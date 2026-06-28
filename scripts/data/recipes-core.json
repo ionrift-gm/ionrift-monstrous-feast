@@ -1,0 +1,102 @@
+{
+    "_meta": {
+        "version": "0.1.0",
+        "tier": "free",
+        "description": "Free-tier monster recipes for the standalone Monstrous Feast module."
+    },
+    "recipes": [
+        {
+            "id": "cook_campfire_monster_roast",
+            "name": "Campfire Monster Roast",
+            "description": "Spit-roast rough monster cuts over a campfire. Basic but communal.",
+            "linkedCreatures": ["beast", "beast_ursine", "beast_suidae", "monstrosity", "monstrosity_owlbear"],
+            "skill": "sur",
+            "dc": 10,
+            "ingredients": [
+                { "name": "Monster Meat", "quantity": 2 }
+            ],
+            "output": {
+                "name": "Campfire Monster Roast",
+                "img": "icons/consumables/food/dried-meat-jerky-fish-red.webp",
+                "description": "<p>Rough-cut monster meat, charred over open flame. Party meal: all party members gain temporary hit points.</p>",
+                "rarity": "common"
+            },
+            "ambitiousOutput": {
+                "name": "Well-Turned Monster Roast",
+                "img": "icons/consumables/food/dried-meat-jerky-fish-red.webp",
+                "description": "<p>Properly seasoned and turned. Party meal: all party members gain more temporary hit points.</p>",
+                "rarity": "uncommon"
+            },
+            "partyEffect": {
+                "tempHP": "1d4",
+                "ambitiousTempHP": "1d6"
+            },
+            "successNarrative": "The meat crackles and spits. Strange, but the smell draws the whole camp.",
+            "failNarrative": "The meat fights the fire. Charred outside, raw inside. The cuts are ruined."
+        },
+        {
+            "id": "cook_bear_roast",
+            "name": "Bear Roast",
+            "description": "Slow-roast bear haunch with rations. A warming, powerful meal.",
+            "linkedCreatures": ["beast_ursine"],
+            "skill": "sur",
+            "dc": 12,
+            "ingredients": [
+                { "name": "Bear Haunch", "quantity": 1 },
+                { "name": "Rations", "quantity": 1 }
+            ],
+            "output": {
+                "name": "Bear Roast",
+                "img": "icons/consumables/food/steak-cooked-grilled-brown.webp",
+                "description": "<p>Thick slabs of slow-roasted bear. Party meal: temporary hit points and a surge of strength.</p>",
+                "rarity": "uncommon"
+            },
+            "ambitiousOutput": {
+                "name": "Herb-Crusted Bear Roast",
+                "img": "icons/consumables/food/steak-cooked-grilled-brown.webp",
+                "description": "<p>Expertly crusted. Party meal: greater temporary hit points and a surge of strength.</p>",
+                "rarity": "rare"
+            },
+            "partyEffect": {
+                "tempHP": "1d8",
+                "ambitiousTempHP": "2d8",
+                "strengthAdvantage": true
+            },
+            "successNarrative": "The haunch roasts slowly, fat rendering into the coals. The camp fills with a primal, savoury warmth.",
+            "failNarrative": "Overcooked and dry. The bear deserved better. Ingredients lost."
+        },
+        {
+            "id": "cook_owlbear_stew",
+            "name": "Owlbear Stew",
+            "description": "A thick stew from owlbear flank, wild herbs, and rations.",
+            "linkedCreatures": ["monstrosity_owlbear"],
+            "skill": "sur",
+            "dc": 13,
+            "ingredients": [
+                { "name": "Owlbear Flank", "quantity": 1 },
+                { "name": "Wild Herbs", "quantity": 1 },
+                { "name": "Rations", "quantity": 1 }
+            ],
+            "output": {
+                "name": "Owlbear Stew",
+                "img": "icons/consumables/food/bowl-stew-brown.webp",
+                "description": "<p>A rich, dark stew with a faintly gamey warmth. Party meal: darkvision for 8 hours.</p>",
+                "rarity": "uncommon"
+            },
+            "ambitiousOutput": {
+                "name": "Seasoned Owlbear Stew",
+                "img": "icons/consumables/food/bowl-stew-brown.webp",
+                "description": "<p>Deeply flavoured, slow-simmered perfection. Party meal: darkvision and sharper senses in dim light.</p>",
+                "rarity": "rare"
+            },
+            "partyEffect": {
+                "tempHP": "1d4",
+                "ambitiousTempHP": "1d6",
+                "darkvisionFeet": 60,
+                "perceptionAdvantageDim": true
+            },
+            "successNarrative": "The stew darkens as it simmers. There is something primal in the smell. Everyone reaches for a bowl.",
+            "failNarrative": "The owlbear meat toughens and the stew goes bitter. A waste of rare ingredients."
+        }
+    ]
+}

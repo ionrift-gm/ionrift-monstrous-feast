@@ -1,0 +1,33 @@
+{
+    "_key": "!items!mfPageRoast00001",
+    "_id": "mfPageRoast00001",
+    "name": "Recipe Page: Campfire Monster Roast",
+    "type": "loot",
+    "img": "icons/sundries/documents/document-torn-diagram-tan.webp",
+    "folder": "mfStarterFold001",
+    "sort": 200,
+    "system": {
+        "description": {
+            "value": "<p>A loose page torn from a hunter's cookbook. Inscribe it into a Monster Cooking book to learn how to prepare <strong>Campfire Monster Roast</strong>.</p><p><em>Requires:</em> 2x Monster Meat</p>"
+        },
+        "rarity": "common",
+        "weight": 0.1,
+        "price": {
+            "value": 0,
+            "denomination": "gp"
+        },
+        "type": {
+            "value": ""
+        }
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "isRecipePage": true,
+            "recipeId": "cook_campfire_monster_roast"
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

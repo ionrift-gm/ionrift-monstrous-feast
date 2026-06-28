@@ -1,0 +1,10 @@
+{
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "build:packs": "node tools/compile-packs.mjs"
+    },
+    "devDependencies": {
+        "@foundryvtt/foundryvtt-cli": "^1.1.0"
+    }
+}

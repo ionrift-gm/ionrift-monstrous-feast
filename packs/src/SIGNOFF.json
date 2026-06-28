@@ -1,0 +1,10 @@
+{
+    "version": 1,
+    "entries": {
+        "mf-starter/_folder_mfStarterFold001.json": { "status": "approved", "tier": "free" },
+        "mf-starter/monster-cooking-book.json": { "status": "approved", "tier": "free" },
+        "mf-starter/recipe-page-campfire-roast.json": { "status": "approved", "tier": "free" },
+        "mf-starter/recipe-page-bear-roast.json": { "status": "approved", "tier": "free" },
+        "mf-starter/recipe-page-owlbear-stew.json": { "status": "approved", "tier": "free" }
+    }
+}

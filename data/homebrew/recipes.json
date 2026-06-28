@@ -1,0 +1,6 @@
+{
+    "_meta": {
+        "description": "Optional homebrew recipes. Same shape as scripts/data/recipes-core.json. Matching recipe ids override bundled entries after a registry reload."
+    },
+    "recipes": []
+}

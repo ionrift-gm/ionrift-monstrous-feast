@@ -1,0 +1,197 @@
+import { CreatureRegistry } from "./CreatureRegistry.js";
+import { RecipeRegistry } from "./RecipeRegistry.js";
+import { CookEngine } from "../engine/CookEngine.js";
+import { SystemBridge } from "../compat/SystemBridge.js";
+import { CoreIcons } from "./CoreIcons.js";
+
+const TYPE_ICONS = {
+    beast: CoreIcons.bear,
+    monstrosity: CoreIcons.monstrosity,
+    aberration: CoreIcons.aberration,
+    dragon: CoreIcons.dragon
+};
+
+const YIELD_TIERS = ["basic", "standard", "exceptional"];
+
+const TIER_NUMBERS = { common: 1, uncommon: 2, rare: 3, legendary: 4 };
+
+function resolveCreatureIcon(entry) {
+    if (entry.img) return entry.img;
+    const base = String(entry.id ?? "").split("_")[0];
+    return TYPE_ICONS[base] ?? CoreIcons.unknown;
+}
+
+/**
+ * Icon for a harvested ingredient row. Art pack can override per yield via
+ * an explicit icon; otherwise we infer from loot/food tag and name.
+ * @param {{name:string,isLoot:boolean,foodTag:string|null,icon?:string}} ing
+ * @returns {string}
+ */
+function resolveIngredientIcon(ing) {
+    if (ing.icon) return ing.icon;
+    const name = String(ing.name ?? "").toLowerCase();
+    if (name.includes("hide") || name.includes("pelt") || name.includes("fur")) return CoreIcons.hide;
+    if (name.includes("claw") || name.includes("talon")) return CoreIcons.claw;
+    if (name.includes("feather") || name.includes("plume")) return CoreIcons.feather;
+    if (name.includes("bone") || name.includes("horn") || name.includes("tusk")) return CoreIcons.bone;
+    if (name.includes("herb") || name.includes("root") || name.includes("leaf")) return CoreIcons.herb;
+    if (ing.foodTag === "essence") return CoreIcons.gem;
+    if (ing.foodTag === "plant") return CoreIcons.mushroom;
+    if (ing.isLoot) return CoreIcons.bone;
+    return CoreIcons.rawMeat;
+}
+
+/**
+ * Flatten an entry's tiered yields into a unique ingredient list.
+ * @param {object} entry
+ * @returns {Array<{name:string,qty:number,isLoot:boolean,foodTag:string|null}>}
+ */
+function collectIngredients(entry) {
+    const byName = new Map();
+    for (const tier of YIELD_TIERS) {
+        for (const y of entry[tier] ?? []) {
+            const existing = byName.get(y.name);
+            const qty = Math.max(1, Number(y.qty) || 1);
+            if (existing) {
+                existing.qty = Math.max(existing.qty, qty);
+            } else {
+                byName.set(y.name, {
+                    name: y.name,
+                    qty,
+                    isLoot: y.type === "loot",
+                    foodTag: y.foodTag ?? null,
+                    icon: y.icon ?? null
+                });
+            }
+        }
+    }
+    return [...byName.values()].map(ing => ({ ...ing, icon: resolveIngredientIcon(ing) }));
+}
+
+/**
+ * Human-readable buff summary from a recipe partyEffect. Display only; the
+ * dedicated buff pass will turn these into applied effects.
+ * @param {object} recipe
+ * @returns {string[]}
+ */
+function buffSummary(recipe) {
+    const fx = recipe.partyEffect ?? {};
+    const lines = [];
+    if (fx.tempHP) lines.push(`${fx.tempHP} temp HP`);
+    if (fx.strengthAdvantage) lines.push("Strength advantage");
+    if (fx.darkvisionFeet) lines.push(`Darkvision ${fx.darkvisionFeet} ft`);
+    if (fx.perceptionAdvantageDim) lines.push("Keen senses in dim light");
+    return lines;
+}
+
+function mapRecipe(recipe, actor, inscribed) {
+    const check = actor
+        ? CookEngine.checkIngredients(actor, recipe)
+        : { ok: false, missing: [] };
+    return {
+        id: recipe.id,
+        name: recipe.name,
+        description: recipe.description,
+        dc: recipe.dc,
+        img: recipe.output?.img ?? CoreIcons.stew,
+        art: recipe.output?.art ?? null,
+        buffs: buffSummary(recipe),
+        ingredients: (recipe.ingredients ?? []).map(i => `${i.quantity}x ${i.name}`),
+        ingredientRows: recipe.ingredients ?? [],
+        canCook: inscribed && check.ok,
+        missing: check.missing.join(", "),
+        inscribed
+    };
+}
+
+/**
+ * Build the shared codex view model.
+ *
+ * @param {object} [opts]
+ * @param {Set<string>} [opts.discoveredCreatures] Creature ids learned by butchering.
+ * @param {Set<string>} [opts.inscribedRecipes] Recipe ids learned from recipe pages.
+ * @param {Actor|null} [opts.actor] Actor whose inventory gates "cookable now".
+ * @param {boolean} [opts.revealAll] When true every entry and recipe is visible (GM registry).
+ * @returns {object}
+ */
+export function buildCodex({ discoveredCreatures = null, inscribedRecipes = null, actor = null, revealAll = false } = {}) {
+    const crLabel = SystemBridge.systemId() === "pf2e" ? "Level" : "CR";
+    const cookableRecipes = [];
+    const recipeList = [];
+
+    const entries = CreatureRegistry.all().map(entry => {
+        const baseType = String(entry.id ?? "").split("_")[0];
+        const unlocked = revealAll || (discoveredCreatures?.has(entry.id) ?? false);
+
+        const linked = RecipeRegistry.forCreature(entry.id);
+        const visibleRecipes = linked
+            .filter(recipe => revealAll || (inscribedRecipes?.has(recipe.id) ?? false))
+            .map(recipe => mapRecipe(recipe, actor, revealAll || (inscribedRecipes?.has(recipe.id) ?? false)));
+
+        const pendingPages = revealAll
+            ? 0
+            : linked.filter(recipe => !(inscribedRecipes?.has(recipe.id) ?? false)).length;
+
+        const ingredients = unlocked ? collectIngredients(entry) : [];
+        const searchBlob = unlocked
+            ? [
+                entry.label ?? entry.id,
+                baseType,
+                ...ingredients.map(i => i.name),
+                ...visibleRecipes.map(r => r.name)
+            ].join(" ").toLowerCase()
+            : "";
+
+        for (const recipe of visibleRecipes) {
+            const withCreature = {
+                ...recipe,
+                creatureLabel: entry.label ?? entry.id,
+                creatureId: entry.id
+            };
+            recipeList.push(withCreature);
+            if (recipe.canCook) cookableRecipes.push(withCreature);
+        }
+
+        const tier = entry.tier ?? "common";
+        return {
+            id: entry.id,
+            label: entry.label ?? entry.id,
+            tier,
+            tierNum: TIER_NUMBERS[tier] ?? 1,
+            type: baseType,
+            minCR: entry.minCR ?? 0,
+            crLabel,
+            img: resolveCreatureIcon(entry),
+            art: entry.art ?? null,
+            hasArt: Boolean(entry.art),
+            flavour: unlocked ? (entry.flavour ?? "") : "",
+            unlocked,
+            ingredients,
+            recipes: unlocked ? visibleRecipes : [],
+            pendingPages,
+            linkedRecipeCount: linked.length,
+            cookableNow: visibleRecipes.some(r => r.canCook),
+            searchBlob
+        };
+    });
+
+    const tiers = [...new Set(entries.map(e => e.tier))];
+    const types = [...new Set(entries.map(e => e.type))];
+
+    return {
+        entries,
+        tiers,
+        types,
+        crLabel,
+        hasActor: Boolean(actor),
+        totalCount: entries.length,
+        unlockedCount: entries.filter(e => e.unlocked).length,
+        cookableRecipes,
+        recipeList: recipeList.sort((a, b) => {
+            if (a.canCook !== b.canCook) return a.canCook ? -1 : 1;
+            return a.name.localeCompare(b.name);
+        }),
+        inscribedCount: inscribedRecipes?.size ?? 0,
+        recipeTotal: RecipeRegistry.all().length
+    };
+}

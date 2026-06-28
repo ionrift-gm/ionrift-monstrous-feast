@@ -1,0 +1,85 @@
+<section class="mf-living-cookbook">
+    <header class="mf-lc-header">
+        <div class="mf-lc-book">
+            <div class="mf-lc-book-emblem"><i class="fas fa-book"></i></div>
+            <div>
+                <h2>{{bookName}}</h2>
+                <p class="mf-lc-sub"><i class="fas fa-feather"></i> Carried by {{actorName}} · {{systemLabel}}</p>
+            </div>
+        </div>
+        <div class="mf-lc-progress">
+            <div class="mf-lc-stat">
+                <i class="fas fa-paw"></i>
+                <div class="mf-lc-stat-body">
+                    <span class="mf-lc-count"><b>{{discoveredCount}}</b> / {{totalCount}}</span>
+                    <span class="mf-lc-label">creatures logged</span>
+                </div>
+            </div>
+            <div class="mf-lc-stat">
+                <i class="fas fa-utensils"></i>
+                <div class="mf-lc-stat-body">
+                    <span class="mf-lc-count mf-lc-recipes-count"><b>{{inscribedCount}}</b> / {{recipeTotal}}</span>
+                    <span class="mf-lc-label">recipes inscribed</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="mf-lc-tabs" data-mf-tabs>
+        <button type="button" class="mf-lc-tab active" data-mf-tab="howto"><i class="fas fa-book"></i> How to use</button>
+        <button type="button" class="mf-lc-tab" data-mf-tab="creatures"><i class="fas fa-paw"></i> Creatures</button>
+        <button type="button" class="mf-lc-tab" data-mf-tab="recipes"><i class="fas fa-utensils"></i> Recipes</button>
+    </nav>
+
+    <div class="mf-lc-panel active" data-mf-panel="howto">
+        <div class="mf-howto">
+            <h3>The party cookbook</h3>
+            <p>This is the party's shared cookbook. Whoever carries it keeps the record, but everyone's hunts and finds fill its pages.</p>
+            <ol class="mf-howto-steps">
+                <li><span class="mf-howto-num">1</span><div><strong>Butcher what you kill.</strong> After a fight, butcher fallen creatures to log them here and collect ingredients.</div></li>
+                <li><span class="mf-howto-num">2</span><div><strong>Find recipe pages.</strong> Pages turn up as loot. Using a page inscribes its recipe into this cookbook, even if someone else carries the book.</div></li>
+                <li><span class="mf-howto-num">3</span><div><strong>Cook at camp.</strong> Open the Recipes tab. When you hold the ingredients, cook the dish to feed the party a shared meal.</div></li>
+            </ol>
+            <p class="mf-howto-foot">A creature must be logged before its ingredients show. A recipe must be inscribed before it can be cooked.</p>
+        </div>
+    </div>
+
+    <div class="mf-lc-panel" data-mf-panel="creatures">
+        {{> "modules/ionrift-monstrous-feast/templates/partials/codex.hbs"}}
+    </div>
+
+    <div class="mf-lc-panel" data-mf-panel="recipes">
+        {{#if recipeList.length}}
+        <ul class="mf-lc-recipe-list">
+            {{#each recipeList as |recipe|}}
+            <li class="{{#if recipe.canCook}}cookable{{/if}}">
+                <img src="{{recipe.img}}" alt="" class="mf-lc-recipe-art" />
+                <div class="mf-lc-recipe-body">
+                    <div class="mf-lc-recipe-head">
+                        <strong>{{recipe.name}}</strong>
+                        <span class="mf-lc-recipe-dc">DC {{recipe.dc}}</span>
+                    </div>
+                    <span class="mf-lc-recipe-from">from {{recipe.creatureLabel}}</span>
+                    <p class="mf-lc-recipe-need">Needs: {{#each recipe.ingredients}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+                    {{#if recipe.buffs.length}}
+                    <p class="mf-lc-recipe-buff"><i class="fas fa-bolt"></i> {{#each recipe.buffs}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+                    {{/if}}
+                </div>
+                {{#if recipe.canCook}}
+                <button type="button" data-action="cookRecipe" data-recipe-id="{{recipe.id}}">
+                    <i class="fas fa-fire"></i> Cook
+                </button>
+                {{else}}
+                <span class="mf-lc-recipe-missing" title="{{recipe.missing}}">Missing</span>
+                {{/if}}
+            </li>
+            {{/each}}
+        </ul>
+        {{else}}
+        <div class="mf-lc-empty">
+            <i class="fas fa-scroll"></i>
+            <p>No recipes inscribed yet. Find recipe pages and inscribe them to learn how to cook.</p>
+        </div>
+        {{/if}}
+    </div>
+</section>

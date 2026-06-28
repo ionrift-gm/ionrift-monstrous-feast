@@ -1,0 +1,34 @@
+<div class="mf-ceremony-embers" aria-hidden="true"></div>
+<div class="mf-ceremony-card">
+    <div class="mf-ceremony-emblem"><i class="fas fa-utensils"></i></div>
+    <h2 class="mf-ceremony-title">Inscribe Recipe</h2>
+    <p class="mf-ceremony-sub">You etch the knowledge onto the pages, that it may nourish the party to come.</p>
+
+    <div class="mf-ceremony-anim">
+        <div class="mf-ceremony-page"><i class="fas fa-scroll"></i></div>
+        <div class="mf-ceremony-book"><i class="fas fa-book-open"></i></div>
+        <div class="mf-ceremony-glow"></div>
+    </div>
+
+    <div class="mf-ceremony-entry">
+        <img src="{{recipeImg}}" alt="" class="mf-ceremony-entry-art" />
+        <div class="mf-ceremony-entry-body">
+            <span class="mf-ceremony-newtag">New recipe</span>
+            <strong class="mf-ceremony-entry-name">{{recipeName}}</strong>
+            {{#if buffs.length}}
+            <span class="mf-ceremony-buff"><i class="fas fa-bolt"></i> {{#each buffs}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</span>
+            {{/if}}
+        </div>
+    </div>
+
+    <label class="mf-ceremony-check">
+        <input type="checkbox" data-mf-confirm-check /> Inscribe into {{bookName}}
+    </label>
+
+    <div class="mf-ceremony-actions">
+        <button type="button" class="mf-ceremony-cancel" data-action="cancel">Not yet</button>
+        <button type="button" class="mf-ceremony-confirm" data-action="confirm" disabled>
+            <i class="fas fa-feather"></i> Confirm
+        </button>
+    </div>
+</div>

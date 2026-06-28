@@ -1,0 +1,25 @@
+/**
+ * Foundry core icon paths verified on live instances (see ionrift-respite verified-core-icons.json).
+ * Avoid inventing paths under icons/consumables/food/meat-* that are absent on some builds.
+ */
+export const CoreIcons = {
+    rawMeat: "icons/consumables/meat/steak-raw-red-pink.webp",
+    jerky: "icons/consumables/food/dried-meat-jerky-fish-red.webp",
+    stew: "icons/consumables/food/bowl-stew-brown.webp",
+    grilled: "icons/consumables/food/steak-cooked-grilled-brown.webp",
+    porridge: "icons/consumables/food/bowl-stew-tofu-potato-brown.webp",
+    hide: "icons/commodities/leather/fur-pelt-brown.webp",
+    claw: "icons/commodities/claws/claw-bear-brown.webp",
+    feather: "icons/commodities/materials/feather-colored-red.webp",
+    bone: "icons/commodities/biological/shell-tan.webp",
+    mushroom: "icons/consumables/mushrooms/bell-shiitake-brown.webp",
+    herb: "icons/commodities/flowers/clover-pink.webp",
+    gem: "icons/commodities/gems/gem-rough-oval-purple.webp",
+    book: "icons/sundries/books/book-worn-brown.webp",
+    recipePage: "icons/sundries/documents/document-torn-diagram-tan.webp",
+    bear: "icons/creatures/abilities/bear-roar-bite-brown.webp",
+    monstrosity: "icons/creatures/abilities/mouth-teeth-sharp.webp",
+    aberration: "icons/creatures/tentacles/tentacle-eyes-yellow-pink.webp",
+    dragon: "icons/creatures/abilities/dragon-breath-purple.webp",
+    unknown: "icons/svg/mystery-man.svg"
+};

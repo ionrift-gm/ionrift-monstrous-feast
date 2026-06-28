@@ -1,0 +1,133 @@
+<div class="mf-codex" data-codex>
+    <div class="mf-codex-toolbar">
+        <div class="mf-codex-search">
+            <i class="fas fa-search"></i>
+            <input type="search" data-codex-search placeholder="Search creatures, ingredients, recipes" />
+        </div>
+        <select data-codex-tier class="mf-codex-filter" title="Filter by tier">
+            <option value="">All tiers</option>
+            {{#each tiers as |tier|}}
+            <option value="{{tier}}">{{tier}}</option>
+            {{/each}}
+        </select>
+        <select data-codex-type class="mf-codex-filter" title="Filter by type">
+            <option value="">All types</option>
+            {{#each types as |type|}}
+            <option value="{{type}}">{{type}}</option>
+            {{/each}}
+        </select>
+        <select data-codex-sort class="mf-codex-filter" title="Sort order">
+            <option value="tier">Sort: tier</option>
+            <option value="name">Sort: name</option>
+            <option value="cr">Sort: {{crLabel}}</option>
+        </select>
+        {{#if hasActor}}
+        <label class="mf-codex-toggle">
+            <input type="checkbox" data-codex-cookable /> Cookable now{{#if cookableRecipes.length}} <span class="mf-codex-toggle-count">{{cookableRecipes.length}}</span>{{/if}}
+        </label>
+        {{/if}}
+    </div>
+
+    <div class="mf-codex-scroll">
+    <div class="mf-codex-grid" data-codex-grid>
+        {{#each entries as |entry|}}
+        <article class="mf-codex-card {{#if entry.unlocked}}unlocked{{else}}locked{{/if}} {{#if entry.cookableNow}}cookable-ready{{/if}} tier-{{entry.tier}}"
+            data-codex-card
+            data-label="{{entry.label}}"
+            data-tier="{{entry.tier}}"
+            data-type="{{entry.type}}"
+            data-cr="{{entry.minCR}}"
+            data-unlocked="{{entry.unlocked}}"
+            data-cookable="{{entry.cookableNow}}"
+            data-search="{{entry.searchBlob}}">
+            <div class="mf-codex-art {{#if entry.hasArt}}has-art{{else}}icon-only{{/if}}">
+                {{#if entry.unlocked}}
+                <span class="mf-codex-tier-badge tier-{{entry.tier}}">Tier {{entry.tierNum}}</span>
+                {{#if entry.cookableNow}}<span class="mf-codex-ready-badge"><i class="fas fa-fire"></i> Ready</span>{{/if}}
+                {{#if entry.hasArt}}
+                <img src="{{entry.art}}" alt="" class="mf-codex-art-img" />
+                {{else}}
+                <img src="{{entry.img}}" alt="" class="mf-codex-art-icon" />
+                {{/if}}
+                <div class="mf-codex-name"><h3>{{entry.label}}</h3></div>
+                {{else}}
+                <div class="mf-codex-silhouette"><i class="fas fa-question"></i></div>
+                <div class="mf-codex-name"><h3>Unknown Creature</h3></div>
+                {{/if}}
+            </div>
+
+            {{#if entry.unlocked}}
+            <div class="mf-codex-body">
+                {{#if entry.ingredients.length}}
+                <div class="mf-codex-section">
+                    <h4>Harvested ingredients</h4>
+                    <ul class="mf-codex-ingredients">
+                        {{#each entry.ingredients as |ing|}}
+                        <li>
+                            <img src="{{ing.icon}}" alt="" class="mf-ing-icon" />
+                            <span class="mf-ing-name">{{ing.name}}{{#if ing.isLoot}} <span class="mf-loot-tag">loot</span>{{/if}}</span>
+                            <span class="mf-ing-qty">{{ing.qty}}</span>
+                        </li>
+                        {{/each}}
+                    </ul>
+                </div>
+                {{/if}}
+
+                <div class="mf-codex-section">
+                    <h4>{{#if entry.recipes.length}}Recipe{{else}}Recipes{{/if}}</h4>
+                    {{#if entry.recipes.length}}
+                    <ul class="mf-codex-recipes">
+                        {{#each entry.recipes as |recipe|}}
+                        <li class="mf-codex-recipe {{#if recipe.canCook}}cookable{{/if}}">
+                            <img src="{{#if recipe.art}}{{recipe.art}}{{else}}{{recipe.img}}{{/if}}" alt="" class="mf-codex-recipe-art" />
+                            <div class="mf-codex-recipe-info">
+                                <strong>{{recipe.name}}</strong>
+                                {{#if recipe.buffs.length}}
+                                <span class="mf-codex-recipe-buff"><i class="fas fa-heart"></i> {{#each recipe.buffs}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</span>
+                                {{/if}}
+                            </div>
+                            {{#if hasActor}}
+                                {{#if recipe.canCook}}
+                                <button type="button" class="mf-codex-cook" data-action="cookRecipe" data-recipe-id="{{recipe.id}}" title="Cook {{recipe.name}}">
+                                    <i class="fas fa-fire"></i>
+                                </button>
+                                {{else}}
+                                <span class="mf-codex-recipe-missing" title="Missing: {{recipe.missing}}"><i class="fas fa-lock"></i></span>
+                                {{/if}}
+                            {{/if}}
+                        </li>
+                        {{/each}}
+                    </ul>
+                    {{else}}
+                    {{#if entry.pendingPages}}
+                    <p class="mf-codex-note">{{entry.pendingPages}} recipe page(s) not yet inscribed. Find pages in loot to learn these cuts.</p>
+                    {{else if entry.linkedRecipeCount}}
+                    <p class="mf-codex-note">No recipe pages inscribed for this creature yet.</p>
+                    {{else}}
+                    <p class="mf-codex-note">No house recipes yet. Homebrew welcome.</p>
+                    {{/if}}
+                    {{/if}}
+                </div>
+            </div>
+            {{else}}
+            <div class="mf-codex-locked-body">
+                <p>Log or harvest this creature to reveal details.</p>
+                <div class="mf-codex-lock"><i class="fas fa-lock"></i></div>
+            </div>
+            {{/if}}
+        </article>
+        {{/each}}
+    </div>
+
+    <div class="mf-codex-empty" data-codex-empty hidden>
+        <i class="fas fa-utensils"></i>
+        <p>Nothing matches the current filters.</p>
+    </div>
+
+    <div class="mf-codex-pager" data-codex-pager hidden>
+        <button type="button" data-codex-prev><i class="fas fa-chevron-left"></i></button>
+        <span data-codex-pageinfo>1 / 1</span>
+        <button type="button" data-codex-next><i class="fas fa-chevron-right"></i></button>
+    </div>
+    </div>
+</div>

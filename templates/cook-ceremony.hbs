@@ -1,0 +1,28 @@
+<div class="mf-ceremony-embers" aria-hidden="true"></div>
+<div class="mf-ceremony-card mf-cook-card">
+    <div class="mf-ceremony-emblem mf-cook-emblem"><i class="fas fa-fire"></i></div>
+    <h2 class="mf-ceremony-title">{{title}}</h2>
+    <p class="mf-ceremony-sub">{{narrative}}</p>
+
+    <div class="mf-cook-reveal rarity-{{rarity}}">
+        <div class="mf-cook-steam"></div>
+        <div class="mf-cook-plate">
+            <img src="{{mealImg}}" alt="" class="mf-cook-dish" />
+        </div>
+        {{#if ambitious}}<span class="mf-cook-ambitious"><i class="fas fa-star"></i> Ambitious</span>{{/if}}
+    </div>
+
+    <div class="mf-cook-mealname">{{mealName}}</div>
+
+    {{#if buffs.length}}
+    <p class="mf-ceremony-buff"><i class="fas fa-bolt"></i> {{#each buffs}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+    {{/if}}
+
+    {{#if cookName}}<p class="mf-cook-by">Cooked by {{cookName}}</p>{{/if}}
+
+    <div class="mf-ceremony-actions">
+        <button type="button" class="mf-ceremony-confirm" data-action="done">
+            <i class="fas fa-bowl-food"></i> Serve the party
+        </button>
+    </div>
+</div>

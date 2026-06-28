@@ -1,0 +1,5 @@
+{
+    "_meta": {
+        "description": "Optional homebrew creature entries. Same shape as scripts/data/creature-registry.json. Matching ids override bundled entries after a registry reload."
+    }
+}

@@ -1,0 +1,199 @@
+<section class="monstrous-feast-cookbook-body">
+    <header class="mf-cookbook-header">
+        <p class="mf-cookbook-lede">Hunt, butcher, and cook the monsters you kill.</p>
+        <div class="mf-cookbook-meta">
+            <span><strong>System:</strong> {{systemLabel}}</span>
+            <span><strong>Registry:</strong> {{registryCount}} creatures</span>
+            <span><strong>Recipes:</strong> {{recipeCount}}</span>
+        </div>
+    </header>
+
+    {{#unless supported}}
+    <div class="mf-cookbook-warning">
+        <i class="fas fa-triangle-exclamation"></i>
+        <p>{{unsupportedNotice}}</p>
+    </div>
+    {{/unless}}
+
+    {{#if isGM}}
+    <div class="mf-cookbook-actions">
+        <button type="button" data-action="openCompendium">
+            <i class="fas fa-box-open"></i> Open Starter Compendium
+        </button>
+        {{#if hasPartyBook}}
+        <button type="button" data-action="openCookbook">
+            <i class="fas fa-book-open"></i> Open Party Cookbook
+        </button>
+        {{/if}}
+        <button type="button" data-action="testButcher">
+            <i class="fas fa-drumstick-bite"></i> Test Butcher (selected token)
+        </button>
+    </div>
+
+    {{#unless starterPackReady}}
+    <p class="mf-cookbook-note">Starter compendium not loaded. Reload the world to finish setting up Monstrous Feast.</p>
+    {{/unless}}
+    {{/if}}
+
+    <nav class="mf-gm-tabs" data-mf-tabs>
+        <button type="button" class="mf-gm-tab active" data-mf-tab="registry">
+            <i class="fas fa-paw"></i> Registry
+        </button>
+        <button type="button" class="mf-gm-tab" data-mf-tab="setup">
+            <i class="fas fa-compass"></i> Setup
+        </button>
+        <button type="button" class="mf-gm-tab" data-mf-tab="pages">
+            <i class="fas fa-scroll"></i> Recipe Pages
+            {{#unless premiumAuthoring}}<span class="mf-premium-badge">Premium</span>{{/unless}}
+        </button>
+        <button type="button" class="mf-gm-tab" data-mf-tab="authoring">
+            <i class="fas fa-dragon"></i> Monster Authoring
+            {{#unless premiumAuthoring}}<span class="mf-premium-badge">Premium</span>{{/unless}}
+        </button>
+    </nav>
+
+    <div class="mf-gm-panel active" data-mf-panel="registry">
+        <section class="mf-cookbook-registry">
+            {{> "modules/ionrift-monstrous-feast/templates/partials/codex.hbs"}}
+        </section>
+
+        {{#if isGM}}
+        <details class="mf-cookbook-homebrew">
+            <summary>Homebrew JSON</summary>
+            <p class="mf-cookbook-homebrew-lede">Drop creature and recipe JSON into the module homebrew folder. Reload after edits.</p>
+            <p class="mf-cookbook-homebrew-path"><code>{{homebrewPath}}</code></p>
+            <div class="mf-cookbook-actions">
+                <button type="button" data-action="reloadRegistry">
+                    <i class="fas fa-rotate"></i> Reload Registry
+                </button>
+            </div>
+        </details>
+        {{/if}}
+    </div>
+
+    <div class="mf-gm-panel" data-mf-panel="setup">
+        <section class="mf-cookbook-how">
+            <h3>Getting started</h3>
+            <ol>
+                <li>Open the <strong>Monstrous Feast Starter</strong> compendium and drag the Monster Cooking book onto one party character. One keeper carrying the book is enough for the whole party.</li>
+                <li>Drag recipe pages from the same compendium when you want the party to learn a dish. Players inscribe pages from the item sheet into the carried book.</li>
+                <li>Butcher slain creatures for ingredients, then cook from the book when a recipe is inscribed and ingredients are ready.</li>
+            </ol>
+        </section>
+
+        {{#if isGM}}
+        <details class="mf-cookbook-dev">
+            <summary>GM testing shortcuts</summary>
+            <p class="mf-cookbook-dev-lede">Skip the compendium while iterating. Grants go to the selected token or your assigned character.</p>
+            <div class="mf-cookbook-actions mf-cookbook-dev-actions">
+                <button type="button" data-action="grantBook">
+                    <i class="fas fa-book"></i> Grant Monster Cooking Book
+                </button>
+            </div>
+
+            {{#if partyBook}}
+            <section class="mf-cookbook-progress">
+                <h4>Party cookbook · {{partyBook.carrierName}}</h4>
+
+                <div class="mf-cookbook-progress-block">
+                    <div class="mf-cookbook-progress-head">
+                        <span>Inscribed recipes</span>
+                        {{#if partyBook.inscribedRecipes.length}}
+                        <button type="button" class="mf-cookbook-progress-clear" data-action="clearInscribedRecipes">Clear all</button>
+                        {{/if}}
+                    </div>
+                    {{#if partyBook.inscribedRecipes.length}}
+                    <ul class="mf-cookbook-progress-list">
+                        {{#each partyBook.inscribedRecipes as |recipe|}}
+                        <li>
+                            <span>{{recipe.name}}</span>
+                            <button type="button" class="mf-cookbook-progress-remove" data-action="removeInscribedRecipe" data-recipe-id="{{recipe.id}}">
+                                <i class="fas fa-times"></i> Remove
+                            </button>
+                        </li>
+                        {{/each}}
+                    </ul>
+                    {{else}}
+                    <p class="mf-cookbook-progress-empty">None inscribed yet.</p>
+                    {{/if}}
+                </div>
+
+                <div class="mf-cookbook-progress-block">
+                    <div class="mf-cookbook-progress-head">
+                        <span>Logged creatures</span>
+                        {{#if partyBook.discoveredCreatures.length}}
+                        <button type="button" class="mf-cookbook-progress-clear" data-action="clearDiscoveredTypes">Clear all</button>
+                        {{/if}}
+                    </div>
+                    {{#if partyBook.discoveredCreatures.length}}
+                    <ul class="mf-cookbook-progress-list">
+                        {{#each partyBook.discoveredCreatures as |creature|}}
+                        <li>
+                            <span>{{creature.label}}</span>
+                            <button type="button" class="mf-cookbook-progress-remove" data-action="removeDiscoveredType" data-type-id="{{creature.id}}">
+                                <i class="fas fa-times"></i> Remove
+                            </button>
+                        </li>
+                        {{/each}}
+                    </ul>
+                    {{else}}
+                    <p class="mf-cookbook-progress-empty">None logged yet.</p>
+                    {{/if}}
+                </div>
+
+                <button type="button" class="mf-cookbook-progress-reset" data-action="resetCookbook">
+                    <i class="fas fa-rotate-left"></i> Reset cookbook progress
+                </button>
+            </section>
+            {{/if}}
+        </details>
+        {{/if}}
+    </div>
+
+    <div class="mf-gm-panel" data-mf-panel="pages">
+        {{#if premiumAuthoring}}
+        <section class="mf-gm-premium-shell">
+            <p class="mf-gm-premium-lede">Mint recipe page items and push them to party tokens from the premium authoring overlay.</p>
+        </section>
+        {{else}}
+        <section class="mf-gm-premium-lock">
+            <div class="mf-gm-premium-lock-icon"><i class="fas fa-gem"></i></div>
+            <h3>Recipe page minting</h3>
+            <p>Mint physical recipe pages, preview parchment layouts, and grant them to tokens from the premium Monstrous Feast overlay.</p>
+        </section>
+
+        {{#if isGM}}
+        <details class="mf-cookbook-dev mf-cookbook-dev-inline">
+            <summary>GM testing shortcuts</summary>
+            <p class="mf-cookbook-dev-lede">Grant bundled recipe pages to the selected token or your assigned character.</p>
+            <div class="mf-cookbook-page-buttons">
+                {{#each recipePages as |page|}}
+                <button type="button" data-action="grantRecipePage" data-recipe-id="{{page.id}}">
+                    <i class="fas fa-file"></i> {{page.name}}
+                </button>
+                {{/each}}
+            </div>
+        </details>
+        {{/if}}
+        {{/if}}
+    </div>
+
+    <div class="mf-gm-panel" data-mf-panel="authoring">
+        {{#if premiumAuthoring}}
+        <section class="mf-gm-premium-shell">
+            <p class="mf-gm-premium-lede">Drag-drop monster registry authoring ships with the premium overlay.</p>
+        </section>
+        {{else}}
+        <section class="mf-gm-premium-lock">
+            <div class="mf-gm-premium-lock-icon"><i class="fas fa-gem"></i></div>
+            <h3>Monster authoring</h3>
+            <p>Configure harvested ingredients, linked recipes, and creature outputs in a drag-drop editor. Part of the premium Monstrous Feast overlay.</p>
+            <ul class="mf-gm-authoring-preview">
+                <li><i class="fas fa-paw"></i> Creature fields and tier badges</li>
+                <li><i class="fas fa-drumstick-bite"></i> Harvested ingredient slots</li>
+                <li><i class="fas fa-utensils"></i> Linked recipes and meal outputs</li>
+            </ul>
+        </section>
+        {{/if}}
+    </div>
+</section>
