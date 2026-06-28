@@ -332,7 +332,8 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         const codex = buildCodex({
             discoveredCreatures: discovered,
             inscribedRecipes: inscribed,
-            actor: this.#actor
+            actor: this.#actor,
+            hideEntryRecipes: true
         });
 
         const cook = this.#buildCookView();

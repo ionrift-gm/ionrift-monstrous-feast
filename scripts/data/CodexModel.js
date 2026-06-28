@@ -161,7 +161,7 @@ function buildSeasoningStatus(recipe, actor) {
  * @param {Set<string>} [opts.auditInscribed] Party-book inscribed recipe ids, for the GM audit overlay.
  * @returns {object}
  */
-export function buildCodex({ discoveredCreatures = null, inscribedRecipes = null, actor = null, revealAll = false, auditDiscovered = null, auditInscribed = null } = {}) {
+export function buildCodex({ discoveredCreatures = null, inscribedRecipes = null, actor = null, revealAll = false, auditDiscovered = null, auditInscribed = null, hideEntryRecipes = false } = {}) {
     const crLabel = SystemBridge.systemId() === "pf2e" ? "Level" : "CR";
     const audit = Boolean(auditDiscovered || auditInscribed);
     const cookableRecipes = [];
@@ -223,7 +223,7 @@ export function buildCodex({ discoveredCreatures = null, inscribedRecipes = null
             audit,
             partyDiscovered,
             ingredients,
-            recipes: unlocked ? visibleRecipes : [],
+            recipes: unlocked && !hideEntryRecipes ? visibleRecipes : [],
             pendingPages,
             linkedRecipeCount: linked.length,
             cookableNow: visibleRecipes.some(r => r.canCook),
@@ -251,6 +251,7 @@ export function buildCodex({ discoveredCreatures = null, inscribedRecipes = null
         recipeTotal: RecipeRegistry.all().length,
         audit,
         auditDiscoveredCount: entries.filter(e => e.partyDiscovered).length,
-        auditInscribedCount: auditInscribed?.size ?? 0
+        auditInscribedCount: auditInscribed?.size ?? 0,
+        hideEntryRecipes
     };
 }

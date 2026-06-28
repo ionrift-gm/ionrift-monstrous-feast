@@ -78,6 +78,7 @@
                 </div>
                 {{/if}}
 
+                {{#unless @root.hideEntryRecipes}}
                 <div class="mf-codex-section">
                     <h4>{{#if entry.recipes.length}}Recipe{{else}}Recipes{{/if}}</h4>
                     {{#if entry.recipes.length}}
@@ -119,10 +120,11 @@
                     {{/if}}
                     {{/if}}
                 </div>
+                {{/unless}}
             </div>
             {{else}}
             <div class="mf-codex-locked-body">
-                <p>Butcher this creature to reveal its cuts and recipes.</p>
+                <p>Butcher this creature to reveal its cuts{{#unless @root.hideEntryRecipes}} and recipes{{/unless}}.</p>
                 <div class="mf-codex-lock"><i class="fas fa-lock"></i></div>
             </div>
             {{/if}}
