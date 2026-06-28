@@ -95,6 +95,7 @@
 }
 
 .monstrous-feast-cookbook .monstrous-feast-cookbook-body {
+    position: relative;
     padding: 1rem;
     display: flex;
     flex-direction: column;
@@ -102,6 +103,85 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
+}
+
+/* ── Header flyout panels (Setup, How to use) ─────────────────── */
+.mf-flyout {
+    display: none;
+    position: absolute;
+    top: 4.5rem;
+    right: 1rem;
+    z-index: 40;
+    width: min(380px, calc(100% - 2rem));
+    max-height: calc(100% - 6rem);
+    flex-direction: column;
+    border: 1px solid rgba(155, 89, 182, 0.4);
+    border-radius: 12px;
+    background: linear-gradient(160deg, rgba(24, 15, 33, 0.99), rgba(14, 9, 20, 0.99));
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.6), 0 0 22px rgba(155, 89, 182, 0.18);
+    overflow: hidden;
+}
+
+.mf-flyout.open {
+    display: flex;
+}
+
+.mf-flyout-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid rgba(155, 89, 182, 0.2);
+}
+
+.mf-flyout-head h3 {
+    margin: 0;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(210, 180, 230, 0.95);
+}
+
+.mf-flyout-head h3 i {
+    margin-right: 0.35rem;
+    color: rgba(155, 89, 182, 0.8);
+}
+
+.application.monstrous-feast-cookbook .mf-flyout-close,
+.application.monstrous-feast-living-cookbook .mf-flyout-close {
+    all: unset;
+    box-sizing: border-box;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+}
+
+.application.monstrous-feast-cookbook .mf-flyout-close:hover,
+.application.monstrous-feast-living-cookbook .mf-flyout-close:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.mf-flyout-body {
+    padding: 0.8rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.mf-cookbook-homebrew-inline h4,
+.mf-cookbook-how h4 {
+    margin: 0 0 0.4rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(180, 150, 205, 0.8);
 }
 
 .mf-gm-header {
@@ -219,6 +299,11 @@
 .application.monstrous-feast-cookbook .mf-gm-toolbar button:hover {
     background: rgba(155, 89, 182, 0.25);
     border-color: rgba(155, 89, 182, 0.6);
+}
+
+.application.monstrous-feast-cookbook .mf-gm-toolbar button.active {
+    background: rgba(155, 89, 182, 0.32);
+    border-color: rgba(155, 89, 182, 0.7);
 }
 
 .mf-cookbook-lede {
@@ -785,6 +870,7 @@
 }
 
 .mf-living-cookbook {
+    position: relative;
     padding: 1rem;
     display: flex;
     flex-direction: column;
@@ -849,7 +935,34 @@
 
 .mf-lc-progress {
     display: flex;
+    align-items: center;
     gap: 1.4rem;
+}
+
+.application.monstrous-feast-living-cookbook .mf-lc-help {
+    all: unset;
+    box-sizing: border-box;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid rgba(155, 89, 182, 0.4);
+    background: rgba(155, 89, 182, 0.12);
+    color: rgba(220, 190, 235, 0.95);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.application.monstrous-feast-living-cookbook .mf-lc-help:hover {
+    background: rgba(155, 89, 182, 0.25);
+    border-color: rgba(155, 89, 182, 0.6);
+}
+
+.application.monstrous-feast-living-cookbook .mf-lc-help.active {
+    background: rgba(155, 89, 182, 0.3);
+    border-color: rgba(155, 89, 182, 0.7);
 }
 
 .mf-lc-stat {
@@ -1026,6 +1139,59 @@
     color: rgba(255, 255, 255, 0.5);
 }
 
+.mf-lc-pending {
+    margin-bottom: 0.8rem;
+    padding: 0.6rem;
+    border: 1px solid rgba(155, 89, 182, 0.32);
+    border-radius: 10px;
+    background: rgba(155, 89, 182, 0.06);
+}
+
+.mf-lc-pending-title {
+    margin: 0 0 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: rgba(206, 168, 230, 0.9);
+}
+
+.mf-lc-pending-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.mf-lc-pending-list li {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.5rem;
+    border: 1px solid rgba(155, 89, 182, 0.25);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.mf-lc-inscribe {
+    padding: 0.4rem 0.7rem;
+    border: 1px solid rgba(155, 89, 182, 0.55);
+    border-radius: 5px;
+    background: rgba(155, 89, 182, 0.2);
+    color: rgba(224, 200, 245, 0.95);
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.mf-lc-inscribe:hover {
+    background: rgba(155, 89, 182, 0.34);
+}
+
 .mf-lc-recipe-list {
     list-style: none;
     margin: 0;
@@ -1109,11 +1275,62 @@
     background: rgba(230, 126, 34, 0.32);
 }
 
-.mf-lc-recipe-missing {
-    font-size: 0.72rem;
-    color: rgba(231, 76, 60, 0.75);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+.mf-lc-ing-boxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0.25rem 0 0.1rem;
+}
+
+.mf-lc-ing {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(46, 204, 113, 0.4);
+    border-radius: 6px;
+    background: rgba(46, 204, 113, 0.08);
+}
+
+.mf-lc-ing img {
+    width: 22px;
+    height: 22px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.mf-lc-ing-qty {
+    position: absolute;
+    right: -3px;
+    bottom: -4px;
+    min-width: 14px;
+    padding: 0 2px;
+    font-size: 0.54rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.92);
+    background: rgba(20, 40, 28, 0.95);
+    border: 1px solid rgba(46, 204, 113, 0.5);
+    border-radius: 999px;
+}
+
+.mf-lc-ing.missing {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.mf-lc-ing.missing img {
+    filter: grayscale(1) brightness(0.4);
+    opacity: 0.6;
+}
+
+.mf-lc-ing.missing .mf-lc-ing-qty {
+    color: rgba(231, 120, 110, 0.95);
+    background: rgba(40, 18, 18, 0.95);
+    border-color: rgba(231, 76, 60, 0.45);
 }
 
 .mf-lc-empty {
@@ -1216,6 +1433,10 @@
     z-index: 10000 !important;
     overflow: auto;
     animation: mf-fade-in 0.25s ease both;
+}
+
+.mf-ceremony-stage {
+    display: contents;
 }
 
 .mf-ceremony-card {
@@ -1836,7 +2057,7 @@
     max-height: min(56vh, 540px);
     overflow-y: auto;
     overflow-x: hidden;
-    padding-right: 0.2rem;
+    padding: 0.35rem 0.2rem 0.2rem;
 }
 
 .mf-codex-search {
@@ -1886,7 +2107,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(198px, 1fr));
     gap: 0.7rem;
-    align-items: start;
+    align-items: stretch;
 }
 
 .mf-codex-card {
@@ -1897,13 +2118,12 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .mf-codex-card.unlocked:hover {
     border-color: rgba(155, 89, 182, 0.5);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(155, 89, 182, 0.15);
-    transform: translateY(-2px);
 }
 
 .mf-codex-card.locked {
@@ -1938,6 +2158,65 @@
     color: rgba(126, 223, 154, 0.98);
     background: rgba(10, 30, 18, 0.7);
     border: 1px solid rgba(46, 204, 113, 0.5);
+}
+
+.mf-codex-audit-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.45rem;
+    border-radius: 5px;
+}
+
+.mf-codex-audit-badge.in-book {
+    color: rgba(126, 223, 154, 0.98);
+    background: rgba(10, 30, 18, 0.78);
+    border: 1px solid rgba(46, 204, 113, 0.5);
+}
+
+.mf-codex-audit-badge.absent {
+    color: rgba(255, 255, 255, 0.55);
+    background: rgba(10, 8, 14, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.mf-codex-recipe-audit {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    z-index: 2;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.52rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.mf-codex-recipe-audit.inscribed {
+    color: rgba(126, 223, 154, 0.98);
+    background: rgba(12, 34, 20, 0.95);
+    border: 1px solid rgba(46, 204, 113, 0.55);
+}
+
+.mf-codex-recipe-audit.absent {
+    color: rgba(255, 200, 150, 0.9);
+    background: rgba(34, 22, 12, 0.95);
+    border: 1px solid rgba(255, 160, 90, 0.4);
+}
+
+.mf-gm-stat-audit b {
+    color: rgba(126, 223, 154, 0.97);
 }
 
 .mf-codex-toggle-count {
@@ -2131,6 +2410,7 @@
 }
 
 .mf-codex-recipe {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.5rem;

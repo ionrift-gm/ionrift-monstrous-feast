@@ -68,7 +68,10 @@ export class CodexController {
 
     _sorted(cards) {
         const { sort } = this.state;
+        const knownRank = card => (card.dataset.unlocked === "true" ? 0 : 1);
         return [...cards].sort((a, b) => {
+            const byKnown = knownRank(a) - knownRank(b);
+            if (byKnown) return byKnown;
             if (sort === "name") {
                 return a.dataset.label.localeCompare(b.dataset.label);
             }

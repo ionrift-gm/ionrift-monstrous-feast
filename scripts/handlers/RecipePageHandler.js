@@ -1,4 +1,4 @@
-import { inscribeRecipePage } from "../services/RecipePageService.js";
+import { openOrInscribe } from "../services/RecipePageService.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 
@@ -13,7 +13,7 @@ export const RecipePageHandler = {
 
         Hooks.on("dnd5e.useItem", (item, config, options) => {
             if (!item?.getFlag?.(MODULE_ID, "isRecipePage")) return;
-            inscribeRecipePage(item);
+            openOrInscribe(item);
             return false;
         });
     },
@@ -44,7 +44,7 @@ export const RecipePageHandler = {
         button.innerHTML = '<i class="fas fa-book-medical"></i> Inscribe to Cookbook';
         button.addEventListener("click", async (event) => {
             event.preventDefault();
-            await inscribeRecipePage(item, actor);
+            await openOrInscribe(item, actor);
         });
         footer.prepend(button);
     }

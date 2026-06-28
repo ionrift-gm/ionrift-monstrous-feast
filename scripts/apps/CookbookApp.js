@@ -9,7 +9,7 @@ import { grantRecipePage } from "../services/RecipePageService.js";
 import { DiscoveryService } from "../services/DiscoveryService.js";
 import { LivingCookbookApp } from "./LivingCookbookApp.js";
 import { CompendiumService } from "../services/CompendiumService.js";
-import { bindTabs } from "../ui/TabBinder.js";
+import { bindTabs, bindFlyouts } from "../ui/TabBinder.js";
 
 const PREMIUM_MODULE_ID = "ionrift-monstrous-feast-premium";
 
@@ -78,13 +78,16 @@ export class CookbookApp extends HandlebarsApplicationMixin(ApplicationV2) {
     async _prepareContext() {
         const supported = SystemBridge.isLaunchSupported();
         const partyBook = buildPartyBookSnapshot();
+        const book = DiscoveryService.findPartyCookbook();
+        const auditDiscovered = book ? new Set(DiscoveryService.getDiscoveredTypes(book)) : null;
+        const auditInscribed = book ? new Set(DiscoveryService.getInscribedRecipes(book)) : null;
         return {
             supported,
             unsupportedNotice: SystemBridge.unsupportedNotice(),
             systemLabel: SystemBridge.launchLabel(),
             registryCount: CreatureRegistry.all().length,
             recipeCount: RecipeRegistry.all().length,
-            ...buildCodex({ revealAll: true }),
+            ...buildCodex({ revealAll: true, auditDiscovered, auditInscribed }),
             hasActor: false,
             recipePages: RecipeRegistry.all().map(r => ({
                 id: r.id,
@@ -102,6 +105,7 @@ export class CookbookApp extends HandlebarsApplicationMixin(ApplicationV2) {
     _onRender(context, options) {
         CodexController.attach(this.element);
         bindTabs(this.element);
+        bindFlyouts(this.element);
     }
 
     static #partyBookOrWarn() {

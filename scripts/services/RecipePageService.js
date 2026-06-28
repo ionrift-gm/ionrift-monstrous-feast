@@ -103,3 +103,26 @@ export async function inscribeRecipePage(pageItem, actor = null) {
     ui.notifications.info(`${recipe.name} inscribed into ${book.name}.`);
     return true;
 }
+
+/**
+ * Entry point when a recipe page is used or its inscribe button is pressed.
+ * When the page sits on the party-book carrier and the user may open the book,
+ * open it on the Recipes tab so the inscribe offer is reviewed in place.
+ * Otherwise fall back to the direct inscribe (relay plus ceremony).
+ * @param {Item} pageItem
+ * @param {Actor} [actor] Defaults to pageItem.parent.
+ * @returns {Promise<boolean>}
+ */
+export async function openOrInscribe(pageItem, actor = null) {
+    actor = actor ?? pageItem?.parent ?? pageItem?.actor;
+    const book = DiscoveryService.findPartyCookbook();
+    const carrier = book?.actor ?? book?.parent ?? null;
+
+    const pageOnCarrier = Boolean(book && carrier && actor && carrier.id === actor.id);
+    if (pageOnCarrier && DiscoveryService.canUserOpenCookbook(book)) {
+        LivingCookbookApp.open(book, carrier, { focusTab: "recipes" });
+        return true;
+    }
+
+    return inscribeRecipePage(pageItem, actor);
+}

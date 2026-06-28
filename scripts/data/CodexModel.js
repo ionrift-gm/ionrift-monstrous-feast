@@ -1,6 +1,7 @@
 import { CreatureRegistry } from "./CreatureRegistry.js";
 import { RecipeRegistry } from "./RecipeRegistry.js";
 import { CookEngine } from "../engine/CookEngine.js";
+import { countIngredient } from "../services/IngredientMatcher.js";
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { CoreIcons } from "./CoreIcons.js";
 
@@ -84,10 +85,26 @@ function buffSummary(recipe) {
     return lines;
 }
 
-function mapRecipe(recipe, actor, inscribed) {
+function mapRecipe(recipe, actor, inscribed, { audit = false, partyInscribed = false } = {}) {
     const check = actor
         ? CookEngine.checkIngredients(actor, recipe)
         : { ok: false, missing: [] };
+    const ingredientStatus = (recipe.ingredients ?? []).map(ing => {
+        const need = Math.max(1, Number(ing.quantity) || 1);
+        const have = actor ? countIngredient(actor, ing.name) : 0;
+        return {
+            name: ing.name,
+            need,
+            have,
+            satisfied: have >= need,
+            icon: resolveIngredientIcon({
+                name: ing.name,
+                isLoot: false,
+                foodTag: ing.foodTag ?? null,
+                icon: ing.icon ?? null
+            })
+        };
+    });
     return {
         id: recipe.id,
         name: recipe.name,
@@ -98,9 +115,12 @@ function mapRecipe(recipe, actor, inscribed) {
         buffs: buffSummary(recipe),
         ingredients: (recipe.ingredients ?? []).map(i => `${i.quantity}x ${i.name}`),
         ingredientRows: recipe.ingredients ?? [],
+        ingredientStatus,
         canCook: inscribed && check.ok,
         missing: check.missing.join(", "),
-        inscribed
+        inscribed,
+        audit,
+        partyInscribed
     };
 }
 
@@ -112,21 +132,30 @@ function mapRecipe(recipe, actor, inscribed) {
  * @param {Set<string>} [opts.inscribedRecipes] Recipe ids learned from recipe pages.
  * @param {Actor|null} [opts.actor] Actor whose inventory gates "cookable now".
  * @param {boolean} [opts.revealAll] When true every entry and recipe is visible (GM registry).
+ * @param {Set<string>} [opts.auditDiscovered] Party-book discovered ids, for the GM audit overlay.
+ * @param {Set<string>} [opts.auditInscribed] Party-book inscribed recipe ids, for the GM audit overlay.
  * @returns {object}
  */
-export function buildCodex({ discoveredCreatures = null, inscribedRecipes = null, actor = null, revealAll = false } = {}) {
+export function buildCodex({ discoveredCreatures = null, inscribedRecipes = null, actor = null, revealAll = false, auditDiscovered = null, auditInscribed = null } = {}) {
     const crLabel = SystemBridge.systemId() === "pf2e" ? "Level" : "CR";
+    const audit = Boolean(auditDiscovered || auditInscribed);
     const cookableRecipes = [];
     const recipeList = [];
 
     const entries = CreatureRegistry.all().map(entry => {
         const baseType = String(entry.id ?? "").split("_")[0];
         const unlocked = revealAll || (discoveredCreatures?.has(entry.id) ?? false);
+        const partyDiscovered = audit && (auditDiscovered?.has(entry.id) ?? false);
 
         const linked = RecipeRegistry.forCreature(entry.id);
         const visibleRecipes = linked
             .filter(recipe => revealAll || (inscribedRecipes?.has(recipe.id) ?? false))
-            .map(recipe => mapRecipe(recipe, actor, revealAll || (inscribedRecipes?.has(recipe.id) ?? false)));
+            .map(recipe => mapRecipe(
+                recipe,
+                actor,
+                revealAll || (inscribedRecipes?.has(recipe.id) ?? false),
+                { audit, partyInscribed: auditInscribed?.has(recipe.id) ?? false }
+            ));
 
         const pendingPages = revealAll
             ? 0
@@ -166,6 +195,8 @@ export function buildCodex({ discoveredCreatures = null, inscribedRecipes = null
             hasArt: Boolean(entry.art),
             flavour: unlocked ? (entry.flavour ?? "") : "",
             unlocked,
+            audit,
+            partyDiscovered,
             ingredients,
             recipes: unlocked ? visibleRecipes : [],
             pendingPages,
@@ -192,6 +223,9 @@ export function buildCodex({ discoveredCreatures = null, inscribedRecipes = null
             return a.name.localeCompare(b.name);
         }),
         inscribedCount: inscribedRecipes?.size ?? 0,
-        recipeTotal: RecipeRegistry.all().length
+        recipeTotal: RecipeRegistry.all().length,
+        audit,
+        auditDiscoveredCount: entries.filter(e => e.partyDiscovered).length,
+        auditInscribedCount: auditInscribed?.size ?? 0
     };
 }

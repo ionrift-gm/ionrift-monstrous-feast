@@ -1,11 +1,14 @@
 import { CookEngine } from "../engine/CookEngine.js";
 import { RecipeRegistry } from "../data/RecipeRegistry.js";
 import { DiscoveryService } from "../services/DiscoveryService.js";
+import { inscribeRecipePage } from "../services/RecipePageService.js";
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { buildCodex } from "../data/CodexModel.js";
 import { CodexController } from "../ui/CodexController.js";
 import { CookCeremonyApp } from "./CookCeremonyApp.js";
-import { bindTabs } from "../ui/TabBinder.js";
+import { bindTabs, bindFlyouts } from "../ui/TabBinder.js";
+
+const MODULE_ID = "ionrift-monstrous-feast";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -22,6 +25,9 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
     /** @type {Actor|null} */
     #actor = null;
 
+    /** @type {string|null} */
+    #focusTab = null;
+
     static DEFAULT_OPTIONS = {
         classes: ["ionrift-window", "monstrous-feast-living-cookbook"],
         position: { width: 900, height: 820 },
@@ -31,7 +37,8 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
             resizable: true
         },
         actions: {
-            cookRecipe: LivingCookbookApp.#onCookRecipe
+            cookRecipe: LivingCookbookApp.#onCookRecipe,
+            inscribePage: LivingCookbookApp.#onInscribePage
         }
     };
 
@@ -56,7 +63,7 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
      * @param {Item} bookItem
      * @param {Actor} actor
      */
-    static open(bookItem, actor) {
+    static open(bookItem, actor, { focusTab = null } = {}) {
         if (!bookItem) return null;
         if (!DiscoveryService.canUserOpenCookbook(bookItem)) {
             ui.notifications.warn("Only the book keeper or the GM can open the Monster Cooking book.");
@@ -69,10 +76,12 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
             existing.#syncRefs(bookItem, actor);
             existing.render(false);
             existing.bringToTop?.();
+            if (focusTab) existing.activateTab(focusTab);
             return existing;
         }
 
         const app = new LivingCookbookApp(bookItem, actor);
+        app.#focusTab = focusTab;
         OPEN_BY_BOOK.set(key, app);
         app.render(true);
         return app;
@@ -104,6 +113,29 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     static #onCookRecipe(event, target) {
         return this.cookRecipe(event, target);
+    }
+
+    static #onInscribePage(event, target) {
+        return this.inscribePage(event, target);
+    }
+
+    async inscribePage(_event, target) {
+        const pageId = target?.dataset?.pageId;
+        if (!pageId || !this.#actor) return;
+        const pageItem = this.#actor.items.get(pageId);
+        if (!pageItem) return;
+
+        const recipeId = pageItem.getFlag(MODULE_ID, "recipeId");
+        const inscribed = await inscribeRecipePage(pageItem, this.#actor);
+        if (inscribed && recipeId) {
+            const dupeIds = this.#actor.items
+                .filter(item =>
+                    item.getFlag?.(MODULE_ID, "isRecipePage") === true &&
+                    item.getFlag(MODULE_ID, "recipeId") === recipeId)
+                .map(item => item.id);
+            if (dupeIds.length) await this.#actor.deleteEmbeddedDocuments("Item", dupeIds);
+        }
+        this.render(false);
     }
 
     async cookRecipe(_event, target) {
@@ -186,12 +218,63 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
             totalCount: codex.totalCount,
             hasActor: codex.hasActor,
             cookableRecipes: codex.cookableRecipes,
+            pendingPages: this.#pendingPages(inscribed),
             ...codex
         };
+    }
+
+    /**
+     * Recipe pages the carrier holds that are not yet inscribed in this book.
+     * @param {Set<string>} inscribed
+     * @returns {object[]}
+     */
+    #pendingPages(inscribed) {
+        const actor = this.#actor;
+        if (!actor?.items) return [];
+
+        const pages = [];
+        const seen = new Set();
+        for (const item of actor.items) {
+            if (item.getFlag?.(MODULE_ID, "isRecipePage") !== true) continue;
+            const recipeId = item.getFlag(MODULE_ID, "recipeId");
+            if (!recipeId || inscribed.has(recipeId) || seen.has(recipeId)) continue;
+            const recipe = RecipeRegistry.get(recipeId);
+            if (!recipe) continue;
+            seen.add(recipeId);
+            pages.push({
+                pageId: item.id,
+                recipeId,
+                name: recipe.name,
+                img: recipe.output?.img ?? item.img,
+                buffs: this._buffLines(recipe)
+            });
+        }
+        return pages;
+    }
+
+    /**
+     * Switch the active tab in an already-rendered window.
+     * @param {string} tab
+     */
+    activateTab(tab) {
+        const root = this.element;
+        if (!root || !tab) return;
+        for (const btn of root.querySelectorAll("[data-mf-tab]")) {
+            btn.classList.toggle("active", btn.dataset.mfTab === tab);
+        }
+        for (const panel of root.querySelectorAll("[data-mf-panel]")) {
+            panel.classList.toggle("active", panel.dataset.mfPanel === tab);
+        }
     }
 
     _onRender(context, options) {
         CodexController.attach(this.element);
         bindTabs(this.element);
+        bindFlyouts(this.element);
+
+        if (this.#focusTab) {
+            this.activateTab(this.#focusTab);
+            this.#focusTab = null;
+        }
     }
 }

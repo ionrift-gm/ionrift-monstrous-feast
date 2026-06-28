@@ -10,6 +10,16 @@
 
         <div class="mf-gm-header-right">
             <div class="mf-gm-stats">
+                {{#if hasPartyBook}}
+                <div class="mf-gm-stat mf-gm-stat-audit">
+                    <i class="fas fa-paw"></i>
+                    <div class="mf-gm-stat-body"><b>{{auditDiscoveredCount}} / {{registryCount}}</b><span>logged in book</span></div>
+                </div>
+                <div class="mf-gm-stat mf-gm-stat-audit">
+                    <i class="fas fa-feather"></i>
+                    <div class="mf-gm-stat-body"><b>{{auditInscribedCount}} / {{recipeCount}}</b><span>inscribed</span></div>
+                </div>
+                {{else}}
                 <div class="mf-gm-stat">
                     <i class="fas fa-paw"></i>
                     <div class="mf-gm-stat-body"><b>{{registryCount}}</b><span>creatures</span></div>
@@ -18,6 +28,7 @@
                     <i class="fas fa-utensils"></i>
                     <div class="mf-gm-stat-body"><b>{{recipeCount}}</b><span>recipes</span></div>
                 </div>
+                {{/if}}
             </div>
 
             {{#if isGM}}
@@ -32,6 +43,9 @@
                 {{/if}}
                 <button type="button" data-action="testButcher" title="Test butcher (selected token)">
                     <i class="fas fa-drumstick-bite"></i>
+                </button>
+                <button type="button" data-mf-flyout="setup" title="Setup and tools">
+                    <i class="fas fa-question"></i>
                 </button>
             </div>
             {{/if}}
@@ -55,9 +69,6 @@
         <button type="button" class="mf-gm-tab active" data-mf-tab="registry">
             <i class="fas fa-paw"></i> Registry
         </button>
-        <button type="button" class="mf-gm-tab" data-mf-tab="setup">
-            <i class="fas fa-compass"></i> Setup
-        </button>
         <button type="button" class="mf-gm-tab" data-mf-tab="pages">
             <i class="fas fa-scroll"></i> Recipe Pages
             {{#unless premiumAuthoring}}<span class="mf-premium-badge">Premium</span>{{/unless}}
@@ -72,99 +83,106 @@
         <section class="mf-cookbook-registry">
             {{> "modules/ionrift-monstrous-feast/templates/partials/codex.hbs"}}
         </section>
-
-        {{#if isGM}}
-        <details class="mf-cookbook-homebrew">
-            <summary>Homebrew JSON</summary>
-            <p class="mf-cookbook-homebrew-lede">Drop creature and recipe JSON into the module homebrew folder. Reload after edits.</p>
-            <p class="mf-cookbook-homebrew-path"><code>{{homebrewPath}}</code></p>
-            <div class="mf-cookbook-actions">
-                <button type="button" data-action="reloadRegistry">
-                    <i class="fas fa-rotate"></i> Reload Registry
-                </button>
-            </div>
-        </details>
-        {{/if}}
     </div>
 
-    <div class="mf-gm-panel" data-mf-panel="setup">
-        <section class="mf-cookbook-how">
-            <h3>Getting started</h3>
-            <ol>
-                <li>Open the <strong>Monstrous Feast Starter</strong> compendium and drag the Monster Cooking book onto one party character. One keeper carrying the book is enough for the whole party.</li>
-                <li>Drag recipe pages from the same compendium when you want the party to learn a dish. Players inscribe pages from the item sheet into the carried book.</li>
-                <li>Butcher slain creatures for ingredients, then cook from the book when a recipe is inscribed and ingredients are ready.</li>
-            </ol>
-        </section>
+    {{#if isGM}}
+    <aside class="mf-flyout" data-mf-flyout-panel="setup">
+        <header class="mf-flyout-head">
+            <h3><i class="fas fa-question"></i> Setup and tools</h3>
+            <button type="button" class="mf-flyout-close" data-mf-flyout-close title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </header>
 
-        {{#if isGM}}
-        <details class="mf-cookbook-dev">
-            <summary>GM testing shortcuts</summary>
-            <p class="mf-cookbook-dev-lede">Skip the compendium while iterating. Grants go to the selected token or your assigned character.</p>
-            <div class="mf-cookbook-actions mf-cookbook-dev-actions">
-                <button type="button" data-action="grantBook">
-                    <i class="fas fa-book"></i> Grant Monster Cooking Book
-                </button>
-            </div>
-
-            {{#if partyBook}}
-            <section class="mf-cookbook-progress">
-                <h4>Party cookbook · {{partyBook.carrierName}}</h4>
-
-                <div class="mf-cookbook-progress-block">
-                    <div class="mf-cookbook-progress-head">
-                        <span>Inscribed recipes</span>
-                        {{#if partyBook.inscribedRecipes.length}}
-                        <button type="button" class="mf-cookbook-progress-clear" data-action="clearInscribedRecipes">Clear all</button>
-                        {{/if}}
-                    </div>
-                    {{#if partyBook.inscribedRecipes.length}}
-                    <ul class="mf-cookbook-progress-list">
-                        {{#each partyBook.inscribedRecipes as |recipe|}}
-                        <li>
-                            <span>{{recipe.name}}</span>
-                            <button type="button" class="mf-cookbook-progress-remove" data-action="removeInscribedRecipe" data-recipe-id="{{recipe.id}}">
-                                <i class="fas fa-times"></i> Remove
-                            </button>
-                        </li>
-                        {{/each}}
-                    </ul>
-                    {{else}}
-                    <p class="mf-cookbook-progress-empty">None inscribed yet.</p>
-                    {{/if}}
-                </div>
-
-                <div class="mf-cookbook-progress-block">
-                    <div class="mf-cookbook-progress-head">
-                        <span>Logged creatures</span>
-                        {{#if partyBook.discoveredCreatures.length}}
-                        <button type="button" class="mf-cookbook-progress-clear" data-action="clearDiscoveredTypes">Clear all</button>
-                        {{/if}}
-                    </div>
-                    {{#if partyBook.discoveredCreatures.length}}
-                    <ul class="mf-cookbook-progress-list">
-                        {{#each partyBook.discoveredCreatures as |creature|}}
-                        <li>
-                            <span>{{creature.label}}</span>
-                            <button type="button" class="mf-cookbook-progress-remove" data-action="removeDiscoveredType" data-type-id="{{creature.id}}">
-                                <i class="fas fa-times"></i> Remove
-                            </button>
-                        </li>
-                        {{/each}}
-                    </ul>
-                    {{else}}
-                    <p class="mf-cookbook-progress-empty">None logged yet.</p>
-                    {{/if}}
-                </div>
-
-                <button type="button" class="mf-cookbook-progress-reset" data-action="resetCookbook">
-                    <i class="fas fa-rotate-left"></i> Reset cookbook progress
-                </button>
+        <div class="mf-flyout-body">
+            <section class="mf-cookbook-how">
+                <h4>Getting started</h4>
+                <ol>
+                    <li>Open the <strong>Monstrous Feast Starter</strong> compendium and drag the Monster Cooking book onto one party character. One keeper carrying the book is enough for the whole party.</li>
+                    <li>Drag recipe pages from the same compendium when you want the party to learn a dish. Players inscribe pages from the item sheet into the carried book.</li>
+                    <li>Butcher slain creatures for ingredients, then cook from the book when a recipe is inscribed and ingredients are ready.</li>
+                </ol>
             </section>
-            {{/if}}
-        </details>
-        {{/if}}
-    </div>
+
+            <section class="mf-cookbook-homebrew-inline">
+                <h4>Homebrew JSON</h4>
+                <p class="mf-cookbook-homebrew-lede">Drop creature and recipe JSON into the module homebrew folder. Reload after edits.</p>
+                <p class="mf-cookbook-homebrew-path"><code>{{homebrewPath}}</code></p>
+                <div class="mf-cookbook-actions">
+                    <button type="button" data-action="reloadRegistry">
+                        <i class="fas fa-rotate"></i> Reload Registry
+                    </button>
+                </div>
+            </section>
+
+            <details class="mf-cookbook-dev">
+                <summary>GM testing shortcuts</summary>
+                <p class="mf-cookbook-dev-lede">Skip the compendium while iterating. Grants go to the selected token or your assigned character.</p>
+                <div class="mf-cookbook-actions mf-cookbook-dev-actions">
+                    <button type="button" data-action="grantBook">
+                        <i class="fas fa-book"></i> Grant Monster Cooking Book
+                    </button>
+                </div>
+
+                {{#if partyBook}}
+                <section class="mf-cookbook-progress">
+                    <h4>Party cookbook · {{partyBook.carrierName}}</h4>
+
+                    <div class="mf-cookbook-progress-block">
+                        <div class="mf-cookbook-progress-head">
+                            <span>Inscribed recipes</span>
+                            {{#if partyBook.inscribedRecipes.length}}
+                            <button type="button" class="mf-cookbook-progress-clear" data-action="clearInscribedRecipes">Clear all</button>
+                            {{/if}}
+                        </div>
+                        {{#if partyBook.inscribedRecipes.length}}
+                        <ul class="mf-cookbook-progress-list">
+                            {{#each partyBook.inscribedRecipes as |recipe|}}
+                            <li>
+                                <span>{{recipe.name}}</span>
+                                <button type="button" class="mf-cookbook-progress-remove" data-action="removeInscribedRecipe" data-recipe-id="{{recipe.id}}">
+                                    <i class="fas fa-times"></i> Remove
+                                </button>
+                            </li>
+                            {{/each}}
+                        </ul>
+                        {{else}}
+                        <p class="mf-cookbook-progress-empty">None inscribed yet.</p>
+                        {{/if}}
+                    </div>
+
+                    <div class="mf-cookbook-progress-block">
+                        <div class="mf-cookbook-progress-head">
+                            <span>Logged creatures</span>
+                            {{#if partyBook.discoveredCreatures.length}}
+                            <button type="button" class="mf-cookbook-progress-clear" data-action="clearDiscoveredTypes">Clear all</button>
+                            {{/if}}
+                        </div>
+                        {{#if partyBook.discoveredCreatures.length}}
+                        <ul class="mf-cookbook-progress-list">
+                            {{#each partyBook.discoveredCreatures as |creature|}}
+                            <li>
+                                <span>{{creature.label}}</span>
+                                <button type="button" class="mf-cookbook-progress-remove" data-action="removeDiscoveredType" data-type-id="{{creature.id}}">
+                                    <i class="fas fa-times"></i> Remove
+                                </button>
+                            </li>
+                            {{/each}}
+                        </ul>
+                        {{else}}
+                        <p class="mf-cookbook-progress-empty">None logged yet.</p>
+                        {{/if}}
+                    </div>
+
+                    <button type="button" class="mf-cookbook-progress-reset" data-action="resetCookbook">
+                        <i class="fas fa-rotate-left"></i> Reset cookbook progress
+                    </button>
+                </section>
+                {{/if}}
+            </details>
+        </div>
+    </aside>
+    {{/if}}
 
     <div class="mf-gm-panel" data-mf-panel="pages">
         {{#if premiumAuthoring}}

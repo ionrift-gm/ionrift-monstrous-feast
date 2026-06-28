@@ -44,6 +44,11 @@
                 {{#if entry.unlocked}}
                 <span class="mf-codex-tier-badge tier-{{entry.tier}}">Tier {{entry.tierNum}}</span>
                 {{#if entry.cookableNow}}<span class="mf-codex-ready-badge"><i class="fas fa-fire"></i> Ready</span>{{/if}}
+                {{#if entry.audit}}
+                <span class="mf-codex-audit-badge {{#if entry.partyDiscovered}}in-book{{else}}absent{{/if}}" title="{{#if entry.partyDiscovered}}Logged in the party cookbook{{else}}Not yet logged by the party{{/if}}">
+                    {{#if entry.partyDiscovered}}<i class="fas fa-check"></i> In book{{else}}<i class="fas fa-eye-slash"></i> Not logged{{/if}}
+                </span>
+                {{/if}}
                 {{#if entry.hasArt}}
                 <img src="{{entry.art}}" alt="" class="mf-codex-art-img" />
                 {{else}}
@@ -95,6 +100,11 @@
                                 <span class="mf-codex-recipe-missing" title="Missing: {{recipe.missing}}"><i class="fas fa-lock"></i></span>
                                 {{/if}}
                             {{/if}}
+                            {{#if recipe.audit}}
+                            <span class="mf-codex-recipe-audit {{#if recipe.partyInscribed}}inscribed{{else}}absent{{/if}}" title="{{#if recipe.partyInscribed}}Inscribed in the party cookbook{{else}}Not inscribed in the party cookbook{{/if}}">
+                                <i class="fas {{#if recipe.partyInscribed}}fa-check{{else}}fa-minus{{/if}}"></i>
+                            </span>
+                            {{/if}}
                         </li>
                         {{/each}}
                     </ul>
@@ -111,7 +121,7 @@
             </div>
             {{else}}
             <div class="mf-codex-locked-body">
-                <p>Log or harvest this creature to reveal details.</p>
+                <p>Butcher this creature to reveal its cuts and recipes.</p>
                 <div class="mf-codex-lock"><i class="fas fa-lock"></i></div>
             </div>
             {{/if}}
