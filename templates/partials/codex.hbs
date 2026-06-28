@@ -92,13 +92,14 @@
                                 {{/if}}
                             </div>
                             {{#if hasActor}}
-                                {{#if recipe.canCook}}
-                                <button type="button" class="mf-codex-cook" data-action="cookRecipe" data-recipe-id="{{recipe.id}}" title="Cook {{recipe.name}}">
+                                <button type="button"
+                                    class="mf-codex-cook{{#unless recipe.canCook}} is-disabled{{/unless}}"
+                                    data-action="cookRecipe"
+                                    data-recipe-id="{{recipe.id}}"
+                                    title="{{recipe.cookTooltip}}"
+                                    {{#unless recipe.canCook}}disabled{{/unless}}>
                                     <i class="fas fa-fire"></i>
                                 </button>
-                                {{else}}
-                                <span class="mf-codex-recipe-missing" title="Missing: {{recipe.missing}}"><i class="fas fa-lock"></i></span>
-                                {{/if}}
                             {{/if}}
                             {{#if recipe.audit}}
                             <span class="mf-codex-recipe-audit {{#if recipe.partyInscribed}}inscribed{{else}}absent{{/if}}" title="{{#if recipe.partyInscribed}}Inscribed in the party cookbook{{else}}Not inscribed in the party cookbook{{/if}}">

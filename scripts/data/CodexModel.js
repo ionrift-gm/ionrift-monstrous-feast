@@ -119,6 +119,9 @@ function mapRecipe(recipe, actor, inscribed, { audit = false, partyInscribed = f
         seasoning: buildSeasoningStatus(recipe, actor),
         canCook: inscribed && check.ok,
         missing: check.missing.join(", "),
+        cookTooltip: (inscribed && check.ok)
+            ? `Cook ${recipe.name}`
+            : (!inscribed ? "Inscribe this recipe first" : `Missing: ${check.missing.join(", ")}`),
         inscribed,
         audit,
         partyInscribed

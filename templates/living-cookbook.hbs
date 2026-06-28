@@ -31,8 +31,8 @@
     </header>
 
     <nav class="mf-lc-tabs" data-mf-tabs>
-        <button type="button" class="mf-lc-tab active" data-mf-tab="creatures"><i class="fas fa-paw"></i> Creatures</button>
-        <button type="button" class="mf-lc-tab" data-mf-tab="recipes"><i class="fas fa-utensils"></i> Recipes</button>
+        <button type="button" class="mf-lc-tab{{#if creaturesTabActive}} active{{/if}}" data-mf-tab="creatures"><i class="fas fa-paw"></i> Creatures</button>
+        <button type="button" class="mf-lc-tab{{#if recipesTabActive}} active{{/if}}" data-mf-tab="recipes"><i class="fas fa-utensils"></i> Recipes</button>
     </nav>
 
     <aside class="mf-flyout" data-mf-flyout-panel="howto">
@@ -55,11 +55,15 @@
         </div>
     </aside>
 
-    <div class="mf-lc-panel active" data-mf-panel="creatures">
+    <div class="mf-lc-panel{{#if creaturesTabActive}} active{{/if}}" data-mf-panel="creatures">
         {{> "modules/ionrift-monstrous-feast/templates/partials/codex.hbs"}}
     </div>
 
-    <div class="mf-lc-panel" data-mf-panel="recipes">
+    <div class="mf-lc-panel{{#if recipesTabActive}} active{{/if}}" data-mf-panel="recipes">
+        {{#if cookActive}}
+        {{> "modules/ionrift-monstrous-feast/templates/partials/cook-session.hbs" cook}}
+        {{else}}
+        <div class="mf-lc-recipes-browse">
         {{#if pendingPages.length}}
         <section class="mf-lc-pending">
             <h3 class="mf-lc-pending-title"><i class="fas fa-scroll"></i> Pages to inscribe</h3>
@@ -109,11 +113,14 @@
                     <p class="mf-lc-recipe-buff"><i class="fas fa-bolt"></i> {{#each recipe.buffs}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
                     {{/if}}
                 </div>
-                {{#if recipe.canCook}}
-                <button type="button" data-action="cookRecipe" data-recipe-id="{{recipe.id}}">
+                <button type="button"
+                    class="mf-lc-cook-btn{{#unless recipe.canCook}} is-disabled{{/unless}}"
+                    data-action="cookRecipe"
+                    data-recipe-id="{{recipe.id}}"
+                    title="{{recipe.cookTooltip}}"
+                    {{#unless recipe.canCook}}disabled{{/unless}}>
                     <i class="fas fa-fire"></i> Cook
                 </button>
-                {{/if}}
             </li>
             {{/each}}
         </ul>
@@ -124,6 +131,8 @@
             <p>No recipes inscribed yet. Find recipe pages and inscribe them to learn how to cook.</p>
         </div>
         {{/unless}}
+        {{/if}}
+        </div>
         {{/if}}
     </div>
 </section>

@@ -63,6 +63,10 @@ export const SystemBridge = {
         return this.systemId() === "pf2e" ? "Survival" : "Survival";
     },
 
+    survivalSkillKey() {
+        return this.systemId() === "pf2e" ? "survival" : "sur";
+    },
+
     getSurvivalModifier(actor) {
         if (!actor) return 0;
         if (this.systemId() === "pf2e") {

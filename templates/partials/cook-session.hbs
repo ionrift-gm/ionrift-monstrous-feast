@@ -1,0 +1,156 @@
+<section class="mf-lc-cook-session">
+    {{#if isFailed}}
+    <div class="mf-lc-cook-fail">
+        <div class="mf-lc-cook-emblem mf-lc-cook-emblem--fail"><i class="fas fa-fire"></i></div>
+        <h3 class="mf-lc-cook-heading">The Fire Fizzles</h3>
+        <p class="mf-lc-cook-sub">{{failMessage}}</p>
+        <div class="mf-lc-cook-actions">
+            <button type="button" class="mf-lc-cook-btn-secondary" data-action="closeFailed">
+                <i class="fas fa-arrow-left"></i> Back to recipes
+            </button>
+        </div>
+    </div>
+    {{else if isRolling}}
+    <div class="mf-lc-cook-rolling">
+        <div class="mf-lc-cook-emblem"><i class="fas fa-dice-d20 fa-spin-pulse"></i></div>
+        <h3 class="mf-lc-cook-heading">At the Fire</h3>
+        <p class="mf-lc-cook-sub">{{chefName}} rolls {{skillLabel}} against DC {{cookDc}}.</p>
+        <p class="mf-lc-cook-wait"><i class="fas fa-hourglass-half"></i> Waiting for the cook's roll...</p>
+    </div>
+    {{else if isSuccess}}
+    <div class="mf-lc-cook-success">
+        <article class="mf-lc-cook-success-card">
+            <div class="mf-cook-reveal rarity-{{rarity}}">
+                <div class="mf-cook-steam"></div>
+                <div class="mf-cook-plate">
+                    <img src="{{mealImg}}" alt="" class="mf-cook-dish" />
+                </div>
+                {{#if ambitious}}<span class="mf-cook-ambitious"><i class="fas fa-star"></i> Ambitious</span>{{/if}}
+            </div>
+            <h3 class="mf-lc-cook-heading">{{title}}</h3>
+            <p class="mf-lc-cook-sub">{{narrative}}</p>
+            <div class="mf-cook-mealname">{{mealName}}</div>
+            {{#if buffs.length}}
+            <p class="mf-lc-cook-buff"><i class="fas fa-bolt"></i> {{#each buffs}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+            {{/if}}
+            {{#if cookName}}<p class="mf-cook-by">Cooked by {{cookName}}</p>{{/if}}
+        </article>
+        <div class="mf-lc-cook-actions">
+            <button type="button" class="mf-lc-cook-btn-primary" data-action="serveMeal">
+                <i class="fas fa-bowl-food"></i> Serve the party
+            </button>
+        </div>
+    </div>
+    {{else}}
+    <div class="mf-lc-cook-prep">
+        <header class="mf-lc-cook-head">
+            <button type="button" class="mf-lc-cook-back" data-action="cancelCook" title="Back to recipes">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="mf-lc-cook-head-main">
+                <div class="mf-lc-cook-title-row">
+                    <div class="mf-lc-cook-emblem mf-lc-cook-emblem--inline"><i class="fas fa-fire"></i></div>
+                    <div>
+                        <h3 class="mf-lc-cook-heading">{{recipeName}}</h3>
+                        <p class="mf-lc-cook-sub">{{description}}</p>
+                    </div>
+                </div>
+                <p class="mf-lc-cook-chef"><i class="fas fa-hat-chef"></i> Cook: <strong>{{chefName}}</strong></p>
+            </div>
+        </header>
+
+        <div class="mf-lc-cook-body">
+            <aside class="mf-lc-cook-sidebar">
+                <section class="mf-lc-cook-block mf-lc-cook-block--ingredients">
+                    <h4 class="mf-lc-cook-label">Ingredients consumed</h4>
+                    <div class="mf-lc-ing-boxes mf-lc-cook-ing-grid">
+                        {{#each ingredientStatus}}
+                        <span class="mf-lc-ing{{#unless satisfied}} missing{{/unless}}" title="{{name}} ({{have}}/{{need}})">
+                            <img src="{{icon}}" alt="" />
+                            <span class="mf-lc-ing-qty">{{have}}/{{need}}</span>
+                        </span>
+                        {{/each}}
+                    </div>
+                    {{#if seasoning}}
+                    <p class="mf-lc-cook-seasoning">
+                        <i class="fas fa-mortar-pestle"></i>
+                        {{seasoning.name}} on hand for the ambitious tier.
+                    </p>
+                    {{/if}}
+                </section>
+
+                <section class="mf-lc-cook-block mf-lc-cook-block--check">
+                    <h4 class="mf-lc-cook-label">{{skillLabel}} check</h4>
+                    <div class="mf-lc-cook-dc-hero">
+                        <div class="event-dc-badge circular mf-lc-cook-dc-badge">
+                            <span class="dc-label">DC</span>
+                            <span class="dc-value">{{cookDc}}</span>
+                        </div>
+                        {{#if dcBreakdown.hasModifiers}}
+                        <div class="mf-dc-pills mf-lc-cook-dc-pills">
+                            {{#each dcBreakdown.factors}}
+                            <span class="mf-dc-pill mf-dc-pill--{{sign}}">{{label}}</span>
+                            {{/each}}
+                        </div>
+                        {{/if}}
+                    </div>
+                    <p class="mf-lc-cook-ambition-note">Nat 20 or total {{ambitiousDc}}+ yields the ambitious tier.</p>
+                </section>
+            </aside>
+
+            <div class="mf-lc-cook-outcomes">
+                <h4 class="mf-lc-cook-label">Possible outcomes</h4>
+                <div class="mf-lc-cook-tiers">
+                    <div class="mf-lc-cook-tier">
+                        <h4 class="mf-lc-cook-tier-title">Standard</h4>
+                        <img src="{{standard.img}}" alt="" class="mf-lc-cook-tier-img" />
+                        <strong>{{standard.name}}</strong>
+                        {{#if standard.buffs.length}}
+                        <ul class="mf-lc-cook-tier-buffs">
+                            {{#each standard.buffs}}<li>{{this}}</li>{{/each}}
+                        </ul>
+                        {{/if}}
+                    </div>
+                    <div class="mf-lc-cook-tier mf-lc-cook-tier--ambitious">
+                        <h4 class="mf-lc-cook-tier-title"><i class="fas fa-star"></i> Ambitious</h4>
+                        <img src="{{ambitious.img}}" alt="" class="mf-lc-cook-tier-img" />
+                        <strong>{{ambitious.name}}</strong>
+                        {{#if ambitious.buffs.length}}
+                        <ul class="mf-lc-cook-tier-buffs">
+                            {{#each ambitious.buffs}}<li>{{this}}</li>{{/each}}
+                        </ul>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mf-lc-cook-foot">
+            {{#if overwriteNames}}
+            <p class="mf-lc-cook-note">
+                <i class="fas fa-triangle-exclamation"></i>
+                Replaces the active meal buff on <strong>{{overwriteNames}}</strong>.
+            </p>
+            {{/if}}
+            {{#if partyMembers.length}}
+            <div class="mf-lc-cook-foot-party">
+                <span class="mf-lc-cook-label mf-lc-cook-label--inline">Party served</span>
+                <div class="mf-lc-cook-party-row">
+                    {{#each partyMembers}}
+                    <span class="mf-lc-cook-party-member" title="{{name}}">
+                        {{#if img}}<img src="{{img}}" alt="{{name}}" />{{else}}<i class="fas fa-user"></i>{{/if}}
+                        <span>{{name}}</span>
+                    </span>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+            <div class="mf-lc-cook-foot-actions">
+                <button type="button" class="mf-lc-cook-btn-primary" data-action="beginCook">
+                    <i class="fas fa-fire-burner"></i> Begin cooking
+                </button>
+            </div>
+        </footer>
+    </div>
+    {{/if}}
+</section>

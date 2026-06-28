@@ -2,15 +2,12 @@ import { CookEngine } from "../engine/CookEngine.js";
 import { RecipeRegistry } from "../data/RecipeRegistry.js";
 import { DiscoveryService } from "../services/DiscoveryService.js";
 import { inscribeRecipePage } from "../services/RecipePageService.js";
-import { MealEffects } from "../services/MealEffects.js";
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { buildCodex } from "../data/CodexModel.js";
 import { CodexController } from "../ui/CodexController.js";
-import { CookCeremonyApp } from "./CookCeremonyApp.js";
 import { FeastServingApp } from "./FeastServingApp.js";
 import { bindTabs, bindFlyouts } from "../ui/TabBinder.js";
-import { build as buildCookDcBreakdown } from "../engine/CookDcBreakdown.js";
-import { formatDcLine } from "../ui/DcBreakdown.js";
+import { buildCookPhaseContext, buildCookSuccessContext } from "../engine/CookPhaseModel.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 
@@ -32,6 +29,12 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
     /** @type {string|null} */
     #focusTab = null;
 
+    /** @type {"creatures"|"recipes"} */
+    #activeTab = "creatures";
+
+    /** @type {object|null} */
+    #cookSession = null;
+
     static DEFAULT_OPTIONS = {
         classes: ["ionrift-window", "monstrous-feast-living-cookbook"],
         position: { width: 900, height: 820 },
@@ -42,7 +45,11 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         },
         actions: {
             cookRecipe: LivingCookbookApp.#onCookRecipe,
-            inscribePage: LivingCookbookApp.#onInscribePage
+            inscribePage: LivingCookbookApp.#onInscribePage,
+            cancelCook: LivingCookbookApp.#onCancelCook,
+            beginCook: LivingCookbookApp.#onBeginCook,
+            closeFailed: LivingCookbookApp.#onCloseFailed,
+            serveMeal: LivingCookbookApp.#onServeMeal
         }
     };
 
@@ -101,7 +108,51 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         const app = OPEN_BY_BOOK.get(key);
         if (!app?.rendered) return;
         app.#bookItem = bookItem;
+        if (app.#cookSession?.phase === "prep") {
+            app.#cookSession.context = buildCookPhaseContext(
+                app.#actor,
+                app.#cookSession.recipe,
+                app.#bookItem
+            );
+        }
         app.render(false);
+    }
+
+    /**
+     * Open the in-book cooking session for a recipe.
+     * @param {string} recipeId
+     * @returns {boolean}
+     */
+    startCookSession(recipeId) {
+        if (!recipeId || !this.#actor || !this.#bookItem) return false;
+
+        const recipe = RecipeRegistry.get(recipeId);
+        if (!recipe) {
+            ui.notifications.warn("Recipe not found.");
+            return false;
+        }
+
+        if (!DiscoveryService.isRecipeInscribed(this.#bookItem, recipeId)) {
+            ui.notifications.warn("Inscribe this recipe page before cooking.");
+            return false;
+        }
+
+        const check = CookEngine.checkIngredients(this.#actor, recipe);
+        if (!check.ok) {
+            ui.notifications.warn(`Missing ingredients: ${check.missing.join(", ")}`);
+            return false;
+        }
+
+        this.#cookSession = {
+            recipe,
+            phase: "prep",
+            context: buildCookPhaseContext(this.#actor, recipe, this.#bookItem),
+            failMessage: "",
+            result: null
+        };
+        this.#activeTab = "recipes";
+        this.render(false);
+        return true;
     }
 
     #syncRefs(bookItem, actor) {
@@ -109,9 +160,39 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.#actor = actor?.uuid ? actor : game.actors.get(actor?.id) ?? actor;
     }
 
+    #clearCookSession() {
+        this.#cookSession = null;
+    }
+
+    #buildCookView() {
+        if (!this.#cookSession) return null;
+
+        const { phase, context, failMessage, result } = this.#cookSession;
+        const view = {
+            ...context,
+            phase,
+            failMessage,
+            isPrep: phase === "prep",
+            isRolling: phase === "rolling",
+            isFailed: phase === "failed",
+            isSuccess: phase === "success"
+        };
+
+        if (phase === "success" && result?.recipe) {
+            Object.assign(view, buildCookSuccessContext(
+                result.recipe,
+                result.ambitious,
+                this.#actor?.name ?? ""
+            ));
+        }
+
+        return view;
+    }
+
     _onClose(options) {
         const key = this.#bookItem?.uuid ?? this.#bookItem?.id;
         if (key) OPEN_BY_BOOK.delete(key);
+        this.#cookSession = null;
         return super._onClose(options);
     }
 
@@ -121,6 +202,24 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     static #onInscribePage(event, target) {
         return this.inscribePage(event, target);
+    }
+
+    static #onCancelCook() {
+        this.#clearCookSession();
+        this.render(false);
+    }
+
+    static #onCloseFailed() {
+        this.#clearCookSession();
+        this.render(false);
+    }
+
+    static #onBeginCook() {
+        return this.#beginCook();
+    }
+
+    static #onServeMeal() {
+        return this.#serveMeal();
     }
 
     async inscribePage(_event, target) {
@@ -142,72 +241,72 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.render(false);
     }
 
-    async cookRecipe(_event, target) {
+    cookRecipe(_event, target) {
+        if (target?.disabled) return;
         const recipeId = target?.dataset?.recipeId;
-        if (!recipeId || !this.#actor || !this.#bookItem) return;
+        if (!recipeId) return;
+        this.startCookSession(recipeId);
+    }
 
-        const recipe = RecipeRegistry.get(recipeId);
-        if (!recipe) return;
+    async #beginCook() {
+        if (this.#cookSession?.phase !== "prep" || !this.#actor || !this.#cookSession.recipe) return;
 
-        if (!DiscoveryService.isRecipeInscribed(this.#bookItem, recipeId)) {
-            ui.notifications.warn("Inscribe this recipe page before cooking.");
-            return;
-        }
+        this.#cookSession.phase = "rolling";
+        this.render(false);
 
-        const check = CookEngine.checkIngredients(this.#actor, recipe);
-        if (!check.ok) {
-            ui.notifications.warn(`Missing ingredients: ${check.missing.join(", ")}`);
-            return;
-        }
+        const { recipe, context } = this.#cookSession;
+        const rollResult = await CookEngine.requestSurvivalRoll(
+            this.#actor,
+            recipe,
+            context.dcBreakdown
+        );
 
-        const consumes = (recipe.ingredients ?? [])
-            .map(i => `${i.quantity}x ${i.name}`)
-            .join(", ");
-        const buffs = this._buffLines(recipe).join(", ") || "party meal effect";
+        if (!this.#cookSession) return;
 
-        const seasoning = CookEngine.findSeasoning(this.#actor, recipe);
-        const seasoningLine = seasoning
-            ? `<p class="mf-cook-confirm">Seasoned with <strong>${seasoning}</strong>: a plain success becomes the better meal.</p>`
-            : "";
-
-        let overwriteLine = "";
-        if (MealEffects.producesManagedBuff(recipe.partyEffect)) {
-            const affected = MealEffects.membersWithMealEffect();
-            if (affected.length) {
-                const names = affected.map(actor => actor.name).join(", ");
-                overwriteLine = `<p class="mf-cook-warn"><i class="fas fa-triangle-exclamation"></i> This replaces the active meal buff on <strong>${names}</strong>. Only one Monstrous Feast meal effect holds at a time.</p>`;
-            }
-        }
-
-        const confirmFn = game.ionrift?.library?.confirm ?? Dialog.confirm.bind(Dialog);
-        const dcBreakdown = buildCookDcBreakdown(this.#actor, recipe);
-        const dcLine = formatDcLine(dcBreakdown, SystemBridge.survivalLabel?.() ?? "Survival");
-        const confirmed = await confirmFn({
-            title: `Cook ${recipe.name}?`,
-            content: `<p class="mf-cook-confirm">Consumes: <strong>${consumes}</strong></p>${seasoningLine}<p class="mf-cook-confirm">Party gains: <strong>${buffs}</strong></p>${overwriteLine}${dcLine}`,
-            yes: () => true,
-            no: () => false,
-            defaultYes: false
+        const result = await CookEngine.resolveCook(this.#actor, recipe.id, {
+            bookItem: this.#bookItem,
+            rollResult,
+            dcBreakdown: context.dcBreakdown
         });
-        if (!confirmed) return;
 
-        const result = await CookEngine.cook(this.#actor, recipeId, { bookItem: this.#bookItem });
-        if (result?.success) {
-            await CookCeremonyApp.play({
+        if (!this.#cookSession) return;
+
+        if (!result?.success) {
+            this.#cookSession.phase = "failed";
+            this.#cookSession.failMessage = recipe.failNarrative
+                ?? "The cook did not come together. Ingredients were lost.";
+            this.render(false);
+            return;
+        }
+
+        this.#cookSession.phase = "success";
+        this.#cookSession.result = result;
+        this.render(false);
+    }
+
+    async #serveMeal() {
+        const result = this.#cookSession?.result;
+        this.#clearCookSession();
+        this.render(false);
+
+        if (!result?.tempFormula) return;
+
+        if (game.user.isGM) {
+            FeastServingApp.open({
                 recipe: result.recipe,
                 ambitious: result.ambitious,
+                tempFormula: result.tempFormula,
                 cookName: this.#actor?.name ?? ""
             });
-            if (result.tempFormula) {
-                FeastServingApp.open({
-                    recipe: result.recipe,
-                    ambitious: result.ambitious,
-                    tempFormula: result.tempFormula,
-                    cookName: this.#actor?.name ?? ""
-                });
-            }
+        } else {
+            const { FeastServingRelay } = await import("../services/FeastServingRelay.js");
+            FeastServingRelay.requestServing({
+                recipeId: result.recipe.id,
+                ambitious: result.ambitious,
+                tempFormula: result.tempFormula,
+                cookName: this.#actor?.name ?? ""
+            });
         }
-        this.render(false);
     }
 
     _buffLines(recipe) {
@@ -236,6 +335,9 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
             actor: this.#actor
         });
 
+        const cook = this.#buildCookView();
+        const activeTab = this.#cookSession ? "recipes" : this.#activeTab;
+
         return {
             bookName: this.#bookItem?.name ?? "Monster Cooking",
             bookImg: this.#bookItem?.img ?? null,
@@ -248,6 +350,11 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
             hasActor: codex.hasActor,
             cookableRecipes: codex.cookableRecipes,
             pendingPages: this.#pendingPages(inscribed),
+            cookActive: Boolean(cook),
+            cook,
+            activeTab,
+            creaturesTabActive: activeTab === "creatures",
+            recipesTabActive: activeTab === "recipes",
             ...codex
         };
     }
@@ -286,8 +393,10 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
      * @param {string} tab
      */
     activateTab(tab) {
+        if (!tab) return;
+        this.#activeTab = tab;
         const root = this.element;
-        if (!root || !tab) return;
+        if (!root) return;
         for (const btn of root.querySelectorAll("[data-mf-tab]")) {
             btn.classList.toggle("active", btn.dataset.mfTab === tab);
         }
@@ -296,14 +405,41 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         }
     }
 
+    #bindCookbookTabHooks(root) {
+        if (!root || root.dataset.lcTabHook === "true") return;
+        root.dataset.lcTabHook = "true";
+
+        root.addEventListener("click", (event) => {
+            const button = event.target.closest("[data-mf-tab]");
+            if (!button || !root.contains(button)) return;
+
+            const tab = button.dataset.mfTab;
+            if (!tab) return;
+
+            this.#activeTab = tab;
+            if (this.#cookSession && tab !== "recipes") {
+                this.#clearCookSession();
+                this.render(false);
+            }
+        });
+    }
+
     _onRender(context, options) {
         CodexController.attach(this.element);
         bindTabs(this.element);
         bindFlyouts(this.element);
+        this.#bindCookbookTabHooks(this.element);
 
         if (this.#focusTab) {
-            this.activateTab(this.#focusTab);
+            this.#activeTab = this.#focusTab;
             this.#focusTab = null;
         }
+
+        this.activateTab(this.#cookSession ? "recipes" : this.#activeTab);
+
+        const root = this.element;
+        if (!root) return;
+
+        root.classList.toggle("mf-lc-cook-active", Boolean(this.#cookSession));
     }
 }

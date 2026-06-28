@@ -26,6 +26,18 @@ Hooks.once("init", () => {
         openCookbook: () => new CookbookApp().render(true),
         openStarterCompendium: () => CompendiumService.openStarterCompendium(),
         openLivingCookbook: (bookItem, actor) => LivingCookbookApp.open(bookItem, actor),
+        openCookPhase: ({ actor, recipeId, bookItem } = {}) => {
+            const book = bookItem ?? DiscoveryService.findPartyCookbook();
+            if (!book) {
+                ui.notifications.warn("No Monster Cooking book found.");
+                return null;
+            }
+            const carrier = actor
+                ?? (book.parent?.documentName === "Actor" ? book.parent : null);
+            const app = LivingCookbookApp.open(book, carrier, { focusTab: "recipes" });
+            if (!app?.startCookSession(recipeId)) return null;
+            return app;
+        },
         openFeastServing: (args) => FeastServingApp.open(args),
         grantBook: (actor) => grantMonsterCookingBook(actor),
         grantRecipePage: (actor, recipeId) => grantRecipePage(actor, recipeId),
@@ -101,7 +113,8 @@ Hooks.once("ready", async () => {
 
     try {
         await foundry.applications.handlebars.loadTemplates([
-            "modules/ionrift-monstrous-feast/templates/partials/codex.hbs"
+            "modules/ionrift-monstrous-feast/templates/partials/codex.hbs",
+            "modules/ionrift-monstrous-feast/templates/partials/cook-session.hbs"
         ]);
     } catch (e) {
         Logger.warn("Failed to register codex partial:", e);
