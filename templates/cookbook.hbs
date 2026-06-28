@@ -1,10 +1,40 @@
 <section class="monstrous-feast-cookbook-body">
-    <header class="mf-cookbook-header">
-        <p class="mf-cookbook-lede">Hunt, butcher, and cook the monsters you kill.</p>
-        <div class="mf-cookbook-meta">
-            <span><strong>System:</strong> {{systemLabel}}</span>
-            <span><strong>Registry:</strong> {{registryCount}} creatures</span>
-            <span><strong>Recipes:</strong> {{recipeCount}}</span>
+    <header class="mf-gm-header">
+        <div class="mf-gm-id">
+            <div class="mf-gm-emblem"><i class="fas fa-drumstick-bite"></i></div>
+            <div class="mf-gm-id-text">
+                <h2>Monstrous Feast</h2>
+                <p class="mf-gm-sub"><i class="fas fa-feather"></i> Game Master view · {{systemLabel}}</p>
+            </div>
+        </div>
+
+        <div class="mf-gm-header-right">
+            <div class="mf-gm-stats">
+                <div class="mf-gm-stat">
+                    <i class="fas fa-paw"></i>
+                    <div class="mf-gm-stat-body"><b>{{registryCount}}</b><span>creatures</span></div>
+                </div>
+                <div class="mf-gm-stat">
+                    <i class="fas fa-utensils"></i>
+                    <div class="mf-gm-stat-body"><b>{{recipeCount}}</b><span>recipes</span></div>
+                </div>
+            </div>
+
+            {{#if isGM}}
+            <div class="mf-gm-toolbar">
+                <button type="button" data-action="openCompendium" title="Open starter compendium">
+                    <i class="fas fa-box-open"></i>
+                </button>
+                {{#if hasPartyBook}}
+                <button type="button" data-action="openCookbook" title="Open party cookbook">
+                    <i class="fas fa-book-open"></i>
+                </button>
+                {{/if}}
+                <button type="button" data-action="testButcher" title="Test butcher (selected token)">
+                    <i class="fas fa-drumstick-bite"></i>
+                </button>
+            </div>
+            {{/if}}
         </div>
     </header>
 
@@ -16,20 +46,6 @@
     {{/unless}}
 
     {{#if isGM}}
-    <div class="mf-cookbook-actions">
-        <button type="button" data-action="openCompendium">
-            <i class="fas fa-box-open"></i> Open Starter Compendium
-        </button>
-        {{#if hasPartyBook}}
-        <button type="button" data-action="openCookbook">
-            <i class="fas fa-book-open"></i> Open Party Cookbook
-        </button>
-        {{/if}}
-        <button type="button" data-action="testButcher">
-            <i class="fas fa-drumstick-bite"></i> Test Butcher (selected token)
-        </button>
-    </div>
-
     {{#unless starterPackReady}}
     <p class="mf-cookbook-note">Starter compendium not loaded. Reload the world to finish setting up Monstrous Feast.</p>
     {{/unless}}

@@ -50,7 +50,7 @@ export class CookbookApp extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = {
         id: "monstrous-feast-cookbook",
         classes: ["ionrift-window", "monstrous-feast-cookbook"],
-        position: { width: 720, height: 860 },
+        position: { width: 920, height: 840 },
         window: {
             title: "Monstrous Feast",
             icon: "fas fa-drumstick-bite",

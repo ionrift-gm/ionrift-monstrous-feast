@@ -24,7 +24,7 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     static DEFAULT_OPTIONS = {
         classes: ["ionrift-window", "monstrous-feast-living-cookbook"],
-        position: { width: 680, height: 820 },
+        position: { width: 900, height: 820 },
         window: {
             title: "Monster Cooking",
             icon: "fas fa-book-open",
