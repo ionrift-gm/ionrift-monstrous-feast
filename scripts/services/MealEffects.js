@@ -22,25 +22,27 @@ export const MealEffects = {
     },
 
     /**
-     * @param {Actor[]} actors
-     * @param {string} formula
-     * @returns {Promise<number>}
-     */
-    async _rollTotal(formula) {
-        const roll = await new Roll(formula).evaluate();
-        return roll.total;
-    },
-
-    /**
      * @param {Actor} actor
      * @param {number} amount
      */
-    async _applyTempHP(actor, amount) {
+    async applyTempHP(actor, amount) {
         if (!amount || amount <= 0) return;
-        const hp = actor.system?.attributes?.hp;
+        const hp = actor?.system?.attributes?.hp;
         if (!hp) return;
         const currentTemp = Number(hp.temp ?? 0);
         await actor.update({ "system.attributes.hp.temp": currentTemp + amount });
+    },
+
+    /**
+     * @param {object} partyEffect
+     * @param {boolean} ambitious
+     * @returns {string|null}
+     */
+    getTempFormula(partyEffect, ambitious = false) {
+        if (!partyEffect) return null;
+        return ambitious
+            ? (partyEffect.ambitiousTempHP ?? partyEffect.tempHP ?? null)
+            : (partyEffect.tempHP ?? null);
     },
 
     /**
@@ -52,6 +54,41 @@ export const MealEffects = {
         ) ?? [];
         if (!existing.length) return;
         await actor.deleteEmbeddedDocuments("ActiveEffect", existing.map(effect => effect.id));
+    },
+
+    /**
+     * Whether the actor already carries one of this module's meal effects.
+     * Effects from other modules (e.g. a Well Fed buff) are deliberately ignored.
+     * @param {Actor} actor
+     * @returns {boolean}
+     */
+    hasMealEffect(actor) {
+        return Boolean(actor?.effects?.some(effect =>
+            effect.getFlag?.(MODULE_ID, MEAL_EFFECT_FLAG) === true
+        ));
+    },
+
+    /**
+     * Party members whose active meal buff a new cook would replace. Used to warn
+     * before a destructive overwrite. Only this module's effects count.
+     * @returns {Actor[]}
+     */
+    membersWithMealEffect() {
+        return this.getPartyMembers().filter(actor => this.hasMealEffect(actor));
+    },
+
+    /**
+     * Whether a recipe's party effect produces a stacking-managed Active Effect
+     * (as opposed to temp HP only, which is additive and never overwrites).
+     * @param {object} partyEffect
+     * @param {boolean} [ambitious]
+     * @returns {boolean}
+     */
+    producesManagedBuff(partyEffect) {
+        if (!partyEffect || SystemBridge.systemId() !== "dnd5e") return false;
+        return Boolean(partyEffect.strengthAdvantage
+            || partyEffect.darkvisionFeet
+            || partyEffect.perceptionAdvantageDim);
     },
 
     /**
@@ -110,9 +147,10 @@ export const MealEffects = {
      * @param {Actor} actor
      * @param {object} partyEffect
      * @param {boolean} ambitious
+     * @param {string} [mealName] Short dish name used as the effect title.
      * @returns {Promise<string[]>}
      */
-    async _applyBuffEffects(actor, partyEffect, ambitious) {
+    async _applyBuffEffects(actor, partyEffect, ambitious, mealName = "") {
         const lines = [];
         const changes = this._buildDnd5eChanges({
             strengthAdvantage: partyEffect.strengthAdvantage,
@@ -139,9 +177,11 @@ export const MealEffects = {
             parts.push("advantage on Perception checks for 8 hours");
         }
 
+        const title = mealName ? `Monstrous Feast: ${mealName}` : "Monstrous Feast";
         await this._applyActiveEffect(actor, {
-            name: `Monstrous Feast: ${parts.join(", ")}`,
+            name: title,
             icon: "icons/consumables/food/bowl-stew-brown.webp",
+            description: `<p>${parts.join(", ")}.</p>`,
             origin: actor.uuid,
             disabled: false,
             duration: { seconds },
@@ -155,23 +195,14 @@ export const MealEffects = {
     /**
      * @param {object} partyEffect
      * @param {boolean} ambitious
+     * @param {object} [opts]
+     * @param {string} [opts.mealName] Short dish name used as the effect title.
      * @returns {Promise<string[]>}
      */
-    async applyPartyEffect(partyEffect, ambitious = false) {
+    async applyPartyEffect(partyEffect, ambitious = false, { mealName = "" } = {}) {
         if (!partyEffect) return [];
         const members = this.getPartyMembers();
         const lines = [];
-        const tempFormula = ambitious
-            ? (partyEffect.ambitiousTempHP ?? partyEffect.tempHP)
-            : partyEffect.tempHP;
-
-        if (tempFormula) {
-            for (const member of members) {
-                const amount = await this._rollTotal(tempFormula);
-                await this._applyTempHP(member, amount);
-                lines.push(`${member.name}: +${amount} temp HP`);
-            }
-        }
 
         const canApplyEffects = SystemBridge.systemId() === "dnd5e"
             && (partyEffect.strengthAdvantage
@@ -180,7 +211,7 @@ export const MealEffects = {
 
         if (canApplyEffects) {
             for (const member of members) {
-                const buffLines = await this._applyBuffEffects(member, partyEffect, ambitious);
+                const buffLines = await this._applyBuffEffects(member, partyEffect, ambitious, mealName);
                 lines.push(...buffLines);
             }
         } else {

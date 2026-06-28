@@ -1,0 +1,60 @@
+<section class="mf-serving">
+    <header class="mf-serving-head">
+        <h3 class="mf-serving-title">{{mealName}}</h3>
+        <p class="mf-serving-meta">
+            Each party member rolls <strong>{{tempFormula}}</strong> temp HP
+            {{#if cookName}} · cooked by {{cookName}}{{/if}}
+        </p>
+        {{#if ambitious}}<span class="mf-serving-ambitious"><i class="fas fa-star"></i> Ambitious tier</span>{{/if}}
+    </header>
+
+    <div class="mf-serving-progress">
+        {{rolledCount}} / {{totalCount}} served
+    </div>
+
+    <ul class="mf-serving-roster">
+        {{#each members}}
+        <li class="mf-serving-row mf-serving-row--{{status}}{{#if rolling}} is-rolling{{/if}}">
+            <span class="mf-serving-avatar">
+                {{#if img}}<img src="{{img}}" alt="" />{{/if}}
+            </span>
+            <span class="mf-serving-name">{{name}}</span>
+            <span class="mf-serving-status">
+                {{#if (eq status "rolled")}}
+                <i class="fas fa-check"></i> +{{total}} temp HP
+                {{else if rolling}}
+                <i class="fas fa-spinner fa-spin"></i> Rolling...
+                {{else}}
+                <i class="fas fa-hourglass-half"></i> Waiting
+                {{/if}}
+            </span>
+            {{#unless (eq status "rolled")}}
+            <button type="button"
+                class="mf-serving-roll-btn"
+                data-action="rollForMember"
+                data-member-id="{{id}}"
+                {{#if rolling}}disabled{{/if}}>
+                <i class="fas fa-dice"></i> Roll for them
+            </button>
+            {{/unless}}
+        </li>
+        {{/each}}
+    </ul>
+
+    <footer class="mf-serving-actions">
+        {{#unless servingStarted}}
+        <button type="button" class="mf-serving-primary" data-action="beginServing">
+            <i class="fas fa-bell-concierge"></i> Request party rolls
+        </button>
+        {{else unless allRolled}}
+        <button type="button" class="mf-serving-secondary" data-action="rollAllRemaining">
+            <i class="fas fa-dice"></i> Roll all remaining
+        </button>
+        {{/unless}}
+        {{#if allRolled}}
+        <button type="button" class="mf-serving-primary" data-action="closeServing">
+            <i class="fas fa-check"></i> Done
+        </button>
+        {{/if}}
+    </footer>
+</section>

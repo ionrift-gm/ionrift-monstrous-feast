@@ -7,6 +7,7 @@ import { CreatureRegistry } from "./data/CreatureRegistry.js";
 import { RecipeRegistry } from "./data/RecipeRegistry.js";
 import { CookbookApp } from "./apps/CookbookApp.js";
 import { LivingCookbookApp } from "./apps/LivingCookbookApp.js";
+import { FeastServingApp } from "./apps/FeastServingApp.js";
 import { ChatHandler } from "./handlers/ChatHandler.js";
 import { ItemSheetHandler, grantMonsterCookingBook } from "./handlers/ItemSheetHandler.js";
 import { RecipePageHandler } from "./handlers/RecipePageHandler.js";
@@ -25,6 +26,7 @@ Hooks.once("init", () => {
         openCookbook: () => new CookbookApp().render(true),
         openStarterCompendium: () => CompendiumService.openStarterCompendium(),
         openLivingCookbook: (bookItem, actor) => LivingCookbookApp.open(bookItem, actor),
+        openFeastServing: (args) => FeastServingApp.open(args),
         grantBook: (actor) => grantMonsterCookingBook(actor),
         grantRecipePage: (actor, recipeId) => grantRecipePage(actor, recipeId),
         inscribePage: (pageItem, actor) => inscribeRecipePage(pageItem, actor),

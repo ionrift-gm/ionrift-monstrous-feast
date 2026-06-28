@@ -5,6 +5,7 @@ const CHANNEL = `module.${MODULE_ID}`;
 
 const ACTION_DISCOVER = "recordDiscovery";
 const ACTION_INSCRIBE = "inscribeRecipe";
+const ACTION_SERVING = "openFeastServing";
 
 /** @type {((data: object) => void)|null} */
 let _bound = null;
@@ -95,6 +96,11 @@ export const GMRelay = {
             setTimeout(() => _seen.delete(data.requestId), 120_000);
         }
 
+        if (data.action === ACTION_SERVING) {
+            await GMRelay._applyServing(data);
+            return;
+        }
+
         const book = data.bookUuid ? await fromUuid(data.bookUuid) : null;
         if (!book) {
             Logger.warn(`GMRelay: book not found for ${data.bookUuid}.`);
@@ -105,6 +111,8 @@ export const GMRelay = {
             await GMRelay._applyDiscovery(book, data.typeId);
         } else if (data.action === ACTION_INSCRIBE) {
             await GMRelay._applyInscribe(book, data.recipeId);
+        } else if (data.action === ACTION_SERVING) {
+            await GMRelay._applyServing(data);
         }
     },
 
@@ -130,5 +138,21 @@ export const GMRelay = {
         if (set.has(recipeId)) return;
         set.add(recipeId);
         await book.setFlag(MODULE_ID, "inscribedRecipes", [...set]);
+    },
+
+    /**
+     * @param {object} data
+     */
+    async _applyServing(data) {
+        const { RecipeRegistry } = await import("../data/RecipeRegistry.js");
+        const { FeastServingApp } = await import("../apps/FeastServingApp.js");
+        const recipe = RecipeRegistry.get(data.recipeId);
+        if (!recipe || !data.tempFormula) return;
+        FeastServingApp.open({
+            recipe,
+            ambitious: !!data.ambitious,
+            tempFormula: data.tempFormula,
+            cookName: data.cookName ?? ""
+        });
     }
 };

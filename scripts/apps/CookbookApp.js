@@ -10,6 +10,7 @@ import { DiscoveryService } from "../services/DiscoveryService.js";
 import { LivingCookbookApp } from "./LivingCookbookApp.js";
 import { CompendiumService } from "../services/CompendiumService.js";
 import { bindTabs, bindFlyouts } from "../ui/TabBinder.js";
+import { resolveBookImg } from "../data/BookAssets.js";
 
 const PREMIUM_MODULE_ID = "ionrift-monstrous-feast-premium";
 
@@ -25,6 +26,7 @@ function buildPartyBookSnapshot() {
     const actor = book.actor ?? book.parent ?? null;
     return {
         name: book.name,
+        img: book.img,
         carrierName: actor?.name ?? "Unknown",
         inscribedRecipes: DiscoveryService.getInscribedRecipes(book).map(id => ({
             id,

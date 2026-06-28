@@ -48,7 +48,7 @@
                 "type": "module",
                 "manifest": "https://github.com/ionrift-gm/ionrift-library/releases/latest/download/module.json",
                 "compatibility": {
-                    "minimum": "2.5.2"
+                    "minimum": "2.5.3"
                 }
             }
         ]

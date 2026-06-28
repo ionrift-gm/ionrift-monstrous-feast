@@ -1,7 +1,9 @@
 <section class="mf-living-cookbook">
     <header class="mf-lc-header">
         <div class="mf-lc-book">
-            <div class="mf-lc-book-emblem"><i class="fas fa-book"></i></div>
+            <div class="mf-lc-book-emblem">
+                {{#if bookImg}}<img src="{{bookImg}}" alt="" class="mf-lc-book-emblem-img" />{{else}}<i class="fas fa-book"></i>{{/if}}
+            </div>
             <div>
                 <h2>{{bookName}}</h2>
                 <p class="mf-lc-sub"><i class="fas fa-feather"></i> Carried by {{actorName}} · {{systemLabel}}</p>
@@ -97,6 +99,11 @@
                             <span class="mf-lc-ing-qty">{{ing.have}}/{{ing.need}}</span>
                         </span>
                         {{/each}}
+                        {{#if recipe.seasoning}}
+                        <span class="mf-lc-ing seasoning {{#unless recipe.seasoning.active}}inactive{{/unless}}" title="Optional seasoning: {{recipe.seasoning.label}}. {{#if recipe.seasoning.active}}On hand. A pinch makes this the better meal.{{else}}Add {{recipe.seasoning.label}} for the better meal.{{/if}}">
+                            <i class="fas fa-mortar-pestle"></i>
+                        </span>
+                        {{/if}}
                     </div>
                     {{#if recipe.buffs.length}}
                     <p class="mf-lc-recipe-buff"><i class="fas fa-bolt"></i> {{#each recipe.buffs}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>

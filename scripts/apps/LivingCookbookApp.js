@@ -2,11 +2,15 @@ import { CookEngine } from "../engine/CookEngine.js";
 import { RecipeRegistry } from "../data/RecipeRegistry.js";
 import { DiscoveryService } from "../services/DiscoveryService.js";
 import { inscribeRecipePage } from "../services/RecipePageService.js";
+import { MealEffects } from "../services/MealEffects.js";
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { buildCodex } from "../data/CodexModel.js";
 import { CodexController } from "../ui/CodexController.js";
 import { CookCeremonyApp } from "./CookCeremonyApp.js";
+import { FeastServingApp } from "./FeastServingApp.js";
 import { bindTabs, bindFlyouts } from "../ui/TabBinder.js";
+import { build as buildCookDcBreakdown } from "../engine/CookDcBreakdown.js";
+import { formatDcLine } from "../ui/DcBreakdown.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 
@@ -161,10 +165,26 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
             .join(", ");
         const buffs = this._buffLines(recipe).join(", ") || "party meal effect";
 
+        const seasoning = CookEngine.findSeasoning(this.#actor, recipe);
+        const seasoningLine = seasoning
+            ? `<p class="mf-cook-confirm">Seasoned with <strong>${seasoning}</strong>: a plain success becomes the better meal.</p>`
+            : "";
+
+        let overwriteLine = "";
+        if (MealEffects.producesManagedBuff(recipe.partyEffect)) {
+            const affected = MealEffects.membersWithMealEffect();
+            if (affected.length) {
+                const names = affected.map(actor => actor.name).join(", ");
+                overwriteLine = `<p class="mf-cook-warn"><i class="fas fa-triangle-exclamation"></i> This replaces the active meal buff on <strong>${names}</strong>. Only one Monstrous Feast meal effect holds at a time.</p>`;
+            }
+        }
+
         const confirmFn = game.ionrift?.library?.confirm ?? Dialog.confirm.bind(Dialog);
+        const dcBreakdown = buildCookDcBreakdown(this.#actor, recipe);
+        const dcLine = formatDcLine(dcBreakdown, SystemBridge.survivalLabel?.() ?? "Survival");
         const confirmed = await confirmFn({
             title: `Cook ${recipe.name}?`,
-            content: `<p class="mf-cook-confirm">Consumes: <strong>${consumes}</strong></p><p class="mf-cook-confirm">Party gains: <strong>${buffs}</strong></p><p class="mf-cook-confirm">Roll Survival vs DC ${recipe.dc}.</p>`,
+            content: `<p class="mf-cook-confirm">Consumes: <strong>${consumes}</strong></p>${seasoningLine}<p class="mf-cook-confirm">Party gains: <strong>${buffs}</strong></p>${overwriteLine}${dcLine}`,
             yes: () => true,
             no: () => false,
             defaultYes: false
@@ -174,10 +194,18 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         const result = await CookEngine.cook(this.#actor, recipeId, { bookItem: this.#bookItem });
         if (result?.success) {
             await CookCeremonyApp.play({
-                recipe,
+                recipe: result.recipe,
                 ambitious: result.ambitious,
                 cookName: this.#actor?.name ?? ""
             });
+            if (result.tempFormula) {
+                FeastServingApp.open({
+                    recipe: result.recipe,
+                    ambitious: result.ambitious,
+                    tempFormula: result.tempFormula,
+                    cookName: this.#actor?.name ?? ""
+                });
+            }
         }
         this.render(false);
     }
@@ -210,6 +238,7 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
 
         return {
             bookName: this.#bookItem?.name ?? "Monster Cooking",
+            bookImg: this.#bookItem?.img ?? null,
             actorName: this.#actor?.name ?? "Unknown",
             systemLabel: SystemBridge.launchLabel(),
             discoveredCount: codex.unlockedCount,

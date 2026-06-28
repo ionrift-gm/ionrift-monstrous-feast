@@ -1,7 +1,7 @@
 import { CreatureRegistry } from "./CreatureRegistry.js";
 import { RecipeRegistry } from "./RecipeRegistry.js";
 import { CookEngine } from "../engine/CookEngine.js";
-import { countIngredient } from "../services/IngredientMatcher.js";
+import { countIngredient, findAvailable } from "../services/IngredientMatcher.js";
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { CoreIcons } from "./CoreIcons.js";
 
@@ -116,11 +116,33 @@ function mapRecipe(recipe, actor, inscribed, { audit = false, partyInscribed = f
         ingredients: (recipe.ingredients ?? []).map(i => `${i.quantity}x ${i.name}`),
         ingredientRows: recipe.ingredients ?? [],
         ingredientStatus,
+        seasoning: buildSeasoningStatus(recipe, actor),
         canCook: inscribed && check.ok,
         missing: check.missing.join(", "),
         inscribed,
         audit,
         partyInscribed
+    };
+}
+
+/**
+ * Optional seasoning slot status for display. Never gates cooking; a held spice
+ * promotes a successful cook to the ambitious tier.
+ * @param {object} recipe
+ * @param {Actor|null} actor
+ * @returns {object|null}
+ */
+function buildSeasoningStatus(recipe, actor) {
+    const accepts = recipe?.seasoning?.accepts ?? [];
+    if (!accepts.length) return null;
+    const need = Math.max(1, Number(recipe.seasoning.quantity) || 1);
+    const available = actor ? findAvailable(actor, accepts, need) : null;
+    return {
+        accepts,
+        label: accepts.join(" or "),
+        need,
+        available,
+        active: Boolean(available)
     };
 }
 

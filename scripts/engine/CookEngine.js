@@ -2,10 +2,12 @@ import { Logger } from "../lib/Logger.js";
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { RecipeRegistry } from "../data/RecipeRegistry.js";
 import { buildYieldItemData } from "../services/ItemFactory.js";
-import { countIngredient, consumeIngredient } from "../services/IngredientMatcher.js";
+import { countIngredient, consumeIngredient, findAvailable } from "../services/IngredientMatcher.js";
 import { DiscoveryService } from "../services/DiscoveryService.js";
 import { MealEffects } from "../services/MealEffects.js";
 import { buildCookFailCard, buildMealSplash } from "../ui/MealCards.js";
+import { build as buildCookDcBreakdown } from "./CookDcBreakdown.js";
+import { FeastServingRelay } from "../services/FeastServingRelay.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 
@@ -30,6 +32,19 @@ export const CookEngine = {
         for (const ing of ingredients ?? []) {
             await consumeIngredient(actor, ing.name, ing.quantity);
         }
+    },
+
+    /**
+     * The optional seasoning the actor can spend on this recipe, if any.
+     * A held spice promotes a standard success to the ambitious tier.
+     * @param {Actor} actor
+     * @param {object} recipe
+     * @returns {string|null}
+     */
+    findSeasoning(actor, recipe) {
+        const seasoning = recipe?.seasoning;
+        if (!actor || !seasoning?.accepts?.length) return null;
+        return findAvailable(actor, seasoning.accepts, seasoning.quantity ?? 1);
     },
 
     _buildMealItem(recipe, ambitious) {
@@ -91,15 +106,18 @@ export const CookEngine = {
             return null;
         }
 
+        const dcBreakdown = buildCookDcBreakdown(actor, recipe);
+        const cookDc = dcBreakdown.total;
+
         const rollResult = await SystemBridge.rollSurvival(
             actor,
-            recipe.dc,
+            cookDc,
             `Cooking ${recipe.name}`
         );
 
-        const ambitious = rollResult.natural === 20
-            || rollResult.total >= recipe.dc + 5;
-        const success = rollResult.total >= recipe.dc;
+        let ambitious = rollResult.natural === 20
+            || rollResult.total >= cookDc + 5;
+        const success = rollResult.total >= cookDc;
 
         if (!success) {
             await this._consumeIngredients(actor, recipe.ingredients);
@@ -112,20 +130,43 @@ export const CookEngine = {
         }
 
         await this._consumeIngredients(actor, recipe.ingredients);
+
+        // A spice only earns its keep when it lifts a plain success to ambitious.
+        let seasonedWith = null;
+        if (!ambitious) {
+            const seasoning = this.findSeasoning(actor, recipe);
+            if (seasoning) {
+                await consumeIngredient(actor, seasoning, recipe.seasoning.quantity ?? 1);
+                ambitious = true;
+                seasonedWith = seasoning;
+            }
+        }
+
         await actor.createEmbeddedDocuments("Item", [this._buildMealItem(recipe, ambitious)]);
 
-        const effectLines = await MealEffects.applyPartyEffect(recipe.partyEffect, ambitious);
+        const effectLines = await MealEffects.applyPartyEffect(recipe.partyEffect, ambitious, { mealName: recipe.name });
+        const tempFormula = MealEffects.getTempFormula(recipe.partyEffect, ambitious);
 
         await ChatMessage.create({
             user: game.user.id,
             speaker: ChatMessage.getSpeaker({ actor }),
-            content: buildMealSplash(recipe, actor.name, ambitious)
+            content: buildMealSplash(recipe, actor.name, ambitious, dcBreakdown)
                 + (effectLines.length
                     ? `<ul class="mf-meal-effects">${effectLines.map(line => `<li>${line}</li>`).join("")}</ul>`
                     : "")
         });
 
-        Logger.log(`Cooked ${recipe.name} (${ambitious ? "ambitious" : "standard"}).`);
-        return { success: true, recipe, ambitious, effectLines };
+        Logger.log(`Cooked ${recipe.name} (${ambitious ? "ambitious" : "standard"}${seasonedWith ? `, seasoned with ${seasonedWith}` : ""}).`);
+
+        if (tempFormula && !game.user.isGM) {
+            FeastServingRelay.requestServing({
+                recipeId: recipe.id,
+                ambitious,
+                tempFormula,
+                cookName: actor.name
+            });
+        }
+
+        return { success: true, recipe, ambitious, seasonedWith, effectLines, tempFormula, dcBreakdown };
     }
 };

@@ -33,6 +33,21 @@ export function countIngredient(actor, ingredientName) {
 }
 
 /**
+ * First name in the list the actor holds in sufficient quantity. Used for
+ * optional seasoning slots that accept any one of several pantry items.
+ * @param {Actor} actor
+ * @param {string[]} names
+ * @param {number} [quantity]
+ * @returns {string|null}
+ */
+export function findAvailable(actor, names, quantity = 1) {
+    for (const name of names ?? []) {
+        if (countIngredient(actor, name) >= quantity) return name;
+    }
+    return null;
+}
+
+/**
  * @param {Actor} actor
  * @param {string} ingredientName
  * @param {number} quantity

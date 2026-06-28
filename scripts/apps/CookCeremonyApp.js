@@ -64,11 +64,13 @@ export class CookCeremonyApp extends HandlebarsApplicationMixin(ApplicationV2) {
             ? (this.#recipe?.ambitiousOutput ?? this.#recipe?.output)
             : this.#recipe?.output;
 
+        const mealImg = output?.successImg ?? output?.img ?? CoreIcons.stew;
+
         return {
             title: this.#ambitious ? "A Feast Well Made" : "Served Up",
             narrative: this.#recipe?.successNarrative ?? "The dish comes together over the fire.",
             mealName: output?.name ?? this.#recipe?.name ?? "Monster Dish",
-            mealImg: output?.img ?? CoreIcons.stew,
+            mealImg,
             rarity: output?.rarity ?? "common",
             ambitious: this.#ambitious,
             cookName: this.#cookName,
