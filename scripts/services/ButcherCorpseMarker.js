@@ -21,8 +21,13 @@ let _solidFamilyCache = null;
 let _iconTexCache = null;
 let _overlayContainer = null;
 let _tickerBound = null;
+let _tokensSortablePrev = undefined;
+let _savedTokensSortable = false;
 /** @type {Map<string, CorpseMarkerOverlay>} */
 const _markers = new Map();
+
+const SOCKET_CHANNEL = `module.${MODULE_ID}`;
+const SOCKET_ACTION_SHOW = "showButcherMarkers";
 
 function _faSolidFamily() {
     if (_solidFamilyCache) return _solidFamilyCache;
@@ -182,6 +187,7 @@ class CorpseMarkerOverlay {
         const R = MARKER.BADGE_R;
         const container = new PIXI.Container();
         container.cursor = "pointer";
+        container.zIndex = 1_000_001;
         if ("eventMode" in container) container.eventMode = "static";
         else container.interactive = true;
 
@@ -261,10 +267,22 @@ function _ensureOverlayContainer() {
     if (_overlayContainer && !_overlayContainer.destroyed) return _overlayContainer;
     const layer = canvas?.tokens;
     if (!layer) return null;
-    _overlayContainer = layer.addChild(new PIXI.Container());
+
+    _overlayContainer = new PIXI.Container();
     _overlayContainer.name = `${MODULE_ID}-butcher-markers`;
     _overlayContainer.sortableChildren = true;
-    _overlayContainer.zIndex = 9999;
+    _overlayContainer.zIndex = 1_000_000;
+    if ("eventMode" in _overlayContainer) _overlayContainer.eventMode = "passive";
+    else _overlayContainer.interactiveChildren = true;
+
+    if (layer.addChild) {
+        if (!_savedTokensSortable) {
+            _tokensSortablePrev = layer.sortableChildren;
+            layer.sortableChildren = true;
+            _savedTokensSortable = true;
+        }
+        layer.addChild(_overlayContainer);
+    }
     return _overlayContainer;
 }
 
@@ -284,8 +302,32 @@ function _stopTickerIfEmpty() {
     _tickerBound = null;
 }
 
+function _resolveTargetActor(target) {
+    if (target?.actor) return target.actor;
+    const uuid = target?.actorUuid;
+    if (!uuid) return null;
+    try {
+        const doc = fromUuidSync(uuid);
+        return doc?.actor ?? doc ?? null;
+    } catch {
+        return null;
+    }
+}
+
+function _onSocket(data) {
+    if (data?.action !== SOCKET_ACTION_SHOW || !Array.isArray(data.targets)) return;
+    ButcherCorpseMarker.showTargets(data.targets);
+}
+
 export const ButcherCorpseMarker = {
     init() {
+        if (game.socket) game.socket.on(SOCKET_CHANNEL, _onSocket);
+
+        Hooks.on("canvasReady", () => {
+            const pending = ButcherEngine.getPendingTargetsList?.() ?? [];
+            if (pending.length) this.showTargets(pending);
+        });
+
         Hooks.on("deleteToken", (doc) => {
             for (const [id, overlay] of _markers) {
                 if (overlay.token?.id === doc.id) this.clear(id);
@@ -310,7 +352,7 @@ export const ButcherCorpseMarker = {
     showTargets(targets) {
         if (!canvas?.ready) return;
         if (!_userCanSeeMarkers()) return;
-        _ensureOverlayContainer();
+        if (!_ensureOverlayContainer()) return;
 
         const slice = (targets ?? []).slice(0, MAX_MARKERS);
         const nextIds = new Set(slice.map(t => t.combatantId));
@@ -320,14 +362,30 @@ export const ButcherCorpseMarker = {
         }
 
         for (const target of slice) {
-            const token = _findTokenForActor(target.actor);
+            const actor = _resolveTargetActor(target);
+            if (!actor) continue;
+            const token = _findTokenForActor(actor);
             if (!token) continue;
+            const hydrated = { ...target, actor };
             this.clear(target.combatantId);
-            _markers.set(target.combatantId, new CorpseMarkerOverlay(token, target));
+            _markers.set(target.combatantId, new CorpseMarkerOverlay(token, hydrated));
         }
 
         if (_markers.size) _startTicker();
         else _stopTickerIfEmpty();
+    },
+
+    /**
+     * Render locally and broadcast serialized targets so eligible clients see markers.
+     * @param {object[]} targets
+     */
+    syncShow(targets) {
+        this.showTargets(targets);
+        if (!game.user.isGM || !game.socket || !targets?.length) return;
+        game.socket.emit(SOCKET_CHANNEL, {
+            action: SOCKET_ACTION_SHOW,
+            targets: ButcherEngine.serializeTargets(targets)
+        });
     },
 
     /**

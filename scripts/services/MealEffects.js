@@ -246,22 +246,33 @@ export const MealEffects = {
         const chargeLines = [];
 
         for (const buff of buffs) {
-            const built = cookingBuffs?.build?.(actor, buff) ?? null;
-            if (built?.daeSpecialDuration?.length) daeSpecial.push(...built.daeSpecialDuration);
+            let rolledCharges = null;
 
             if (buff.type === "save_bonus" && buff.uses && globalThis.Roll) {
                 const roll = await new Roll(String(buff.uses)).evaluate();
-                const charges = Math.max(1, roll.total);
-                libFlags.chargesRemaining = charges;
-                libFlags.chargesMax = charges;
+                rolledCharges = Math.max(1, roll.total);
+                libFlags.chargesRemaining = rolledCharges;
+                libFlags.chargesMax = rolledCharges;
                 const ability = String(buff.save?.ability ?? "con").toUpperCase();
-                chargeLines.push(`+${buff.bonus ?? 1} ${ability} saves (${charges} remaining)`);
-                daeSpecial.push(`isSave.${String(buff.save?.ability ?? "con").toLowerCase()}`);
+                chargeLines.push(`+${buff.bonus ?? 1} ${ability} saves (${rolledCharges} remaining)`);
+            }
+
+            const built = cookingBuffs?.build?.(actor, buff) ?? null;
+            if (built?.daeSpecialDuration?.length) {
+                const skipIsSave = buff.type === "save_bonus" && rolledCharges > 1;
+                const durations = skipIsSave
+                    ? built.daeSpecialDuration.filter(entry => !entry.startsWith("isSave"))
+                    : built.daeSpecialDuration;
+                if (durations.length) daeSpecial.push(...durations);
             }
 
             if (buff.type === "advantage" && buff.duration === "nextSave") {
                 const ability = String(buff.save?.ability ?? buff.ability ?? "con").toLowerCase();
                 daeSpecial.push(`isSave.${ability}`);
+            }
+
+            if (buff.type === "save_bonus" && rolledCharges === 1) {
+                daeSpecial.push(`isSave.${String(buff.save?.ability ?? "con").toLowerCase()}`);
             }
         }
 

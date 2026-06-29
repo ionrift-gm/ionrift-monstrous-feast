@@ -47,7 +47,70 @@ export const ButcherEngine = {
             });
         }
 
-        ButcherCorpseMarker.showTargets(targets);
+        ButcherCorpseMarker.syncShow(targets);
+    },
+
+    /**
+     * Offer butchering when a registry creature dies outside an active combat.
+     * @param {Actor} actor
+     */
+    async onCreatureDeath(actor) {
+        const notice = SystemBridge.unsupportedNotice();
+        if (notice) return;
+        if (!CreatureRegistry.hasEntries()) return;
+        if (!actor || SystemBridge.isPlayerCharacter(actor) || !SystemBridge.isDead(actor)) return;
+        if (game.combat?.started) return;
+
+        const token = canvas.tokens?.placeables?.find(entry => entry.actor?.id === actor.id) ?? null;
+        const target = this.buildTargetFromActor(actor, token);
+        if (!target || _pendingTargets.has(target.combatantId)) return;
+
+        const butchers = this.findButcherActors();
+        if (!butchers.length) return;
+
+        _pendingTargets.set(target.combatantId, target);
+        await ChatMessage.create({
+            user: game.user.id,
+            speaker: ChatMessage.getSpeaker(),
+            content: buildPromptCard(target, butchers),
+            flags: { [MODULE_ID]: { butcherPrompt: true, combatantId: target.combatantId } }
+        });
+
+        ButcherCorpseMarker.syncShow(this.getPendingTargetsList());
+    },
+
+    /**
+     * @returns {object[]}
+     */
+    getPendingTargetsList() {
+        return [..._pendingTargets.values()].slice(0, 3);
+    },
+
+    /**
+     * Serialize targets for socket sync (Actor refs become uuids).
+     * @param {object[]} targets
+     * @returns {object[]}
+     */
+    serializeTargets(targets) {
+        return (targets ?? []).slice(0, 3).map(target => ({
+            combatantId: target.combatantId,
+            actorUuid: target.actor?.uuid ?? null,
+            actorName: target.actorName,
+            actorImg: target.actorImg,
+            classifierResult: target.classifierResult,
+            registryEntry: target.registryEntry,
+            cr: target.cr,
+            crLabel: target.crLabel,
+            dc: target.dc
+        }));
+    },
+
+    /**
+     * Re-show markers for any pending targets (canvas refresh).
+     */
+    refreshMarkers() {
+        const pending = this.getPendingTargetsList();
+        if (pending.length) ButcherCorpseMarker.syncShow(pending);
     },
 
     /**

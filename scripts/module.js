@@ -275,6 +275,14 @@ Hooks.on("deleteCombat", (combat) => {
     ButcherEngine.onCombatEnd(combat);
 });
 
+Hooks.on("updateActor", (actor, changes) => {
+    if (!game.user.isGM) return;
+    if (!game.settings.get(MODULE_ID, "promptOnCombatEnd")) return;
+    const hp = foundry.utils.getProperty(changes, "system.attributes.hp.value");
+    if (hp === undefined || Number(hp) > 0) return;
+    ButcherEngine.onCreatureDeath(actor);
+});
+
 Hooks.on("dnd5e.restCompleted", (actor, result) => {
     MealEffects.onLongRestCompleted(actor, result);
 });
