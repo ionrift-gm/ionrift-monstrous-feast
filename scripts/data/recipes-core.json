@@ -82,14 +82,12 @@
             "output": {
                 "name": "Owlbear Stew",
                 "img": "icons/consumables/food/bowl-stew-brown.webp",
-                "successImg": "icons/consumables/food/bowl-stew-hot-red.webp",
                 "description": "<p>A rich, dark stew with a faintly gamey warmth. Party meal: darkvision for 8 hours.</p>",
                 "rarity": "uncommon"
             },
             "ambitiousOutput": {
                 "name": "Seasoned Owlbear Stew",
                 "img": "icons/consumables/food/bowl-stew-brown.webp",
-                "successImg": "icons/consumables/food/bowl-stew-hot-red.webp",
                 "description": "<p>Deeply flavoured, slow-simmered perfection. Party meal: darkvision and sharper senses in dim light.</p>",
                 "rarity": "rare"
             },

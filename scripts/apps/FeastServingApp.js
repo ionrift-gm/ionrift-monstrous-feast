@@ -1,4 +1,5 @@
 import { MealEffects } from "../services/MealEffects.js";
+import { attachImageFallback } from "../ui/ImageFallback.js";
 
 const rollMechanicsPath = "../../../ionrift-library/scripts/services/RollRequestMechanics.js";
 
@@ -100,6 +101,10 @@ export class FeastServingApp extends HandlebarsApplicationMixin(ApplicationV2) {
             allRolled: members.length > 0 && rolledCount === members.length,
             servingStarted: this.#servingStarted
         };
+    }
+
+    _onRender(context, options) {
+        attachImageFallback(this.element);
     }
 
     _onClose(options) {

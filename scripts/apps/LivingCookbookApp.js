@@ -7,6 +7,7 @@ import { buildCodex } from "../data/CodexModel.js";
 import { CodexController } from "../ui/CodexController.js";
 import { FeastServingApp } from "./FeastServingApp.js";
 import { bindTabs, bindFlyouts } from "../ui/TabBinder.js";
+import { attachImageFallback } from "../ui/ImageFallback.js";
 import { buildCookPhaseContext, buildCookSuccessContext } from "../engine/CookPhaseModel.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
@@ -426,6 +427,7 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     _onRender(context, options) {
+        attachImageFallback(this.element);
         CodexController.attach(this.element);
         bindTabs(this.element);
         bindFlyouts(this.element);

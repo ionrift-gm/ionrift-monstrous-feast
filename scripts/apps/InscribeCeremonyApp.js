@@ -66,6 +66,7 @@ export class InscribeCeremonyApp extends HandlebarsApplicationMixin(ApplicationV
     }
 
     _onRender(context, options) {
+        attachImageFallback(this.element);
         if (this.element.dataset.mfBound !== "true") {
             this.element.dataset.mfBound = "true";
             this.element.addEventListener("click", (event) => {

@@ -31,7 +31,7 @@ function ingredientIcon(ing) {
     const name = String(ing.name ?? "").toLowerCase();
     if (name.includes("ration")) return CoreIcons.jerky;
     if (name.includes("salt") || name.includes("pepper") || name.includes("cinnamon")) {
-        return "icons/commodities/materials/powder-white.webp";
+        return "icons/commodities/materials/powder-grey.webp";
     }
     return CoreIcons.rawMeat;
 }

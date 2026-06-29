@@ -10,6 +10,7 @@ import { DiscoveryService } from "../services/DiscoveryService.js";
 import { LivingCookbookApp } from "./LivingCookbookApp.js";
 import { CompendiumService } from "../services/CompendiumService.js";
 import { bindTabs, bindFlyouts } from "../ui/TabBinder.js";
+import { attachImageFallback } from "../ui/ImageFallback.js";
 import { resolveBookImg } from "../data/BookAssets.js";
 
 const PREMIUM_MODULE_ID = "ionrift-monstrous-feast-premium";
@@ -105,6 +106,7 @@ export class CookbookApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _onRender(context, options) {
+        attachImageFallback(this.element);
         CodexController.attach(this.element);
         bindTabs(this.element);
         bindFlyouts(this.element);
