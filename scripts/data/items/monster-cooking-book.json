@@ -1,6 +1,6 @@
 {
     "name": "Monster Cooking",
-    "type": "loot",
+    "type": "equipment",
     "img": "icons/sundries/books/book-worn-brown.webp",
     "system": {
         "description": {
@@ -11,7 +11,11 @@
         "price": {
             "value": 50,
             "denomination": "gp"
-        }
+        },
+        "type": {
+            "value": "trinket"
+        },
+        "equipped": false
     },
     "flags": {
         "ionrift-monstrous-feast": {

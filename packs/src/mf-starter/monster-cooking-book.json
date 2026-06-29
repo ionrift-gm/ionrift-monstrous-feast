@@ -2,7 +2,7 @@
     "_key": "!items!mfBookCook000001",
     "_id": "mfBookCook000001",
     "name": "Monster Cooking",
-    "type": "loot",
+    "type": "equipment",
     "img": "icons/sundries/books/book-worn-brown.webp",
     "folder": "mfStarterFold001",
     "sort": 100,
@@ -17,8 +17,9 @@
             "denomination": "gp"
         },
         "type": {
-            "value": ""
-        }
+            "value": "trinket"
+        },
+        "equipped": false
     },
     "flags": {
         "ionrift-monstrous-feast": {
