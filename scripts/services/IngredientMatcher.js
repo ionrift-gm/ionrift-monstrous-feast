@@ -3,6 +3,32 @@ const MODULE_ID = "ionrift-monstrous-feast";
 /** Recipe ingredient names that accept any butchered monster meat cut. */
 const GENERIC_MONSTER_MEAT = "Monster Meat";
 
+/** Recipe ingredient name for the frying staple the module ships. */
+const COOKING_OIL = "Cooking Oil";
+
+/**
+ * Plain, non-magical oils a GM may already have in play. Magic oils (Oil of
+ * Sharpness and the like) are intentionally excluded.
+ */
+const GENERIC_OIL_NAMES = new Set([
+    "oil",
+    "oil flask",
+    "oil (flask)",
+    "flask of oil",
+    "lamp oil"
+]);
+
+/**
+ * @returns {boolean} Whether a plain flask of oil may stand in for Cooking Oil.
+ */
+function acceptsGenericOil() {
+    try {
+        return game.settings.get(MODULE_ID, "acceptGenericOil") === true;
+    } catch {
+        return false;
+    }
+}
+
 /**
  * @param {Item} item
  * @param {string} ingredientName
@@ -11,6 +37,10 @@ const GENERIC_MONSTER_MEAT = "Monster Meat";
 export function itemMatchesIngredient(item, ingredientName) {
     if (!item || !ingredientName) return false;
     if (item.name === ingredientName) return true;
+
+    if (ingredientName === COOKING_OIL && acceptsGenericOil()) {
+        return GENERIC_OIL_NAMES.has(String(item.name ?? "").trim().toLowerCase());
+    }
 
     if (ingredientName !== GENERIC_MONSTER_MEAT) return false;
 

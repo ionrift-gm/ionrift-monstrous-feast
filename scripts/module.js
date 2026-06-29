@@ -89,6 +89,15 @@ Hooks.once("init", () => {
         default: false
     });
 
+    game.settings.register(MODULE_ID, "acceptGenericOil", {
+        name: "Any Oil Counts as Cooking Oil",
+        hint: "Let a plain flask of oil stand in for Cooking Oil when frying. Turn off to require the module's own Cooking Oil.",
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
     game.settings.register(MODULE_ID, "debug", {
         name: "Debug Mode",
         hint: "Enable verbose logging for Monstrous Feast.",
