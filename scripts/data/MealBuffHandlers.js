@@ -70,6 +70,9 @@ export function buffRegistry() {
 const DURATION = "untilLongRest";
 const PARTY = "party";
 
+/** Compact duration qualifier for codex card summaries (Green, rest-scoped). */
+const UNTIL_LONG_REST = "until long rest";
+
 /** The four built-in Monstrous Feast buff handlers. */
 export const BUILTIN_BUFF_HANDLERS = [
     {
@@ -92,7 +95,7 @@ export const BUILTIN_BUFF_HANDLERS = [
         keys: ["strengthAdvantage"],
         managed: true,
         appliesTo: (fx) => Boolean(fx?.strengthAdvantage),
-        summary: (fx) => (fx?.strengthAdvantage ? "Strength advantage" : null),
+        summary: (fx) => (fx?.strengthAdvantage ? `Strength advantage (${UNTIL_LONG_REST})` : null),
         memberLine: (fx) => (fx?.strengthAdvantage
             ? "advantage on Strength checks until your next long rest" : null),
         manualLine: (fx) => (fx?.strengthAdvantage
@@ -112,7 +115,7 @@ export const BUILTIN_BUFF_HANDLERS = [
         keys: ["darkvisionFeet"],
         managed: true,
         appliesTo: (fx) => Boolean(fx?.darkvisionFeet),
-        summary: (fx) => (fx?.darkvisionFeet ? `Darkvision ${fx.darkvisionFeet} ft` : null),
+        summary: (fx) => (fx?.darkvisionFeet ? `Darkvision ${fx.darkvisionFeet} ft (${UNTIL_LONG_REST})` : null),
         memberLine: (fx) => (fx?.darkvisionFeet
             ? `${fx.darkvisionFeet}ft darkvision until your next long rest` : null),
         manualLine: (fx) => (fx?.darkvisionFeet
@@ -133,7 +136,7 @@ export const BUILTIN_BUFF_HANDLERS = [
         managed: true,
         appliesTo: (fx) => Boolean(fx?.passivePerceptionBonus),
         summary: (fx, ambitious) => (ambitious && fx?.passivePerceptionBonus
-            ? `+${fx.passivePerceptionBonus} passive Perception` : null),
+            ? `+${fx.passivePerceptionBonus} passive Perception (${UNTIL_LONG_REST})` : null),
         memberLine: (fx, ambitious) => (ambitious && fx?.passivePerceptionBonus
             ? `+${fx.passivePerceptionBonus} passive Perception until your next long rest` : null),
         manualLine: (fx, ambitious) => (ambitious && fx?.passivePerceptionBonus
@@ -159,7 +162,7 @@ export const BUILTIN_BUFF_HANDLERS = [
         managed: true,
         appliesTo: (fx) => Boolean(fx?.wisdomBonus),
         summary: (fx, ambitious) => (ambitious && fx?.wisdomBonus
-            ? `+${fx.wisdomBonus} Wisdom checks` : null),
+            ? `+${fx.wisdomBonus} Wisdom checks (${UNTIL_LONG_REST})` : null),
         memberLine: (fx, ambitious) => (ambitious && fx?.wisdomBonus
             ? `+${fx.wisdomBonus} to Wisdom ability checks until your next long rest` : null),
         manualLine: (fx, ambitious) => (ambitious && fx?.wisdomBonus
@@ -214,7 +217,7 @@ export const BUILTIN_BUFF_HANDLERS = [
         summary: (fx, ambitious) => {
             if (!ambitious || !fx?.conSaveBonus) return null;
             const uses = String(fx.conSaveBonus);
-            return `+1 CON saves (${uses} uses)`;
+            return `+1 CON saves (next ${uses} saves)`;
         },
         memberLine: (fx, ambitious) => (ambitious && fx?.conSaveBonus
             ? `+1 to Constitution saves for the next ${fx.conSaveBonus} saves (until long rest)` : null),

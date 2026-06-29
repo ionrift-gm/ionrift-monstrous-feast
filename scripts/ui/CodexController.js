@@ -1,5 +1,6 @@
 const TIER_ORDER = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
-const PAGE_SIZE = 6;
+/** Baseline cards per page; the live page size rounds up to whole grid rows. */
+const BASE_PAGE_SIZE = 8;
 
 /**
  * Wires search, tier/type filters, sort, "cookable now" toggle, and pagination
@@ -49,7 +50,41 @@ export class CodexController {
         prev?.addEventListener("click", () => { this.state.page = Math.max(0, this.state.page - 1); this.apply(); });
         next?.addEventListener("click", () => { this.state.page += 1; this.apply(); });
 
+        // Column count tracks container width (responsive auto-fill grid), so
+        // reflow pages when the window resizes to keep rows full.
+        if (typeof ResizeObserver !== "undefined" && this.grid) {
+            let raf = null;
+            this._resizeObserver = new ResizeObserver(() => {
+                if (raf) cancelAnimationFrame(raf);
+                raf = requestAnimationFrame(() => { raf = null; this.apply(); });
+            });
+            this._resizeObserver.observe(this.grid);
+        }
+
         this.apply();
+    }
+
+    /**
+     * Live column count of the responsive grid, read from the resolved
+     * grid-template-columns track list. Falls back to 1 before layout.
+     * @returns {number}
+     */
+    _columnCount() {
+        if (!this.grid) return 1;
+        const template = getComputedStyle(this.grid).gridTemplateColumns ?? "";
+        if (!template || template === "none") return 1;
+        return Math.max(1, template.split(" ").filter(Boolean).length);
+    }
+
+    /**
+     * Cards per page, rounded up to whole grid rows so a page never breaks
+     * mid-row and leaves a ragged gap before the next page.
+     * @returns {number}
+     */
+    _pageSize() {
+        const columns = this._columnCount();
+        const rows = Math.max(1, Math.ceil(BASE_PAGE_SIZE / columns));
+        return columns * rows;
     }
 
     _matches(card) {
@@ -89,10 +124,11 @@ export class CodexController {
 
         for (const card of this.cards) card.style.display = "none";
 
-        const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+        const pageSize = this._pageSize();
+        const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
         if (this.state.page >= pageCount) this.state.page = pageCount - 1;
-        const start = this.state.page * PAGE_SIZE;
-        const slice = visible.slice(start, start + PAGE_SIZE);
+        const start = this.state.page * pageSize;
+        const slice = visible.slice(start, start + pageSize);
 
         for (const card of slice) {
             card.style.display = "";
@@ -101,7 +137,7 @@ export class CodexController {
 
         if (this.empty) this.empty.hidden = visible.length !== 0;
         if (this.pager) {
-            this.pager.hidden = visible.length <= PAGE_SIZE;
+            this.pager.hidden = visible.length <= pageSize;
             if (this.pageInfo) this.pageInfo.textContent = `${this.state.page + 1} / ${pageCount}`;
         }
     }
