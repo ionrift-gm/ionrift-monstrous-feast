@@ -56,7 +56,7 @@
             { "name": "Choice Game Meat", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 }
         ],
         "exceptional": [
-            { "name": "Choice Game Meat", "qty": 3, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Choice Game Meat", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
             { "name": "Beast Hide", "qty": 1, "type": "loot" }
         ],
         "mishap": { "type": "damage", "damage": "1d4", "damageType": "slashing", "desc": "The blade skips on bone. A deep cut to the hand." },
@@ -94,7 +94,7 @@
             { "name": "Monster Flank", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 }
         ],
         "exceptional": [
-            { "name": "Monster Flank", "qty": 3, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Monster Flank", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
             { "name": "Monster Trophy", "qty": 1, "type": "loot" }
         ],
         "mishap": { "type": "damage", "damage": "1d6", "damageType": "slashing", "desc": "Something bites back from inside. Parasites, or just muscle memory." },

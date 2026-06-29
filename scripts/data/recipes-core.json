@@ -13,7 +13,7 @@
             "skill": "sur",
             "dc": 10,
             "ingredients": [
-                { "name": "Monster Meat", "quantity": 2 }
+                { "name": "Monster Meat", "quantity": 1 }
             ],
             "seasoning": { "accepts": ["Salt", "Pepper", "Cinnamon"], "quantity": 1 },
             "output": {
@@ -76,7 +76,7 @@
             "dc": 13,
             "ingredients": [
                 { "name": "Owlbear Flank", "quantity": 1 },
-                { "name": "Rations", "quantity": 2 }
+                { "name": "Rations", "quantity": 1 }
             ],
             "seasoning": { "accepts": ["Salt", "Pepper", "Cinnamon"], "quantity": 1 },
             "output": {
