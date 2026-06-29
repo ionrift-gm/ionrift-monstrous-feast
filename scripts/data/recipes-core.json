@@ -108,7 +108,8 @@
             "skill": "sur",
             "dc": 8,
             "ingredients": [
-                { "name": "Flour", "quantity": 2 }
+                { "name": "Flour", "quantity": 2 },
+                { "name": "Water", "quantity": 1 }
             ],
             "seasoning": { "accepts": ["Salt", "Cinnamon"], "quantity": 1 },
             "output": {
