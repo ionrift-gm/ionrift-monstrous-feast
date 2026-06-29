@@ -5,7 +5,9 @@ import { inscribeRecipePage } from "../services/RecipePageService.js";
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { buildCodex } from "../data/CodexModel.js";
 import { CodexController } from "../ui/CodexController.js";
-import { FeastServingApp } from "./FeastServingApp.js";
+import { MealService } from "../services/MealService.js";
+import { CookbookMirror } from "../services/CookbookMirror.js";
+import { CookbookLauncher } from "../handlers/CookbookLauncher.js";
 import { bindTabs, bindFlyouts } from "../ui/TabBinder.js";
 import { attachImageFallback } from "../ui/ImageFallback.js";
 import { buildCookPhaseContext, buildCookSuccessContext } from "../engine/CookPhaseModel.js";
@@ -16,6 +18,9 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /** @type {Map<string, LivingCookbookApp>} */
 const OPEN_BY_BOOK = new Map();
+
+/** @type {LivingCookbookApp|null} */
+let READONLY_APP = null;
 
 /**
  * Player-facing Living Cookbook opened from the Monster Cooking item.
@@ -36,6 +41,9 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
     /** @type {object|null} */
     #cookSession = null;
 
+    /** @type {boolean} */
+    #readOnly = false;
+
     static DEFAULT_OPTIONS = {
         classes: ["ionrift-window", "monstrous-feast-living-cookbook"],
         position: { width: 900, height: 820 },
@@ -49,8 +57,11 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
             inscribePage: LivingCookbookApp.#onInscribePage,
             cancelCook: LivingCookbookApp.#onCancelCook,
             beginCook: LivingCookbookApp.#onBeginCook,
+            rollForCook: LivingCookbookApp.#onRollForCook,
             closeFailed: LivingCookbookApp.#onCloseFailed,
-            serveMeal: LivingCookbookApp.#onServeMeal
+            serveMeal: LivingCookbookApp.#onServeMeal,
+            keepMeal: LivingCookbookApp.#onKeepMeal,
+            shareBook: LivingCookbookApp.#onShareBook
         }
     };
 
@@ -63,11 +74,14 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
      * @param {Actor} actor
      * @param {object} [options]
      */
-    constructor(bookItem, actor, options = {}) {
+    constructor(bookItem, actor, { readOnly = false, ...options } = {}) {
         super({
             ...options,
-            id: `monstrous-feast-lc-${bookItem?.id ?? foundry.utils.randomID()}`
+            id: readOnly
+                ? "monstrous-feast-lc-readonly"
+                : `monstrous-feast-lc-${bookItem?.id ?? foundry.utils.randomID()}`
         });
+        this.#readOnly = readOnly;
         this.#syncRefs(bookItem, actor);
     }
 
@@ -97,6 +111,33 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         OPEN_BY_BOOK.set(key, app);
         app.render(true);
         return app;
+    }
+
+    /**
+     * Open the shared read-only viewer. Any player may open their own copy; it
+     * reads the mirrored party-cookbook state and exposes no writing actions.
+     * @returns {LivingCookbookApp}
+     */
+    static openReadOnly() {
+        if (READONLY_APP?.rendered) {
+            READONLY_APP.bringToTop?.();
+            READONLY_APP.render(false);
+            return READONLY_APP;
+        }
+        const app = new LivingCookbookApp(null, null, {
+            readOnly: true,
+            window: { title: "Party Cookbook", icon: "fas fa-book" }
+        });
+        READONLY_APP = app;
+        app.render(true);
+        return app;
+    }
+
+    /**
+     * Re-render the open read-only viewer after the mirrored state changes.
+     */
+    static refreshReadOnly() {
+        if (READONLY_APP?.rendered) READONLY_APP.render(false);
     }
 
     /**
@@ -162,21 +203,33 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     #clearCookSession() {
+        this.#abandonRoll();
         this.#cookSession = null;
+    }
+
+    /**
+     * Release the shared roll-request queue when the session no longer needs the
+     * cook's prompt (GM stepped in, cancelled, or closed). Settled rolls treat
+     * this as a no-op.
+     */
+    #abandonRoll() {
+        this.#cookSession?.rollAbort?.abort();
     }
 
     #buildCookView() {
         if (!this.#cookSession) return null;
 
         const { phase, context, failMessage, result } = this.#cookSession;
+        const isRolling = phase === "rolling";
         const view = {
             ...context,
             phase,
             failMessage,
             isPrep: phase === "prep",
-            isRolling: phase === "rolling",
+            isRolling,
             isFailed: phase === "failed",
-            isSuccess: phase === "success"
+            isSuccess: phase === "success",
+            gmCanRoll: isRolling && game.user.isGM && !this.#cookSession.gmRolling
         };
 
         if (phase === "success" && result?.recipe) {
@@ -191,9 +244,13 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     _onClose(options) {
+        if (this.#readOnly) {
+            if (READONLY_APP === this) READONLY_APP = null;
+            return super._onClose(options);
+        }
         const key = this.#bookItem?.uuid ?? this.#bookItem?.id;
         if (key) OPEN_BY_BOOK.delete(key);
-        this.#cookSession = null;
+        this.#clearCookSession();
         return super._onClose(options);
     }
 
@@ -219,8 +276,30 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         return this.#beginCook();
     }
 
+    static #onRollForCook() {
+        return this.#rollForCook();
+    }
+
     static #onServeMeal() {
         return this.#serveMeal();
+    }
+
+    static #onKeepMeal() {
+        return this.#keepMeal();
+    }
+
+    static #onShareBook() {
+        return this.#shareBook();
+    }
+
+    async #shareBook() {
+        const carrier = this.#actor?.name ?? "The book keeper";
+        const content = `<div class="mf-share-card">`
+            + `<p><i class="fas fa-book-open"></i> <strong>${carrier}</strong> shares the party cookbook.</p>`
+            + `<p>${CookbookLauncher.linkHtml()}</p>`
+            + `</div>`;
+        await ChatMessage.create({ user: game.user.id, content });
+        ui.notifications.info("Shared the cookbook with the party.");
     }
 
     async inscribePage(_event, target) {
@@ -253,16 +332,15 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         if (this.#cookSession?.phase !== "prep" || !this.#actor || !this.#cookSession.recipe) return;
 
         this.#cookSession.phase = "rolling";
+        this.#cookSession.gmRolling = false;
+        this.#cookSession.resolveGmRoll = null;
+        this.#cookSession.rollAbort = null;
         this.render(false);
 
         const { recipe, context } = this.#cookSession;
-        const rollResult = await CookEngine.requestSurvivalRoll(
-            this.#actor,
-            recipe,
-            context.dcBreakdown
-        );
+        const rollResult = await this.#awaitCookRoll(recipe, context.dcBreakdown);
 
-        if (!this.#cookSession) return;
+        if (!this.#cookSession || rollResult == null) return;
 
         const result = await CookEngine.resolveCook(this.#actor, recipe.id, {
             bookItem: this.#bookItem,
@@ -285,29 +363,107 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         this.render(false);
     }
 
+    /**
+     * Resolve the cook's Survival roll. The connected cook is prompted via the
+     * library roll-request; when a GM is present they can step in and roll on
+     * the cook's behalf, whichever resolves first.
+     * @param {object} recipe
+     * @param {object} dcBreakdown
+     * @returns {Promise<object>}
+     */
+    #awaitCookRoll(recipe, dcBreakdown) {
+        const controller = new AbortController();
+        if (this.#cookSession) this.#cookSession.rollAbort = controller;
+
+        const playerRoll = CookEngine.requestSurvivalRoll(
+            this.#actor, recipe, dcBreakdown, { signal: controller.signal }
+        );
+        if (!game.user.isGM) return playerRoll;
+
+        const gmRoll = new Promise((resolve) => {
+            if (this.#cookSession) this.#cookSession.resolveGmRoll = resolve;
+        });
+        return Promise.race([playerRoll, gmRoll]);
+    }
+
+    async #rollForCook() {
+        const session = this.#cookSession;
+        if (session?.phase !== "rolling" || typeof session.resolveGmRoll !== "function") return;
+
+        const resolve = session.resolveGmRoll;
+        session.resolveGmRoll = null;
+        session.gmRolling = true;
+        this.render(false);
+
+        const result = await CookEngine.rollSurvivalForCook(
+            this.#actor,
+            session.recipe,
+            session.context.dcBreakdown
+        );
+        resolve(result);
+        session.rollAbort?.abort();
+    }
+
     async #serveMeal() {
         const result = this.#cookSession?.result;
+        const actor = this.#actor;
         this.#clearCookSession();
         this.render(false);
 
-        if (!result?.tempFormula) return;
+        if (!result?.recipe || !actor) return;
+        await MealService.serveParty(actor, result.recipe, result.ambitious);
+    }
 
-        if (game.user.isGM) {
-            FeastServingApp.open({
-                recipe: result.recipe,
-                ambitious: result.ambitious,
-                tempFormula: result.tempFormula,
-                cookName: this.#actor?.name ?? ""
-            });
-        } else {
-            const { FeastServingRelay } = await import("../services/FeastServingRelay.js");
-            FeastServingRelay.requestServing({
-                recipeId: result.recipe.id,
-                ambitious: result.ambitious,
-                tempFormula: result.tempFormula,
-                cookName: this.#actor?.name ?? ""
-            });
-        }
+    async #keepMeal() {
+        const result = this.#cookSession?.result;
+        const actor = this.#actor;
+        this.#clearCookSession();
+        this.render(false);
+
+        if (!result?.recipe || !actor) return;
+        await MealService.addDishToInventory(actor, result.recipe, result.ambitious);
+        const output = result.ambitious
+            ? (result.recipe.ambitiousOutput ?? result.recipe.output)
+            : result.recipe.output;
+        ui.notifications.info(`${output?.name ?? result.recipe.name} stored in ${actor.name}'s pack.`);
+    }
+
+    #prepareReadOnlyContext() {
+        const state = CookbookMirror.getState();
+        const discovered = new Set(state.discoveredTypes ?? []);
+        const inscribed = new Set(state.inscribedRecipes ?? []);
+        const codex = buildCodex({
+            discoveredCreatures: discovered,
+            inscribedRecipes: inscribed,
+            actor: null,
+            hideEntryRecipes: true
+        });
+
+        const activeTab = this.#activeTab;
+        const carrier = state.carrierName?.trim();
+
+        return {
+            readOnly: true,
+            bookName: state.bookName ?? "Party Cookbook",
+            bookImg: state.bookImg ?? null,
+            actorName: carrier || "the party",
+            carrierName: carrier || "",
+            bookPresent: state.present,
+            systemLabel: SystemBridge.launchLabel(),
+            discoveredCount: codex.unlockedCount,
+            inscribedCount: codex.inscribedCount,
+            recipeTotal: codex.recipeTotal,
+            totalCount: codex.totalCount,
+            hasActor: false,
+            cookableRecipes: [],
+            pendingPages: [],
+            cookActive: false,
+            cook: null,
+            activeTab,
+            creaturesTabActive: activeTab === "creatures",
+            recipesTabActive: activeTab === "recipes",
+            ...codex
+        };
     }
 
     _buffLines(recipe) {
@@ -321,6 +477,8 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     async _prepareContext() {
+        if (this.#readOnly) return this.#prepareReadOnlyContext();
+
         this.#bookItem = this.#bookItem?.uuid
             ? this.#bookItem
             : game.items.get(this.#bookItem?.id) ?? this.#bookItem;

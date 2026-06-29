@@ -16,6 +16,13 @@
         <h3 class="mf-lc-cook-heading">At the Fire</h3>
         <p class="mf-lc-cook-sub">{{chefName}} rolls {{skillLabel}} against DC {{cookDc}}.</p>
         <p class="mf-lc-cook-wait"><i class="fas fa-hourglass-half"></i> Waiting for the cook's roll...</p>
+        {{#if gmCanRoll}}
+        <div class="mf-lc-cook-actions">
+            <button type="button" class="mf-lc-cook-btn-secondary" data-action="rollForCook">
+                <i class="fas fa-dice-d20"></i> Roll for the cook
+            </button>
+        </div>
+        {{/if}}
     </div>
     {{else if isSuccess}}
     <div class="mf-lc-cook-success">
@@ -37,7 +44,10 @@
         </article>
         <div class="mf-lc-cook-actions">
             <button type="button" class="mf-lc-cook-btn-primary" data-action="serveMeal">
-                <i class="fas fa-bowl-food"></i> Serve the party
+                <i class="fas fa-bowl-food"></i> Serve the party now
+            </button>
+            <button type="button" class="mf-lc-cook-btn-secondary" data-action="keepMeal">
+                <i class="fas fa-box-archive"></i> Pack it away
             </button>
         </div>
     </div>
