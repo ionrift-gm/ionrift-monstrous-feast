@@ -1,5 +1,6 @@
 import { MealEffects } from "../services/MealEffects.js";
 import { attachImageFallback } from "../ui/ImageFallback.js";
+import { RollRequestQueue } from "../services/RollRequestQueue.js";
 
 const rollMechanicsPath = "../../../ionrift-library/scripts/services/RollRequestMechanics.js";
 
@@ -167,14 +168,14 @@ export class FeastServingApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 });
                 total = result.total;
             } else {
-                const result = await game.ionrift.library.rollRequest.request({
+                const result = await RollRequestQueue.request({
                     actorId: actor.id,
                     type: "formula",
                     formula: this.#tempFormula,
                     title: "Meal Temp HP",
                     flavor,
                     offlinePolicy: "gm-fallback"
-                });
+                }, { key: `mealTempHP:${this.#recipe?.id ?? "?"}:${actor.id}` });
                 total = result.total;
             }
 
