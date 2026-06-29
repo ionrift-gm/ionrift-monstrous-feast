@@ -4,7 +4,7 @@
     "name": "Cooking Oil",
     "type": "consumable",
     "img": "icons/containers/kitchenware/jug-terracotta-orange.webp",
-    "folder": "mfStarterFold001",
+    "folder": "mfFoldPantry0001",
     "sort": 410,
     "system": {
         "description": {

@@ -4,7 +4,7 @@
     "name": "Salt",
     "type": "consumable",
     "img": "icons/commodities/materials/powder-grey.webp",
-    "folder": "mfStarterFold001",
+    "folder": "mfFoldPantry0001",
     "sort": 430,
     "system": {
         "description": {

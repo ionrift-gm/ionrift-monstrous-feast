@@ -1,4 +1,5 @@
 import { CoreIcons } from "../data/CoreIcons.js";
+import { attachImageFallback } from "../ui/ImageFallback.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -71,15 +72,6 @@ export class InscribeCeremonyApp extends HandlebarsApplicationMixin(ApplicationV
             this.element.dataset.mfBound = "true";
             this.element.addEventListener("click", (event) => {
                 if (event.target === this.element) this.#finish(false);
-            });
-        }
-
-        const check = this.element.querySelector("[data-mf-confirm-check]");
-        const confirmBtn = this.element.querySelector("[data-action='confirm']");
-        if (check && confirmBtn) {
-            confirmBtn.disabled = !check.checked;
-            check.addEventListener("change", () => {
-                confirmBtn.disabled = !check.checked;
             });
         }
     }

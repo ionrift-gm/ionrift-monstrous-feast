@@ -4,7 +4,7 @@
     "name": "Cinnamon",
     "type": "consumable",
     "img": "icons/commodities/materials/powder-red-green-yellow.webp",
-    "folder": "mfStarterFold001",
+    "folder": "mfFoldPantry0001",
     "sort": 450,
     "system": {
         "description": {

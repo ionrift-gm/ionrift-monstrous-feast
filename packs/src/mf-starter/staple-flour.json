@@ -4,7 +4,7 @@
     "name": "Flour",
     "type": "consumable",
     "img": "icons/consumables/grains/sack-rice-flour-brown.webp",
-    "folder": "mfStarterFold001",
+    "folder": "mfFoldPantry0001",
     "sort": 400,
     "system": {
         "description": {

@@ -4,7 +4,7 @@
     "name": "Egg",
     "type": "consumable",
     "img": "icons/consumables/eggs/eggs-white.webp",
-    "folder": "mfStarterFold001",
+    "folder": "mfFoldPantry0001",
     "sort": 420,
     "system": {
         "description": {

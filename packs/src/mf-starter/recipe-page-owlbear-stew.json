@@ -4,7 +4,7 @@
     "name": "Recipe Page: Owlbear Stew",
     "type": "loot",
     "img": "icons/sundries/documents/document-torn-diagram-tan.webp",
-    "folder": "mfStarterFold001",
+    "folder": "mfFoldPages00001",
     "sort": 400,
     "system": {
         "description": {

@@ -1,0 +1,11 @@
+{
+    "_key": "!folders!mfFoldPantry0001",
+    "_id": "mfFoldPantry0001",
+    "name": "Pantry Staples",
+    "type": "Item",
+    "sorting": "a",
+    "sort": 300,
+    "color": "#6c8b3c",
+    "folder": "mfStarterFold001",
+    "flags": {}
+}

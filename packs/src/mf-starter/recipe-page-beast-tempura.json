@@ -4,7 +4,7 @@
     "name": "Recipe Page: Crispy Beast Tempura",
     "type": "loot",
     "img": "icons/sundries/documents/document-torn-diagram-tan.webp",
-    "folder": "mfStarterFold001",
+    "folder": "mfFoldPages00001",
     "sort": 510,
     "system": {
         "description": {
