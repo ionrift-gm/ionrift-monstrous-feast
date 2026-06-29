@@ -16,7 +16,7 @@
             "value": 5,
             "denomination": "sp"
         },
-        "quantity": 3,
+        "quantity": 1,
         "type": {
             "value": "food",
             "subtype": ""
