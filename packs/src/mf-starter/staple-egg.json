@@ -1,0 +1,38 @@
+{
+    "_key": "!items!mfStapleEgg00001",
+    "_id": "mfStapleEgg00001",
+    "name": "Egg",
+    "type": "consumable",
+    "img": "icons/consumables/eggs/eggs-white.webp",
+    "folder": "mfStarterFold001",
+    "sort": 420,
+    "system": {
+        "description": {
+            "value": "<p>Eggs gathered from nests and coops. Bind a batter, fold an omelet, or eat them plain in a pinch.</p>"
+        },
+        "rarity": "common",
+        "weight": 0.1,
+        "price": {
+            "value": 1,
+            "denomination": "sp"
+        },
+        "quantity": 6,
+        "type": {
+            "value": "food",
+            "subtype": ""
+        }
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "pantryStaple": true
+        },
+        "ionrift-respite": {
+            "resourceType": "food",
+            "spoilsAfter": 5
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

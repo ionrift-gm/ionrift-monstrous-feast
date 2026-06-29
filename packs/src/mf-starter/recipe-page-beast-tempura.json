@@ -1,0 +1,33 @@
+{
+    "_key": "!items!mfPageTempura001",
+    "_id": "mfPageTempura001",
+    "name": "Recipe Page: Crispy Beast Tempura",
+    "type": "loot",
+    "img": "icons/sundries/documents/document-torn-diagram-tan.webp",
+    "folder": "mfStarterFold001",
+    "sort": 510,
+    "system": {
+        "description": {
+            "value": "<p>A loose page torn from a hunter's cookbook. Inscribe it into a Monster Cooking book to learn how to fry <strong>Crispy Beast Tempura</strong>.</p><p><em>Requires:</em> 1x Monster Meat, 1x Flour, 1x Cooking Oil</p>"
+        },
+        "rarity": "uncommon",
+        "weight": 0.1,
+        "price": {
+            "value": 0,
+            "denomination": "gp"
+        },
+        "type": {
+            "value": ""
+        }
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "isRecipePage": true,
+            "recipeId": "cook_beast_tempura"
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

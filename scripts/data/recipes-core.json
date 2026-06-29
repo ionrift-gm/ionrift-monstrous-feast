@@ -99,6 +99,100 @@
             },
             "successNarrative": "The stew darkens as it simmers. There is something primal in the smell. Everyone reaches for a bowl.",
             "failNarrative": "The owlbear meat toughens and the stew goes bitter. A waste of rare ingredients."
+        },
+        {
+            "id": "cook_camp_bread",
+            "name": "Camp Bread",
+            "description": "Flatbread baked on a hot stone. The backbone of any real camp meal.",
+            "linkedCreatures": [],
+            "skill": "sur",
+            "dc": 8,
+            "ingredients": [
+                { "name": "Flour", "quantity": 2 }
+            ],
+            "seasoning": { "accepts": ["Salt", "Cinnamon"], "quantity": 1 },
+            "output": {
+                "name": "Camp Bread",
+                "img": "icons/consumables/grains/bread-loaf-wheat-brown.webp",
+                "description": "<p>A dense, warm loaf split around the fire. Party meal: a little temporary hit points to start the day.</p>",
+                "rarity": "common"
+            },
+            "ambitiousOutput": {
+                "name": "Golden Camp Loaf",
+                "img": "icons/consumables/grains/bread-loaf-wheat-brown.webp",
+                "description": "<p>Risen high with a crackling crust. Party meal: more temporary hit points to start the day.</p>",
+                "rarity": "uncommon"
+            },
+            "partyEffect": {
+                "tempHP": "1d4",
+                "ambitiousTempHP": "1d6"
+            },
+            "successNarrative": "The dough puffs and browns on the stone. Warm bread in the wilds lifts everyone.",
+            "failNarrative": "Scorched on one side, raw in the middle. The loaf is a loss."
+        },
+        {
+            "id": "cook_beast_tempura",
+            "name": "Crispy Beast Tempura",
+            "description": "Monster cuts battered in flour and flash-fried in hot oil. Light, crisp, deceptively filling.",
+            "linkedCreatures": ["beast", "beast_ursine", "beast_suidae"],
+            "skill": "sur",
+            "dc": 13,
+            "ingredients": [
+                { "name": "Monster Meat", "quantity": 1 },
+                { "name": "Flour", "quantity": 1 },
+                { "name": "Cooking Oil", "quantity": 1 }
+            ],
+            "seasoning": { "accepts": ["Salt", "Pepper"], "quantity": 1 },
+            "output": {
+                "name": "Crispy Beast Tempura",
+                "img": "icons/consumables/food/drumstick-fried-brown.webp",
+                "description": "<p>Shatteringly crisp batter over tender meat. Party meal: a hearty surge of temporary hit points.</p>",
+                "rarity": "uncommon"
+            },
+            "ambitiousOutput": {
+                "name": "Golden Beast Tempura",
+                "img": "icons/consumables/food/drumstick-fried-brown.webp",
+                "description": "<p>Fried to a flawless gold. Party meal: a greater surge of temporary hit points.</p>",
+                "rarity": "rare"
+            },
+            "partyEffect": {
+                "tempHP": "1d8",
+                "ambitiousTempHP": "2d6"
+            },
+            "successNarrative": "The oil sings and the batter blooms. Hot, crisp, and gone in moments.",
+            "failNarrative": "The oil catches too hot. Burnt batter, greasy meat, a smoking ruin."
+        },
+        {
+            "id": "cook_forest_omelet",
+            "name": "Forest Omelet",
+            "description": "Eggs folded around diced monster meat. Quick, hot, and sharpens the senses for the road.",
+            "linkedCreatures": ["beast", "monstrosity_owlbear"],
+            "skill": "sur",
+            "dc": 11,
+            "ingredients": [
+                { "name": "Egg", "quantity": 2 },
+                { "name": "Monster Meat", "quantity": 1 }
+            ],
+            "seasoning": { "accepts": ["Salt", "Pepper"], "quantity": 1 },
+            "output": {
+                "name": "Forest Omelet",
+                "img": "icons/consumables/eggs/egg-broken-yolk-yellow.webp",
+                "description": "<p>Soft folds of egg around savoury meat. Party meal: temporary hit points.</p>",
+                "rarity": "common"
+            },
+            "ambitiousOutput": {
+                "name": "Fluffy Forest Omelet",
+                "img": "icons/consumables/eggs/egg-broken-yolk-yellow.webp",
+                "description": "<p>Light, airy, and perfectly folded. Party meal: temporary hit points and sharper senses in dim light.</p>",
+                "rarity": "uncommon"
+            },
+            "partyEffect": {
+                "tempHP": "1d4",
+                "ambitiousTempHP": "1d6",
+                "perceptionAdvantageDim": true
+            },
+            "successNarrative": "The pan hisses and the eggs set golden. A quick, bright meal before the road.",
+            "failNarrative": "The eggs catch and tear. A rubbery mess not worth serving."
         }
     ]
 }

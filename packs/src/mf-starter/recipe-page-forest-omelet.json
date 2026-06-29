@@ -1,0 +1,33 @@
+{
+    "_key": "!items!mfPageOmelet0001",
+    "_id": "mfPageOmelet0001",
+    "name": "Recipe Page: Forest Omelet",
+    "type": "loot",
+    "img": "icons/sundries/documents/document-torn-diagram-tan.webp",
+    "folder": "mfStarterFold001",
+    "sort": 520,
+    "system": {
+        "description": {
+            "value": "<p>A loose page torn from a hunter's cookbook. Inscribe it into a Monster Cooking book to learn how to cook a <strong>Forest Omelet</strong>.</p><p><em>Requires:</em> 2x Egg, 1x Monster Meat</p>"
+        },
+        "rarity": "common",
+        "weight": 0.1,
+        "price": {
+            "value": 0,
+            "denomination": "gp"
+        },
+        "type": {
+            "value": ""
+        }
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "isRecipePage": true,
+            "recipeId": "cook_forest_omelet"
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

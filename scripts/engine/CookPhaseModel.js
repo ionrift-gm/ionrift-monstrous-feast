@@ -30,6 +30,10 @@ function buffLines(partyEffect, ambitious = false) {
 function ingredientIcon(ing) {
     const name = String(ing.name ?? "").toLowerCase();
     if (name.includes("ration")) return CoreIcons.jerky;
+    if (name.includes("flour")) return CoreIcons.flour;
+    if (name.includes("oil")) return CoreIcons.oil;
+    if (name.includes("egg")) return CoreIcons.egg;
+    if (name.includes("bread") || name.includes("loaf")) return CoreIcons.bread;
     if (name.includes("salt") || name.includes("pepper") || name.includes("cinnamon")) {
         return "icons/commodities/materials/powder-grey.webp";
     }

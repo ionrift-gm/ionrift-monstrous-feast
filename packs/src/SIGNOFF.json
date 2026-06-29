@@ -5,6 +5,15 @@
         "mf-starter/monster-cooking-book.json": { "status": "approved", "tier": "free" },
         "mf-starter/recipe-page-campfire-roast.json": { "status": "approved", "tier": "free" },
         "mf-starter/recipe-page-bear-roast.json": { "status": "approved", "tier": "free" },
-        "mf-starter/recipe-page-owlbear-stew.json": { "status": "approved", "tier": "free" }
+        "mf-starter/recipe-page-owlbear-stew.json": { "status": "approved", "tier": "free" },
+        "mf-starter/recipe-page-camp-bread.json": { "status": "approved", "tier": "free" },
+        "mf-starter/recipe-page-beast-tempura.json": { "status": "approved", "tier": "free" },
+        "mf-starter/recipe-page-forest-omelet.json": { "status": "approved", "tier": "free" },
+        "mf-starter/staple-flour.json": { "status": "approved", "tier": "free" },
+        "mf-starter/staple-cooking-oil.json": { "status": "approved", "tier": "free" },
+        "mf-starter/staple-egg.json": { "status": "approved", "tier": "free" },
+        "mf-starter/staple-salt.json": { "status": "approved", "tier": "free" },
+        "mf-starter/staple-pepper.json": { "status": "approved", "tier": "free" },
+        "mf-starter/staple-cinnamon.json": { "status": "approved", "tier": "free" }
     }
 }
