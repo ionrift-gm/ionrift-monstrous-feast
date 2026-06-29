@@ -85,6 +85,25 @@ function buffSummary(recipe) {
     return lines;
 }
 
+/**
+ * Short "from ..." source for a recipe card in the deduplicated recipe list.
+ * A recipe that takes any cut reads as generic; one tied to a single creature
+ * names it; pantry recipes (no creature link) name the pantry.
+ * @param {object} recipe
+ * @param {Map<string,string>} labelMap
+ * @returns {string}
+ */
+function recipeSourceLabel(recipe, labelMap) {
+    const usesGenericMeat = (recipe.ingredients ?? []).some(ing => ing.name === "Monster Meat");
+    if (usesGenericMeat) return "any monster meat";
+    const links = (recipe.linkedCreatures ?? [])
+        .map(id => labelMap.get(id))
+        .filter(Boolean);
+    if (links.length === 0) return "the pantry";
+    if (links.length === 1) return links[0];
+    return "various creatures";
+}
+
 function mapRecipe(recipe, actor, inscribed, { audit = false, partyInscribed = false } = {}) {
     const check = actor
         ? CookEngine.checkIngredients(actor, recipe)
@@ -196,16 +215,6 @@ export function buildCodex({ discoveredCreatures = null, inscribedRecipes = null
             ].join(" ").toLowerCase()
             : "";
 
-        for (const recipe of visibleRecipes) {
-            const withCreature = {
-                ...recipe,
-                creatureLabel: entry.label ?? entry.id,
-                creatureId: entry.id
-            };
-            recipeList.push(withCreature);
-            if (recipe.canCook) cookableRecipes.push(withCreature);
-        }
-
         const tier = entry.tier ?? "common";
         return {
             id: entry.id,
@@ -230,6 +239,22 @@ export function buildCodex({ discoveredCreatures = null, inscribedRecipes = null
             searchBlob
         };
     });
+
+    const labelMap = new Map(CreatureRegistry.all().map(e => [e.id, e.label ?? e.id]));
+    for (const recipe of RecipeRegistry.all()) {
+        const isInscribed = revealAll || (inscribedRecipes?.has(recipe.id) ?? false);
+        if (!isInscribed) continue;
+        const card = {
+            ...mapRecipe(recipe, actor, isInscribed, {
+                audit,
+                partyInscribed: auditInscribed?.has(recipe.id) ?? false
+            }),
+            creatureLabel: recipeSourceLabel(recipe, labelMap),
+            creatureId: null
+        };
+        recipeList.push(card);
+        if (card.canCook) cookableRecipes.push(card);
+    }
 
     const tiers = [...new Set(entries.map(e => e.tier))];
     const types = [...new Set(entries.map(e => e.type))];
