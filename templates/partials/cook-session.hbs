@@ -82,9 +82,19 @@
                         {{/each}}
                     </div>
                     {{#if seasoning}}
+                    <h4 class="mf-lc-cook-label mf-lc-cook-label--season">Seasoning spent</h4>
+                    <div class="mf-lc-ing-boxes mf-lc-cook-ing-grid">
+                        <span class="mf-lc-ing{{#unless seasoning.satisfied}} missing{{/unless}}" title="{{seasoning.name}} ({{seasoning.have}}/{{seasoning.need}})">
+                            <img src="{{seasoning.icon}}" alt="" />
+                            <span class="mf-lc-ing-qty">{{seasoning.have}}/{{seasoning.need}}</span>
+                        </span>
+                    </div>
                     <p class="mf-lc-cook-seasoning">
-                        <i class="fas fa-mortar-pestle"></i>
-                        {{seasoning.name}} on hand for the ambitious tier.
+                        {{#if seasoning.active}}
+                        {{seasoning.name}} is spent on a successful cook to reach the ambitious tier.
+                        {{else}}
+                        No {{seasoning.choices}} on hand. Carry one to spend on a successful cook for the ambitious tier.
+                        {{/if}}
                     </p>
                     {{/if}}
                 </section>

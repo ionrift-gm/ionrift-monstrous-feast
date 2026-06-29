@@ -4,6 +4,7 @@ import { countIngredient } from "../services/IngredientMatcher.js";
 import { MealEffects } from "../services/MealEffects.js";
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { CoreIcons } from "../data/CoreIcons.js";
+import { resolveIngredientIcon } from "../data/IngredientIcons.js";
 
 /**
  * @param {object} partyEffect
@@ -24,28 +25,40 @@ function buffLines(partyEffect, ambitious = false) {
 }
 
 /**
- * @param {object} ing
- * @returns {string}
- */
-function ingredientIcon(ing) {
-    const name = String(ing.name ?? "").toLowerCase();
-    if (name.includes("ration")) return CoreIcons.jerky;
-    if (name.includes("flour")) return CoreIcons.flour;
-    if (name.includes("oil")) return CoreIcons.oil;
-    if (name.includes("egg")) return CoreIcons.egg;
-    if (name.includes("bread") || name.includes("loaf")) return CoreIcons.bread;
-    if (name.includes("salt") || name.includes("pepper") || name.includes("cinnamon")) {
-        return "icons/commodities/materials/powder-grey.webp";
-    }
-    return CoreIcons.rawMeat;
-}
-
-/**
  * @param {object} output
  * @returns {string}
  */
 function previewImg(output) {
     return output?.successImg ?? output?.img ?? CoreIcons.stew;
+}
+
+/**
+ * Seasoning view-model for the cook UI: which spice, how many are on hand, and
+ * how many are spent. The spice is consumed on a successful cook and promotes
+ * the dish to the ambitious tier. Pure so it can be unit-tested without an
+ * actor.
+ * @param {object} spec
+ * @param {string[]} [spec.accepts] Spices the recipe will accept.
+ * @param {number} [spec.quantity] Amount spent per cook.
+ * @param {string|null} [spec.heldName] The accepted spice the cook holds, if any.
+ * @param {number} [spec.heldCount] How many of that spice are on hand.
+ * @param {string} [spec.icon] Icon path for the badge.
+ * @returns {object|null} Null when the recipe has no seasoning slot.
+ */
+export function buildSeasoningViewModel({ accepts = [], quantity = 1, heldName = null, heldCount = 0, icon = "" } = {}) {
+    if (!accepts.length) return null;
+    const need = Math.max(1, Number(quantity) || 1);
+    const have = heldName ? Math.max(0, Number(heldCount) || 0) : 0;
+    const onHand = Boolean(heldName) && have >= need;
+    return {
+        active: onHand,
+        name: heldName ?? accepts[0],
+        choices: accepts.join(", "),
+        need,
+        have,
+        satisfied: onHand,
+        icon
+    };
 }
 
 /**
@@ -58,7 +71,9 @@ function previewImg(output) {
 export function buildCookPhaseContext(actor, recipe, bookItem = null) {
     const check = CookEngine.checkIngredients(actor, recipe);
     const dcBreakdown = buildCookDcBreakdown(actor, recipe);
+    const seasoningSpec = recipe.seasoning ?? null;
     const seasoningName = CookEngine.findSeasoning(actor, recipe);
+    const seasoningHeld = (actor && seasoningName) ? countIngredient(actor, seasoningName) : 0;
     const partyEffect = recipe.partyEffect ?? {};
     const standardOutput = recipe.output ?? {};
     const ambitiousOutput = recipe.ambitiousOutput ?? recipe.output ?? {};
@@ -71,7 +86,7 @@ export function buildCookPhaseContext(actor, recipe, bookItem = null) {
             need,
             have,
             satisfied: have >= need,
-            icon: ingredientIcon(ing)
+            icon: resolveIngredientIcon(ing)
         };
     });
 
@@ -99,9 +114,13 @@ export function buildCookPhaseContext(actor, recipe, bookItem = null) {
         cookDc: dcBreakdown.total,
         ambitiousDc: dcBreakdown.total + 5,
         ingredientStatus,
-        seasoning: seasoningName
-            ? { active: true, name: seasoningName }
-            : null,
+        seasoning: buildSeasoningViewModel({
+            accepts: seasoningSpec?.accepts ?? [],
+            quantity: seasoningSpec?.quantity ?? 1,
+            heldName: seasoningName,
+            heldCount: seasoningHeld,
+            icon: resolveIngredientIcon({ name: seasoningName ?? seasoningSpec?.accepts?.[0] ?? "" })
+        }),
         standard: {
             name: standardOutput.name ?? recipe.name,
             img: previewImg(standardOutput),

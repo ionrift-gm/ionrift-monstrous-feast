@@ -4,6 +4,7 @@ import { CookEngine } from "../engine/CookEngine.js";
 import { countIngredient, findAvailable } from "../services/IngredientMatcher.js";
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { CoreIcons } from "./CoreIcons.js";
+import { resolveIngredientIcon } from "./IngredientIcons.js";
 
 const TYPE_ICONS = {
     beast: CoreIcons.bear,
@@ -20,26 +21,6 @@ function resolveCreatureIcon(entry) {
     if (entry.img) return entry.img;
     const base = String(entry.id ?? "").split("_")[0];
     return TYPE_ICONS[base] ?? CoreIcons.unknown;
-}
-
-/**
- * Icon for a harvested ingredient row. Art pack can override per yield via
- * an explicit icon; otherwise we infer from loot/food tag and name.
- * @param {{name:string,isLoot:boolean,foodTag:string|null,icon?:string}} ing
- * @returns {string}
- */
-function resolveIngredientIcon(ing) {
-    if (ing.icon) return ing.icon;
-    const name = String(ing.name ?? "").toLowerCase();
-    if (name.includes("hide") || name.includes("pelt") || name.includes("fur")) return CoreIcons.hide;
-    if (name.includes("claw") || name.includes("talon")) return CoreIcons.claw;
-    if (name.includes("feather") || name.includes("plume")) return CoreIcons.feather;
-    if (name.includes("bone") || name.includes("horn") || name.includes("tusk")) return CoreIcons.bone;
-    if (name.includes("herb") || name.includes("root") || name.includes("leaf")) return CoreIcons.herb;
-    if (ing.foodTag === "essence") return CoreIcons.gem;
-    if (ing.foodTag === "plant") return CoreIcons.mushroom;
-    if (ing.isLoot) return CoreIcons.bone;
-    return CoreIcons.rawMeat;
 }
 
 /**
