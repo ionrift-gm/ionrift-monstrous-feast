@@ -6,8 +6,31 @@ import { grantYields } from "../services/ItemFactory.js";
 import { DiscoveryService } from "../services/DiscoveryService.js";
 import { buildPromptCard, buildResultCard, buildPassedCard } from "../ui/ButcherCards.js";
 import { ButcherCorpseMarker } from "../services/ButcherCorpseMarker.js";
+import {
+    BUTCHER_STATE,
+    getButcherState,
+    getSceneCorpseRegistry,
+    isButcherableState,
+    persistButcherState,
+    resolveTokenFromRegistryEntry,
+    showHarvestedMarker
+} from "../services/ButcherTokenState.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
+
+/**
+ * Butcher offer lifecycle (canvas marker + chat):
+ *
+ * | Trigger | Chat card | Canvas marker |
+ * | Combat ends (deleteCombat) | Yes, up to 3 | Yes |
+ * | HP reaches 0 outside combat | Yes | Yes |
+ * | HP reaches 0 during combat | No (waits for combat end chat) | Yes (scene scan on updateActor) |
+ * | canvasReady (GM) | No | Yes (scan) |
+ * | GM scanButcherCorpses macro | Optional | Yes |
+ *
+ * Token flag `butcherState`: ready | harvested | passed (persisted on the token document).
+ * Pending offer queue is rebuilt from those flags on canvasReady.
+ */
 
 /** @type {Map<string, object>} Pending butcher targets keyed by combatant id. */
 const _pendingTargets = new Map();
@@ -19,6 +42,35 @@ function _markerDebug(...args) {
 
 function _markerWarn(...args) {
     Logger.warn("MF ButcherMarker", ...args);
+}
+
+function _tokenForTarget(target) {
+    return _findCanvasTokenForActor(target?.actor, {
+        combatantId: target?.combatantId,
+        tokenId: target?.tokenId
+    });
+}
+
+function _isTargetButcherable(target) {
+    const token = _tokenForTarget(target);
+    return isButcherableState(getButcherState(token));
+}
+
+async function _markCorpseReady(target) {
+    const token = _tokenForTarget(target);
+    const state = token ? getButcherState(token) : null;
+    if (state === BUTCHER_STATE.HARVESTED || state === BUTCHER_STATE.PASSED) return;
+    await persistButcherState(token, target, BUTCHER_STATE.READY);
+}
+
+async function _markCorpseHarvested(target) {
+    const token = _tokenForTarget(target);
+    await persistButcherState(token, target, BUTCHER_STATE.HARVESTED);
+}
+
+async function _markCorpsePassed(target) {
+    const token = _tokenForTarget(target);
+    await persistButcherState(token, target, BUTCHER_STATE.PASSED);
 }
 
 function _findCanvasTokenForActor(actor, { combatantId = null, tokenId = null } = {}) {
@@ -84,7 +136,9 @@ export const ButcherEngine = {
         }
 
         for (const target of targets.slice(0, 3)) {
+            if (!_isTargetButcherable(target)) continue;
             _pendingTargets.set(target.combatantId, target);
+            await _markCorpseReady(target);
             await ChatMessage.create({
                 user: game.user.id,
                 speaker: ChatMessage.getSpeaker(),
@@ -93,7 +147,7 @@ export const ButcherEngine = {
             });
         }
 
-        ButcherCorpseMarker.syncShow(targets);
+        ButcherCorpseMarker.syncShow(this.getCorpseMarkerEntries());
     },
 
     /**
@@ -133,7 +187,12 @@ export const ButcherEngine = {
         }
         if (_pendingTargets.has(target.combatantId)) {
             _markerDebug("skipped: already pending", { combatantId: target.combatantId });
-            ButcherCorpseMarker.syncShow(this.getPendingTargetsList());
+            ButcherCorpseMarker.syncShow(this.getCorpseMarkerEntries());
+            return;
+        }
+        if (!isButcherableState(getButcherState(token))) {
+            _markerDebug("skipped: corpse already resolved", { state: getButcherState(token) });
+            ButcherCorpseMarker.syncShow(this.getCorpseMarkerEntries());
             return;
         }
 
@@ -144,6 +203,7 @@ export const ButcherEngine = {
         }
 
         _pendingTargets.set(target.combatantId, target);
+        await _markCorpseReady(target);
         await ChatMessage.create({
             user: game.user.id,
             speaker: ChatMessage.getSpeaker(),
@@ -151,7 +211,80 @@ export const ButcherEngine = {
             flags: { [MODULE_ID]: { butcherPrompt: true, combatantId: target.combatantId } }
         });
 
-        ButcherCorpseMarker.syncShow(this.getPendingTargetsList());
+        ButcherCorpseMarker.syncShow(this.getCorpseMarkerEntries());
+    },
+
+    /**
+     * Ready pending targets plus harvested corpse markers for the active scene.
+     * @returns {object[]}
+     */
+    getCorpseMarkerEntries() {
+        const readyById = new Map();
+        for (const target of this.getPendingTargetsList()) {
+            readyById.set(target.combatantId, { ...target, butcherState: BUTCHER_STATE.READY });
+        }
+        const harvested = [];
+        for (const token of canvas?.tokens?.placeables ?? []) {
+            const state = getButcherState(token);
+            const actor = token.actor;
+            if (!actor || SystemBridge.isPlayerCharacter(actor) || !SystemBridge.isDead(actor)) continue;
+
+            if (state === BUTCHER_STATE.READY) {
+                const target = this.buildTargetFromActor(actor, token, { allowResolved: true });
+                if (target && !readyById.has(target.combatantId)) {
+                    readyById.set(target.combatantId, { ...target, butcherState: BUTCHER_STATE.READY });
+                }
+                continue;
+            }
+
+            if (!showHarvestedMarker(state)) continue;
+            const target = this.buildTargetFromActor(actor, token, { allowResolved: true });
+            if (!target) continue;
+            harvested.push({ ...target, butcherState: BUTCHER_STATE.HARVESTED });
+        }
+        return [...readyById.values(), ...harvested];
+    },
+
+    /**
+     * Rebuild the in-memory pending queue from persisted token flags after reload.
+     * Ready corpses keep their offer until butchered or passed.
+     */
+    rehydrateSceneState() {
+        if (!canvas?.ready || !CreatureRegistry.hasEntries()) return;
+        if (SystemBridge.unsupportedNotice()) return;
+
+        const seen = new Set();
+        const readyCandidates = [];
+
+        const ingestReady = (token, target) => {
+            if (!target || seen.has(target.combatantId)) return;
+            if (getButcherState(token) !== BUTCHER_STATE.READY) return;
+            seen.add(target.combatantId);
+            readyCandidates.push(target);
+        };
+
+        for (const token of canvas.tokens?.placeables ?? []) {
+            const actor = token.actor;
+            if (!actor || SystemBridge.isPlayerCharacter(actor) || !SystemBridge.isDead(actor)) continue;
+            const target = this.buildTargetFromActor(actor, token, { allowResolved: true });
+            ingestReady(token, target);
+        }
+
+        for (const [tokenId, entry] of Object.entries(getSceneCorpseRegistry())) {
+            if (entry?.state !== BUTCHER_STATE.READY) continue;
+            const token = resolveTokenFromRegistryEntry(tokenId, entry);
+            if (!token?.actor) continue;
+            if (SystemBridge.isPlayerCharacter(token.actor) || !SystemBridge.isDead(token.actor)) continue;
+            const target = this.buildTargetFromActor(token.actor, token, { allowResolved: true });
+            ingestReady(token, target);
+        }
+
+        readyCandidates.sort((left, right) => right.cr - left.cr);
+        for (const target of readyCandidates.slice(0, 3)) {
+            if (!_pendingTargets.has(target.combatantId)) {
+                _pendingTargets.set(target.combatantId, target);
+            }
+        }
     },
 
     /**
@@ -196,13 +329,24 @@ export const ButcherEngine = {
      */
     async scanSceneCorpses({ createChat = false, reason = "scan" } = {}) {
         if (!game.user?.isGM) return [];
-        if (!game.settings.get(MODULE_ID, "promptOnCombatEnd")) return [];
+        this.rehydrateSceneState();
+
         const notice = SystemBridge.unsupportedNotice();
-        if (notice || !CreatureRegistry.hasEntries() || !canvas?.ready) return [];
+        if (notice || !CreatureRegistry.hasEntries() || !canvas?.ready) {
+            ButcherCorpseMarker.syncShow(this.getCorpseMarkerEntries());
+            return [];
+        }
+
+        if (!game.settings.get(MODULE_ID, "promptOnCombatEnd")) {
+            ButcherCorpseMarker.syncShow(this.getCorpseMarkerEntries());
+            return [];
+        }
 
         const butchers = this.findButcherActors();
         if (!butchers.length) {
             _markerDebug("scanSceneCorpses: no eligible butcher", { reason, requireHandbook: game.settings.get(MODULE_ID, "requireHandbook") });
+            this.rehydrateSceneState();
+            ButcherCorpseMarker.syncShow(this.getCorpseMarkerEntries());
             return [];
         }
 
@@ -210,6 +354,7 @@ export const ButcherEngine = {
         for (const token of canvas.tokens?.placeables ?? []) {
             const actor = token.actor;
             if (!actor || SystemBridge.isPlayerCharacter(actor) || !SystemBridge.isDead(actor)) continue;
+            if (!isButcherableState(getButcherState(token))) continue;
             const target = this.buildTargetFromActor(actor, token);
             if (!target) continue;
             discovered.push(target);
@@ -229,7 +374,9 @@ export const ButcherEngine = {
 
         for (const target of slice) {
             if (_pendingTargets.has(target.combatantId)) continue;
+            if (!_isTargetButcherable(target)) continue;
             _pendingTargets.set(target.combatantId, target);
+            await _markCorpseReady(target);
             if (createChat) {
                 await ChatMessage.create({
                     user: game.user.id,
@@ -240,7 +387,7 @@ export const ButcherEngine = {
             }
         }
 
-        if (slice.length) ButcherCorpseMarker.syncShow(this.getPendingTargetsList());
+        ButcherCorpseMarker.syncShow(this.getCorpseMarkerEntries());
         return slice;
     },
 
@@ -284,7 +431,8 @@ export const ButcherEngine = {
             promptOnCombatEnd: game.settings.get(MODULE_ID, "promptOnCombatEnd"),
             combatStarted: !!game.combat?.started,
             markerCount: ButcherCorpseMarker.count(),
-            canSeeMarkers: ButcherCorpseMarker.canUserSeeMarkers?.() ?? null
+            canSeeMarkers: ButcherCorpseMarker.canUserSeeMarkers?.() ?? null,
+            butcherState: token ? getButcherState(token) : null
         };
     },
 
@@ -300,6 +448,7 @@ export const ButcherEngine = {
                 actorUuid: target.actor?.uuid ?? null,
                 cr: target.cr
             })),
+            sceneCorpseRegistry: getSceneCorpseRegistry(),
             markerCount: ButcherCorpseMarker.count(),
             overlayReady: ButcherCorpseMarker.isOverlayReady?.() ?? false
         };
@@ -340,6 +489,10 @@ export const ButcherEngine = {
             }
 
             const token = _findCanvasTokenForActor(actor, { combatantId: combatant.id });
+            if (!isButcherableState(getButcherState(token))) {
+                _markerDebug("combatant skipped: already harvested or passed", { name: actor.name });
+                continue;
+            }
             targets.push({
                 combatantId: combatant.id,
                 tokenId: token?.document?.id ?? token?.id ?? null,
@@ -381,7 +534,8 @@ export const ButcherEngine = {
         return this.resolve(butcher, target);
     },
 
-    buildTargetFromActor(actor, token) {
+    buildTargetFromActor(actor, token, { allowResolved = false } = {}) {
+        if (token && !allowResolved && !isButcherableState(getButcherState(token))) return null;
         const cr = SystemBridge.getChallengeRating(actor);
         let classification = Library.classify(actor);
         if (!classification?.id || classification.id === "unknown") {
@@ -527,7 +681,9 @@ export const ButcherEngine = {
             flags: { [MODULE_ID]: { butcherResult: true } }
         });
 
-        ButcherCorpseMarker.clear(target.combatantId);
+        _pendingTargets.delete(target.combatantId);
+        await _markCorpseHarvested(target);
+        ButcherCorpseMarker.syncShow(this.getCorpseMarkerEntries());
         return result;
     },
 
@@ -541,7 +697,10 @@ export const ButcherEngine = {
     },
 
     async passTarget(combatantId, creatureName) {
+        const pending = _pendingTargets.get(combatantId);
+        if (pending) await _markCorpsePassed(pending);
         this.clearPendingTarget(combatantId);
+        ButcherCorpseMarker.syncShow(this.getCorpseMarkerEntries());
         await ChatMessage.create({
             user: game.user.id,
             speaker: ChatMessage.getSpeaker(),

@@ -8,6 +8,7 @@ const ACTION_INSCRIBE = "inscribeRecipe";
 const ACTION_SERVING = "openFeastServing";
 const ACTION_APPLY_EFFECT = "applyMealEffect";
 const ACTION_CLEAR_EFFECT = "clearMealEffect";
+const ACTION_PERSIST_BUTCHER = "persistButcherState";
 
 /** @type {((data: object) => void)|null} */
 let _bound = null;
@@ -126,6 +127,15 @@ export const GMRelay = {
     },
 
     /**
+     * Persist butcher corpse marker state on the scene (GM-owned write).
+     * @param {{ tokenId?: string|null, actorUuid?: string|null, actorName?: string|null, state?: string|null }} payload
+     */
+    persistButcherState(payload) {
+        if (!payload?.tokenId && !payload?.actorUuid) return;
+        GMRelay._emit(ACTION_PERSIST_BUTCHER, payload);
+    },
+
+    /**
      * @param {string} action
      * @param {object} payload
      */
@@ -158,6 +168,11 @@ export const GMRelay = {
 
         if (data.action === ACTION_CLEAR_EFFECT) {
             await GMRelay._clearMealEffect(data);
+            return;
+        }
+
+        if (data.action === ACTION_PERSIST_BUTCHER) {
+            await GMRelay._applyButcherState(data);
             return;
         }
 
@@ -242,5 +257,30 @@ export const GMRelay = {
             tempFormula: data.tempFormula,
             cookName: data.cookName ?? ""
         });
+    },
+
+    /**
+     * @param {object} data
+     */
+    async _applyButcherState(data) {
+        const { setButcherState, resolveTokenFromRegistryEntry } = await import("./ButcherTokenState.js");
+        const token = resolveTokenFromRegistryEntry(data.tokenId, data)
+            ?? canvas?.tokens?.get?.(data.tokenId)
+            ?? null;
+        const target = {
+            tokenId: data.tokenId ?? token?.document?.id ?? token?.id ?? null,
+            actorName: data.actorName ?? token?.actor?.name ?? null
+        };
+        let actor = token?.actor ?? null;
+        if (!actor && data.actorUuid) {
+            try {
+                const doc = await fromUuid(data.actorUuid);
+                actor = doc?.actor ?? doc ?? null;
+            } catch {
+                actor = null;
+            }
+        }
+        target.actor = actor;
+        await setButcherState(token, data.state ?? null, target);
     }
 };

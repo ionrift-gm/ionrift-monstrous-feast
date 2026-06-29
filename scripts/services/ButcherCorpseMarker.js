@@ -1,5 +1,7 @@
 import { Logger } from "../lib/Logger.js";
 import { ButcherEngine } from "../engine/ButcherEngine.js";
+import { SystemBridge } from "../compat/SystemBridge.js";
+import { BUTCHER_STATE, clearButcherState, clearSceneCorpseEntry } from "./ButcherTokenState.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 const MAX_MARKERS = 3;
@@ -17,17 +19,37 @@ function _isDebugEnabled() {
     return !!game.settings?.get?.(MODULE_ID, "debugButcherMarker");
 }
 
+/** FA5/6 Free Solid codepoints verified on Foundry installs (see StationInteractionLayer). */
 const FA_SOLID_CODEPOINT = {
-    "fa-drumstick-bite": 0xf6d8
+    "fa-utensils": 0xf2e7,
+    "fa-fire": 0xf06d,
+    "fa-check": 0xf00c
 };
+
+const MARKER_ICON_KEYS = ["fa-utensils", "fa-fire"];
+const HARVESTED_ICON_KEY = "fa-check";
 
 const MARKER = {
     BADGE_R: 14,
     ICON_RASTER_PX: 44,
     ICON_SPRITE_MAX: 18,
     FILL: 0xf5d0a0,
+    FILL_HARVESTED: 0xa8b896,
     BORDER: 0x8b4513,
-    BG_ALPHA: 0.92
+    BORDER_HARVESTED: 0x4a5c3a,
+    BORDER_HOVER: 0xc9782e,
+    BG_ALPHA: 0.92,
+    BG_ALPHA_HARVESTED: 0.72,
+    LABEL_GAP: 5,
+    FONT_TOOLTIP: {
+        fontFamily: "Signika, sans-serif",
+        fontSize: 11,
+        fill: 0xffffff,
+        fontWeight: "bold",
+        align: "center",
+        stroke: 0x1a1208,
+        strokeThickness: 3
+    }
 };
 
 let _solidFamilyCache = null;
@@ -93,8 +115,8 @@ function _scanInkBounds(ctx, w, h) {
     return { minX, minY, maxX, maxY };
 }
 
-function _rasterIconCanvas(fill, px) {
-    const cp = FA_SOLID_CODEPOINT["fa-drumstick-bite"];
+function _rasterIconCanvas(fill, px, iconKey = "fa-utensils") {
+    const cp = FA_SOLID_CODEPOINT[iconKey];
     if (cp == null) return null;
     const glyph = String.fromCodePoint(cp);
     const family = _faSolidFamily();
@@ -137,11 +159,55 @@ function _layoutIconSprite(sprite, tex) {
     sprite.anchor.set(0.5, 0.5);
 }
 
-function _iconTextureAsync(fill, px) {
+function _textureUsable(tex) {
+    if (!tex || tex.destroyed) return false;
+    const source = tex.baseTexture ?? tex.source;
+    if (source?.destroyed) return false;
+    if (source?.valid === false) return false;
+    return true;
+}
+
+function _resetCanvasGraphics() {
+    for (const id of [..._markers.keys()]) {
+        const overlay = _markers.get(id);
+        overlay?.destroy();
+        _markers.delete(id);
+    }
+    _stopTickerIfEmpty();
+
+    if (_iconTexCache) {
+        for (const tex of _iconTexCache.values()) {
+            try {
+                tex?.destroy?.(true);
+            } catch { /* canvas already torn down */ }
+        }
+        _iconTexCache.clear();
+    }
+
+    if (_overlayContainer) {
+        if (!_overlayContainer.destroyed) {
+            try {
+                _overlayContainer.parent?.removeChild?.(_overlayContainer);
+                _overlayContainer.destroy({ children: true });
+            } catch { /* canvas already torn down */ }
+        }
+        _overlayContainer = null;
+    }
+
+    _solidFamilyCache = null;
+    _savedTokensSortable = false;
+    _tokensSortablePrev = undefined;
+}
+
+function _iconTextureAsync(fill, px, iconKey = "fa-utensils") {
     if (!_iconTexCache) _iconTexCache = new Map();
-    const key = `${fill}|${px}`;
-    if (_iconTexCache.has(key)) return Promise.resolve(_iconTexCache.get(key));
-    const cvs = _rasterIconCanvas(fill, px);
+    const key = `${iconKey}|${fill}|${px}`;
+    if (_iconTexCache.has(key)) {
+        const cached = _iconTexCache.get(key);
+        if (_textureUsable(cached)) return Promise.resolve(cached);
+        _iconTexCache.delete(key);
+    }
+    const cvs = _rasterIconCanvas(fill, px, iconKey);
     if (!cvs) return Promise.resolve(null);
     return new Promise((resolve) => {
         const img = new Image();
@@ -161,10 +227,52 @@ function _iconTextureAsync(fill, px) {
     });
 }
 
+async function _resolveMarkerIconTexture(fill, px) {
+    await ensureIconFontsLoaded();
+    for (const iconKey of MARKER_ICON_KEYS) {
+        const tex = await _iconTextureAsync(fill, px, iconKey);
+        if (tex) return tex;
+    }
+    return null;
+}
+
+async function _resolveHarvestedIconTexture(fill, px) {
+    await ensureIconFontsLoaded();
+    return _iconTextureAsync(fill, px, HARVESTED_ICON_KEY);
+}
+
+/** Vector cleaver when FA raster fails (wrong font subset shows random glyphs). */
+function _drawCleaverFallback(container) {
+    const g = new PIXI.Graphics();
+    g.beginFill(MARKER.FILL, 1);
+    g.drawRect(-6, -8, 12, 10);
+    g.drawRect(-3, 2, 6, 6);
+    g.endFill();
+    if ("eventMode" in g) g.eventMode = "none";
+    container.addChild(g);
+    return g;
+}
+
 function ensureIconFontsLoaded() {
     const fontApi = document.fonts;
     if (!fontApi?.load) return Promise.resolve();
-    return fontApi.ready.catch(() => undefined);
+    const px = MARKER.ICON_RASTER_PX;
+    const work = async () => {
+        await fontApi.ready;
+        const pending = [];
+        for (const face of fontApi) {
+            if (/font\s*awesome/i.test(face.family)) {
+                pending.push(face.load().catch(() => {}));
+            }
+        }
+        pending.push(
+            fontApi.load(`900 ${px}px "Font Awesome 6 Free"`, "\uf2e7").catch(() => {}),
+            fontApi.load(`900 ${px}px "Font Awesome 5 Free"`, "\uf2e7").catch(() => {})
+        );
+        await Promise.allSettled(pending);
+        await fontApi.ready;
+    };
+    return work().catch(() => undefined);
 }
 
 function _tokenStillOnScene(token) {
@@ -185,6 +293,20 @@ function _userCanSeeMarkers() {
     return eligible.some(actor => actor.isOwner);
 }
 
+function _containerLive(container) {
+    return Boolean(container && !container.destroyed && container.parent);
+}
+
+function _markerTooltipText(target, butcherState) {
+    const name = target?.actorName ?? target?.actor?.name ?? "Creature";
+    if (butcherState === BUTCHER_STATE.HARVESTED) {
+        return `${name}\nHarvested`;
+    }
+    const dc = target?.dc;
+    const dcBit = Number.isFinite(dc) ? ` (DC ${dc})` : "";
+    return `${name}\nClick to butcher${dcBit}`;
+}
+
 class CorpseMarkerOverlay {
     /**
      * @param {Token} token
@@ -194,32 +316,50 @@ class CorpseMarkerOverlay {
         this.token = token;
         this.target = target;
         this.combatantId = target.combatantId;
+        this.butcherState = target.butcherState ?? BUTCHER_STATE.READY;
+        this._alive = true;
         this._container = null;
         this._iconSprite = null;
+        this._bg = null;
+        this._hoverLabel = null;
         this._build();
     }
 
     _build() {
+        const harvested = this.butcherState === BUTCHER_STATE.HARVESTED;
         const R = MARKER.BADGE_R;
         const container = new PIXI.Container();
-        container.cursor = "pointer";
-        container.zIndex = 1_000_001;
+        container.cursor = harvested ? "default" : "pointer";
+        container.zIndex = harvested ? 999_999 : 1_000_001;
+        container.alpha = harvested ? MARKER.BG_ALPHA_HARVESTED : 1;
         if ("eventMode" in container) container.eventMode = "static";
         else container.interactive = true;
 
         const bg = new PIXI.Graphics();
-        bg.lineStyle(2, MARKER.BORDER, 0.9);
-        bg.beginFill(0x1a1208, MARKER.BG_ALPHA);
-        bg.drawCircle(0, 0, R);
-        bg.endFill();
+        this._drawBadgeBg(bg, harvested, false);
         if ("eventMode" in bg) bg.eventMode = "none";
         container.addChild(bg);
+        this._bg = bg;
 
-        container.on("pointerdown", (ev) => {
-            ev?.stopPropagation?.();
-            if (ev?.nativeEvent?.stopImmediatePropagation) ev.nativeEvent.stopImmediatePropagation();
-            this._onClick();
-        });
+        const hoverLabel = new PIXI.Text(_markerTooltipText(this.target, this.butcherState), MARKER.FONT_TOOLTIP);
+        hoverLabel.anchor.set(0.5, 0);
+        hoverLabel.x = 0;
+        hoverLabel.y = R + MARKER.LABEL_GAP;
+        hoverLabel.visible = false;
+        if ("eventMode" in hoverLabel) hoverLabel.eventMode = "none";
+        container.addChild(hoverLabel);
+        this._hoverLabel = hoverLabel;
+
+        container.on("pointerover", () => this._onHover(true));
+        container.on("pointerout", () => this._onHover(false));
+
+        if (!harvested) {
+            container.on("pointerdown", (ev) => {
+                ev?.stopPropagation?.();
+                if (ev?.nativeEvent?.stopImmediatePropagation) ev.nativeEvent.stopImmediatePropagation();
+                this._onClick();
+            });
+        }
 
         if (_overlayContainer) _overlayContainer.addChild(container);
         else this.token.addChild(container);
@@ -229,17 +369,49 @@ class CorpseMarkerOverlay {
         this._loadIcon();
     }
 
+    _drawBadgeBg(bg, harvested, hover) {
+        if (!bg) return;
+        if (typeof bg.clear === "function") bg.clear();
+        bg.lineStyle(2, harvested
+            ? MARKER.BORDER_HARVESTED
+            : hover ? MARKER.BORDER_HOVER : MARKER.BORDER, 0.9);
+        bg.beginFill(harvested ? 0x121810 : 0x1a1208, harvested ? MARKER.BG_ALPHA_HARVESTED : MARKER.BG_ALPHA);
+        bg.drawCircle(0, 0, MARKER.BADGE_R);
+        bg.endFill();
+    }
+
+    _onHover(over) {
+        if (!this._alive || !_containerLive(this._container)) return;
+        const harvested = this.butcherState === BUTCHER_STATE.HARVESTED;
+        if (this._hoverLabel) this._hoverLabel.visible = over;
+        this._drawBadgeBg(this._bg, harvested, over && !harvested);
+    }
+
     async _loadIcon() {
-        await ensureIconFontsLoaded();
-        const tex = await _iconTextureAsync(MARKER.FILL, MARKER.ICON_RASTER_PX);
-        if (!tex || !this._container || this._container.destroyed) {
-            if (!tex) _markerWarn("icon texture failed", { actorName: this.target?.actorName });
+        if (!this._alive || !_containerLive(this._container)) return;
+        const harvested = this.butcherState === BUTCHER_STATE.HARVESTED;
+        const fill = harvested ? MARKER.FILL_HARVESTED : MARKER.FILL;
+        const tex = harvested
+            ? await _resolveHarvestedIconTexture(fill, MARKER.ICON_RASTER_PX)
+            : await _resolveMarkerIconTexture(fill, MARKER.ICON_RASTER_PX);
+        if (!this._alive || !_containerLive(this._container)) return;
+        if (!tex) {
+            _markerWarn("icon texture failed, using vector cleaver fallback", {
+                actorName: this.target?.actorName
+            });
+            if (!this._iconSprite && this._container) {
+                this._iconSprite = _drawCleaverFallback(this._container);
+            }
             return;
         }
-        if (this._iconSprite) {
+        if (this._iconSprite instanceof PIXI.Sprite) {
             this._iconSprite.texture = tex;
             _layoutIconSprite(this._iconSprite, tex);
             return;
+        }
+        if (this._iconSprite) {
+            this._iconSprite.destroy?.();
+            this._iconSprite = null;
         }
         const spr = new PIXI.Sprite(tex);
         _layoutIconSprite(spr, tex);
@@ -270,15 +442,17 @@ class CorpseMarkerOverlay {
             ui.notifications.warn("No eligible butcher available.");
             return;
         }
-        ButcherEngine.clearPendingTarget(this.combatantId);
-        ButcherCorpseMarker.clear(this.combatantId);
         await ButcherEngine.resolve(butcher, target);
     }
 
     destroy() {
+        this._alive = false;
+        if (this._hoverLabel) this._hoverLabel.visible = false;
         this._container?.destroy?.({ children: true });
         this._container = null;
         this._iconSprite = null;
+        this._bg = null;
+        this._hoverLabel = null;
     }
 }
 
@@ -323,8 +497,10 @@ function _startTicker() {
 }
 
 function _stopTickerIfEmpty() {
-    if (_markers.size || !_tickerBound || !canvas?.app?.ticker) return;
-    canvas.app.ticker.remove(_tickerBound);
+    if (_markers.size || !_tickerBound) return;
+    const ticker = globalThis.canvas?.app?.ticker;
+    if (!ticker) return;
+    ticker.remove(_tickerBound);
     _tickerBound = null;
 }
 
@@ -343,7 +519,35 @@ function _resolveTargetActor(target) {
 function _onSocket(data) {
     if (data?.action !== SOCKET_ACTION_SHOW || !Array.isArray(data.targets)) return;
     _markerDebug("socket showButcherMarkers", { count: data.targets.length });
-    ButcherCorpseMarker.showTargets(data.targets);
+    void _applyTargetsWithIcons(data.targets);
+}
+
+async function _refreshAllMarkerIcons() {
+    await ensureIconFontsLoaded();
+    await Promise.all([..._markers.values()].map(overlay => overlay._loadIcon()));
+}
+
+async function _applyTargetsWithIcons(targets) {
+    await ensureIconFontsLoaded();
+    ButcherCorpseMarker.showTargets(targets);
+    await _refreshAllMarkerIcons();
+}
+
+async function _restoreMarkersAfterCanvasReady() {
+    if (!canvas?.ready) return;
+    _resetCanvasGraphics();
+    await ensureIconFontsLoaded();
+
+    ButcherEngine.rehydrateSceneState();
+
+    if (game.user?.isGM) {
+        await ButcherEngine.scanSceneCorpses({ createChat: false, reason: "canvasReady" });
+    }
+
+    const entries = ButcherEngine.getCorpseMarkerEntries?.() ?? [];
+    if (entries.length) ButcherCorpseMarker.showTargets(entries);
+
+    await _refreshAllMarkerIcons();
 }
 
 /*
@@ -373,28 +577,36 @@ export const ButcherCorpseMarker = {
         _markerWarn("marker service registered");
         if (game.socket) game.socket.on(SOCKET_CHANNEL, _onSocket);
 
-        Hooks.on("canvasReady", () => {
-            _markerDebug("canvasReady", { pending: ButcherEngine.getPendingTargetsList?.()?.length ?? 0 });
-            const pending = ButcherEngine.getPendingTargetsList?.() ?? [];
-            if (pending.length) this.showTargets(pending);
-            if (game.user?.isGM) {
-                ButcherEngine.scanSceneCorpses({ createChat: false, reason: "canvasReady" });
-            }
+        Hooks.on("canvasTearDown", () => {
+            _resetCanvasGraphics();
         });
 
+        Hooks.on("canvasReady", () => {
+            _markerDebug("canvasReady", { pending: ButcherEngine.getPendingTargetsList?.()?.length ?? 0 });
+            void _restoreMarkersAfterCanvasReady();
+        });
+
+        // On a full reload the first canvasReady fires before the ready hook that
+        // runs init(), so that event is already gone. Restore immediately when
+        // the canvas is up so markers survive an F5.
+        if (canvas?.ready) {
+            _markerDebug("init: canvas already ready, restoring markers");
+            void _restoreMarkersAfterCanvasReady();
+        }
+
         Hooks.on("deleteToken", (doc) => {
+            clearSceneCorpseEntry(doc.id).catch(() => {});
             for (const [id, overlay] of _markers) {
                 if (overlay.token?.id === doc.id) this.clear(id);
             }
         });
-        Hooks.on("updateToken", (doc, changes) => {
-            if (!("actorId" in changes) && !("actorData" in changes)) return;
+        Hooks.on("updateToken", (doc) => {
             const actor = doc.actor;
-            if (actor && !actor.system?.attributes?.hp) return;
-            if (actor && Number(actor.system?.attributes?.hp?.value ?? 1) > 0) {
-                for (const [id, overlay] of _markers) {
-                    if (overlay.token?.id === doc.id) this.clear(id);
-                }
+            if (!actor || SystemBridge.isDead(actor)) return;
+            const token = canvas.tokens?.get?.(doc.id);
+            if (token) clearButcherState(token).catch(() => {});
+            for (const [id, overlay] of _markers) {
+                if (overlay.token?.id === doc.id) this.clear(id);
             }
         });
     },
@@ -418,7 +630,13 @@ export const ButcherCorpseMarker = {
         }
         if (!_ensureOverlayContainer()) return;
 
-        const slice = (targets ?? []).slice(0, MAX_MARKERS);
+        const sliceReady = (targets ?? [])
+            .filter(entry => (entry.butcherState ?? BUTCHER_STATE.READY) === BUTCHER_STATE.READY)
+            .slice(0, MAX_MARKERS);
+        const sliceHarvested = (targets ?? [])
+            .filter(entry => entry.butcherState === BUTCHER_STATE.HARVESTED)
+            .slice(0, 10);
+        const slice = [...sliceReady, ...sliceHarvested];
         const nextIds = new Set(slice.map(t => t.combatantId));
 
         for (const [id, overlay] of _markers) {
@@ -444,13 +662,19 @@ export const ButcherCorpseMarker = {
                 });
                 continue;
             }
-            const hydrated = { ...target, actor, tokenId: target.tokenId ?? token.document?.id ?? token.id };
+            const hydrated = {
+                ...target,
+                actor,
+                tokenId: target.tokenId ?? token.document?.id ?? token.id,
+                butcherState: target.butcherState ?? BUTCHER_STATE.READY
+            };
             this.clear(target.combatantId);
             _markers.set(target.combatantId, new CorpseMarkerOverlay(token, hydrated));
             _markerDebug("marker placed", {
                 combatantId: target.combatantId,
                 tokenId: hydrated.tokenId,
-                actorName: hydrated.actorName ?? actor.name
+                actorName: hydrated.actorName ?? actor.name,
+                butcherState: hydrated.butcherState
             });
         }
 
@@ -467,6 +691,7 @@ export const ButcherCorpseMarker = {
      */
     syncShow(targets) {
         this.showTargets(targets);
+        void _refreshAllMarkerIcons();
         if (!game.user.isGM || !game.socket || !targets?.length) return;
         game.socket.emit(SOCKET_CHANNEL, {
             action: SOCKET_ACTION_SHOW,
