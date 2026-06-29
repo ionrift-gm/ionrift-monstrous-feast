@@ -70,6 +70,11 @@ export const MealService = {
      * @returns {Promise<{ effectLines: string[], tempFormula: string }>}
      */
     async serveParty(actor, recipe, ambitious, { sourceItem = null } = {}) {
+        if (MealEffects.serveNeedsAbsentGM()) {
+            ui.notifications.warn("No game master is connected to serve the feast to the party. Ask a GM to join, then serve again.");
+            return { effectLines: [], tempFormula: null };
+        }
+
         const effectLines = await MealEffects.applyPartyEffect(recipe.partyEffect, ambitious, {
             mealName: recipe.name
         });

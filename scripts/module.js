@@ -13,6 +13,7 @@ import { ItemSheetHandler, grantMonsterCookingBook } from "./handlers/ItemSheetH
 import { RecipePageHandler } from "./handlers/RecipePageHandler.js";
 import { grantRecipePage, inscribeRecipePage } from "./services/RecipePageService.js";
 import { GMRelay } from "./services/GMRelay.js";
+import { MealEffects } from "./services/MealEffects.js";
 import { CompendiumService } from "./services/CompendiumService.js";
 import { DiscoveryService } from "./services/DiscoveryService.js";
 import { CookbookMirror } from "./services/CookbookMirror.js";
@@ -198,4 +199,8 @@ Hooks.on("deleteCombat", (combat) => {
     if (!game.user.isGM) return;
     if (!game.settings.get(MODULE_ID, "promptOnCombatEnd")) return;
     ButcherEngine.onCombatEnd(combat);
+});
+
+Hooks.on("dnd5e.restCompleted", (actor, result) => {
+    MealEffects.onLongRestCompleted(actor, result);
 });

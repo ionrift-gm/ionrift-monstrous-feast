@@ -1,7 +1,19 @@
 import { SystemBridge } from "../compat/SystemBridge.js";
+import { GMRelay, decideEffectRoute } from "./GMRelay.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 const MEAL_EFFECT_FLAG = "mealEffect";
+
+/**
+ * Whether a dnd5e rest result represents a completed long rest. The meal buff
+ * is meant to last until the next long rest, so only a long rest clears it.
+ * Handles both the boolean flag and the rest type the system reports.
+ * @param {object} result The result payload from dnd5e.restCompleted.
+ * @returns {boolean}
+ */
+export function isLongRestResult(result) {
+    return result?.longRest === true || result?.type === "long";
+}
 
 /**
  * Standalone party meal effects for Monstrous Feast (no Respite dependency).
@@ -92,18 +104,96 @@ export const MealEffects = {
     },
 
     /**
+     * Clear any prior meal effect, then write the new one. This is the
+     * privileged step a GM performs on behalf of a player who does not own the
+     * target actor. Both writes run together so the swap stays atomic on the
+     * applying client.
      * @param {Actor} actor
      * @param {object} effectData
      */
-    async _applyActiveEffect(actor, effectData) {
+    async _writeMealEffect(actor, effectData) {
         if (!actor?.createEmbeddedDocuments || !effectData?.changes?.length) return;
+        await this._clearMealEffects(actor);
         await actor.createEmbeddedDocuments("ActiveEffect", [{
             ...effectData,
             flags: {
                 ...(effectData.flags ?? {}),
-                [MODULE_ID]: { [MEAL_EFFECT_FLAG]: true }
+                [MODULE_ID]: {
+                    ...(effectData.flags?.[MODULE_ID] ?? {}),
+                    [MEAL_EFFECT_FLAG]: true
+                }
             }
         }]);
+    },
+
+    /**
+     * Apply the managed meal effect, routing to a GM when the serving user does
+     * not own the target actor. Returns the route taken so callers can omit a
+     * report line when the write was blocked (no GM connected).
+     * @param {Actor} actor
+     * @param {object} effectData
+     * @returns {Promise<"local"|"relay"|"blocked">}
+     */
+    async applyMealEffectRouted(actor, effectData) {
+        const route = decideEffectRoute({
+            isOwner: Boolean(actor?.isOwner),
+            hasActiveGM: GMRelay.hasActiveGM()
+        });
+        if (route === "local") {
+            await this._writeMealEffect(actor, effectData);
+        } else if (route === "relay") {
+            await GMRelay.applyMealEffect(actor?.uuid, effectData);
+        }
+        return route;
+    },
+
+    /**
+     * Remove this module's meal buff from an actor, routing to a GM when the
+     * caller does not own the target. Mirrors applyMealEffectRouted: a player
+     * cannot delete effects on a party member they do not own, so the removal
+     * relays to a connected GM, and no-ops when none is online. Returns "noop"
+     * when the actor carries no meal buff to avoid pointless socket traffic.
+     * @param {Actor} actor
+     * @returns {Promise<"local"|"relay"|"blocked"|"noop">}
+     */
+    async removeMealEffectRouted(actor) {
+        if (!actor || !this.hasMealEffect(actor)) return "noop";
+        const route = decideEffectRoute({
+            isOwner: Boolean(actor?.isOwner),
+            hasActiveGM: GMRelay.hasActiveGM()
+        });
+        if (route === "local") {
+            await this._clearMealEffects(actor);
+        } else if (route === "relay") {
+            await GMRelay.clearMealEffect(actor?.uuid);
+        }
+        return route;
+    },
+
+    /**
+     * Primary expiry on dnd5e: clear the meal buff when an actor completes a
+     * long rest. The fixed-duration fallback on the effect itself covers
+     * systems or sessions where this hook never fires.
+     * @param {Actor} actor
+     * @param {object} result The dnd5e.restCompleted result payload.
+     * @returns {Promise<"local"|"relay"|"blocked"|"noop">}
+     */
+    async onLongRestCompleted(actor, result) {
+        if (SystemBridge.systemId() !== "dnd5e") return "noop";
+        if (!isLongRestResult(result)) return "noop";
+        return this.removeMealEffectRouted(actor);
+    },
+
+    /**
+     * Whether serving the party needs a GM who is not connected. True only when
+     * a player serves, no GM is online, and at least one party member is an
+     * actor that player does not own (so its meal writes cannot resolve).
+     * @returns {boolean}
+     */
+    serveNeedsAbsentGM() {
+        if (game.user?.isGM) return false;
+        if (GMRelay.hasActiveGM()) return false;
+        return this.getPartyMembers().some(actor => !actor?.isOwner);
     },
 
     /**
@@ -159,9 +249,9 @@ export const MealEffects = {
         });
         if (!changes.length) return lines;
 
-        await this._clearMealEffects(actor);
-
         const parts = [];
+        // Fallback expiry only. On dnd5e the long-rest hook clears the buff;
+        // this bounds the effect if that signal never arrives.
         const seconds = 28800;
 
         if (partyEffect.strengthAdvantage) {
@@ -175,7 +265,7 @@ export const MealEffects = {
         }
 
         const title = mealName ? `Monstrous Feast: ${mealName}` : "Monstrous Feast";
-        await this._applyActiveEffect(actor, {
+        const route = await this.applyMealEffectRouted(actor, {
             name: title,
             icon: "icons/consumables/food/bowl-stew-brown.webp",
             description: `<p>${parts.join(", ")}.</p>`,
@@ -185,7 +275,7 @@ export const MealEffects = {
             changes
         });
 
-        lines.push(`${actor.name}: ${parts.join("; ")}`);
+        if (route !== "blocked") lines.push(`${actor.name}: ${parts.join("; ")}`);
         return lines;
     },
 

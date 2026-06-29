@@ -6,12 +6,27 @@ const CHANNEL = `module.${MODULE_ID}`;
 const ACTION_DISCOVER = "recordDiscovery";
 const ACTION_INSCRIBE = "inscribeRecipe";
 const ACTION_SERVING = "openFeastServing";
+const ACTION_APPLY_EFFECT = "applyMealEffect";
+const ACTION_CLEAR_EFFECT = "clearMealEffect";
 
 /** @type {((data: object) => void)|null} */
 let _bound = null;
 
 /** @type {Set<string>} */
 const _seen = new Set();
+
+/**
+ * Decide where a cross-actor meal write should run. A player can only write to
+ * actors they own; everything else is relayed to a connected GM. With no GM
+ * online the write cannot resolve.
+ * @param {{ isOwner?: boolean, hasActiveGM?: boolean }} ctx
+ * @returns {"local"|"relay"|"blocked"}
+ */
+export function decideEffectRoute({ isOwner = false, hasActiveGM = false } = {}) {
+    if (isOwner) return "local";
+    if (hasActiveGM) return "relay";
+    return "blocked";
+}
 
 /**
  * Routes privileged Monster Cooking book writes to a GM.
@@ -46,6 +61,14 @@ export const GMRelay = {
     },
 
     /**
+     * Whether any GM is currently connected to apply relayed writes.
+     * @returns {boolean}
+     */
+    hasActiveGM() {
+        return (game.users?.filter(u => u.isGM && u.active).length ?? 0) > 0;
+    },
+
+    /**
      * Record a creature discovery on a book, routing through a GM if needed.
      * @param {Item} book
      * @param {string} typeId
@@ -76,13 +99,40 @@ export const GMRelay = {
     },
 
     /**
+     * Apply this module's managed meal effect to an actor, routing through a GM
+     * when the caller does not own that actor. Foundry blocks cross-owner
+     * ActiveEffect writes, so a player serving the party emits the effect for
+     * the responsible GM to apply.
+     * @param {string} actorUuid
+     * @param {object} effectData
+     * @returns {Promise<void>}
+     */
+    async applyMealEffect(actorUuid, effectData) {
+        if (!actorUuid || !effectData) return;
+        GMRelay._emit(ACTION_APPLY_EFFECT, { actorUuid, effectData });
+    },
+
+    /**
+     * Clear this module's managed meal effect from an actor, routing through a
+     * GM when the caller does not own that actor. A player whose long rest
+     * touches a party member they do not own cannot delete the effect directly,
+     * so the removal is emitted for the responsible GM to apply.
+     * @param {string} actorUuid
+     * @returns {Promise<void>}
+     */
+    async clearMealEffect(actorUuid) {
+        if (!actorUuid) return;
+        GMRelay._emit(ACTION_CLEAR_EFFECT, { actorUuid });
+    },
+
+    /**
      * @param {string} action
      * @param {object} payload
      */
     _emit(action, payload) {
         if (!game.socket) return;
         game.socket.emit(CHANNEL, { action, requestId: foundry.utils.randomID(), ...payload });
-        Logger.log(`GMRelay: emitted ${action} for ${payload.bookUuid}.`);
+        Logger.log(`GMRelay: emitted ${action}.`);
     },
 
     /**
@@ -98,6 +148,16 @@ export const GMRelay = {
 
         if (data.action === ACTION_SERVING) {
             await GMRelay._applyServing(data);
+            return;
+        }
+
+        if (data.action === ACTION_APPLY_EFFECT) {
+            await GMRelay._applyMealEffect(data);
+            return;
+        }
+
+        if (data.action === ACTION_CLEAR_EFFECT) {
+            await GMRelay._clearMealEffect(data);
             return;
         }
 
@@ -138,6 +198,34 @@ export const GMRelay = {
         if (set.has(recipeId)) return;
         set.add(recipeId);
         await book.setFlag(MODULE_ID, "inscribedRecipes", [...set]);
+    },
+
+    /**
+     * GM-side handler: apply a relayed meal effect to the target actor.
+     * @param {object} data
+     */
+    async _applyMealEffect(data) {
+        const actor = data.actorUuid ? await fromUuid(data.actorUuid) : null;
+        if (!actor) {
+            Logger.warn(`GMRelay: actor not found for ${data.actorUuid}.`);
+            return;
+        }
+        const { MealEffects } = await import("./MealEffects.js");
+        await MealEffects._writeMealEffect(actor, data.effectData);
+    },
+
+    /**
+     * GM-side handler: remove this module's meal effect from the target actor.
+     * @param {object} data
+     */
+    async _clearMealEffect(data) {
+        const actor = data.actorUuid ? await fromUuid(data.actorUuid) : null;
+        if (!actor) {
+            Logger.warn(`GMRelay: actor not found for ${data.actorUuid}.`);
+            return;
+        }
+        const { MealEffects } = await import("./MealEffects.js");
+        await MealEffects._clearMealEffects(actor);
     },
 
     /**
