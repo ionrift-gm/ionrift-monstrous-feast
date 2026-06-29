@@ -13,7 +13,7 @@ export const CoreIcons = {
     egg: "icons/consumables/eggs/eggs-white.webp",
     bread: "icons/consumables/grains/bread-loaf-wheat-brown.webp",
     spice: "icons/commodities/materials/powder-grey.webp",
-    water: "icons/consumables/drinks/flask-tea-green.webp",
+    water: "icons/sundries/survival/waterskin-leather-brown.webp",
     pantry: "icons/consumables/food/preserves-jam-jelly-jar-brown-red.webp",
     hide: "icons/commodities/leather/fur-pelt-brown.webp",
     claw: "icons/commodities/claws/claw-bear-brown.webp",
