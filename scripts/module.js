@@ -97,6 +97,13 @@ Hooks.once("init", () => {
         },
         discovery: DiscoveryService,
         testButcher: () => ButcherEngine.testSelectedButcher(),
+        inspectButcher: (token) => ButcherEngine.inspectButcherEligibility(token ?? canvas.tokens.controlled[0]),
+        scanButcherCorpses: (opts) => ButcherEngine.scanSceneCorpses(opts),
+        refreshButcherMarkers: () => ButcherEngine.refreshMarkers(),
+        butcherMarkerState: () => ({
+            ...ButcherEngine.getMarkerDebugState(),
+            overlay: ButcherCorpseMarker.getDebugState()
+        }),
         cook: (actor, recipeId) => CookEngine.cook(actor, recipeId),
         engine: ButcherEngine,
         cookEngine: CookEngine,
@@ -160,6 +167,16 @@ Hooks.once("init", () => {
             off: "Always off"
         },
         default: "automatic"
+    });
+
+    game.settings.register(MODULE_ID, "debugButcherMarker", {
+        name: "Debug Butcher Markers",
+        hint: "Log butcher marker decisions to the console (GM only). Turn off after debugging.",
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: true,
+        restricted: true
     });
 
     game.settings.register(MODULE_ID, "debug", {
@@ -269,18 +286,20 @@ Hooks.on("updateItem", (item, changes) => {
     }
 });
 
-Hooks.on("deleteCombat", (combat) => {
+Hooks.on("deleteCombat", async (combat) => {
     if (!game.user.isGM) return;
     if (!game.settings.get(MODULE_ID, "promptOnCombatEnd")) return;
-    ButcherEngine.onCombatEnd(combat);
+    await ButcherEngine.onCombatEnd(combat);
+    await ButcherEngine.scanSceneCorpses({ createChat: false, reason: "deleteCombat" });
 });
 
-Hooks.on("updateActor", (actor, changes) => {
+Hooks.on("updateActor", async (actor, changes) => {
     if (!game.user.isGM) return;
     if (!game.settings.get(MODULE_ID, "promptOnCombatEnd")) return;
     const hp = foundry.utils.getProperty(changes, "system.attributes.hp.value");
     if (hp === undefined || Number(hp) > 0) return;
-    ButcherEngine.onCreatureDeath(actor);
+    await ButcherEngine.onCreatureDeath(actor);
+    await ButcherEngine.scanSceneCorpses({ createChat: false, reason: "updateActor-death" });
 });
 
 Hooks.on("dnd5e.restCompleted", (actor, result) => {

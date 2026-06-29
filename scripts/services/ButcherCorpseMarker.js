@@ -4,6 +4,19 @@ import { ButcherEngine } from "../engine/ButcherEngine.js";
 const MODULE_ID = "ionrift-monstrous-feast";
 const MAX_MARKERS = 3;
 
+function _markerDebug(...args) {
+    const verbose = game.settings?.get?.(MODULE_ID, "debugButcherMarker");
+    if (verbose) Logger.warn("MF ButcherMarker", ...args);
+}
+
+function _markerWarn(...args) {
+    Logger.warn("MF ButcherMarker", ...args);
+}
+
+function _isDebugEnabled() {
+    return !!game.settings?.get?.(MODULE_ID, "debugButcherMarker");
+}
+
 const FA_SOLID_CODEPOINT = {
     "fa-drumstick-bite": 0xf6d8
 };
@@ -158,9 +171,12 @@ function _tokenStillOnScene(token) {
     return Boolean(token?.scene?.id && canvas?.scene?.id === token.scene.id);
 }
 
-function _findTokenForActor(actor) {
-    if (!actor?.id || !canvas?.tokens?.placeables) return null;
-    return canvas.tokens.placeables.find(t => t.actor?.id === actor.id) ?? null;
+function _resolveTokenForTarget(target) {
+    const actor = _resolveTargetActor(target);
+    return ButcherEngine.findCanvasTokenForActor(actor, {
+        combatantId: target?.combatantId,
+        tokenId: target?.tokenId
+    });
 }
 
 function _userCanSeeMarkers() {
@@ -216,7 +232,10 @@ class CorpseMarkerOverlay {
     async _loadIcon() {
         await ensureIconFontsLoaded();
         const tex = await _iconTextureAsync(MARKER.FILL, MARKER.ICON_RASTER_PX);
-        if (!tex || !this._container || this._container.destroyed) return;
+        if (!tex || !this._container || this._container.destroyed) {
+            if (!tex) _markerWarn("icon texture failed", { actorName: this.target?.actorName });
+            return;
+        }
         if (this._iconSprite) {
             this._iconSprite.texture = tex;
             _layoutIconSprite(this._iconSprite, tex);
@@ -266,7 +285,10 @@ class CorpseMarkerOverlay {
 function _ensureOverlayContainer() {
     if (_overlayContainer && !_overlayContainer.destroyed) return _overlayContainer;
     const layer = canvas?.tokens;
-    if (!layer) return null;
+    if (!layer) {
+        _markerWarn("overlay container unavailable: canvas.tokens missing");
+        return null;
+    }
 
     _overlayContainer = new PIXI.Container();
     _overlayContainer.name = `${MODULE_ID}-butcher-markers`;
@@ -282,6 +304,10 @@ function _ensureOverlayContainer() {
             _savedTokensSortable = true;
         }
         layer.addChild(_overlayContainer);
+        _markerDebug("overlay container attached", {
+            sortableChildren: layer.sortableChildren,
+            zIndex: _overlayContainer.zIndex
+        });
     }
     return _overlayContainer;
 }
@@ -316,16 +342,44 @@ function _resolveTargetActor(target) {
 
 function _onSocket(data) {
     if (data?.action !== SOCKET_ACTION_SHOW || !Array.isArray(data.targets)) return;
+    _markerDebug("socket showButcherMarkers", { count: data.targets.length });
     ButcherCorpseMarker.showTargets(data.targets);
 }
 
+/*
+ * GM console macros (paste into DevTools console):
+ *
+ * // A: Inspect selected token butcher eligibility
+ * game.ionrift.monstrousFeast.engine.inspectButcherEligibility(canvas.tokens.controlled[0])
+ *
+ * // B: Force refresh markers on all dead tokens on scene
+ * game.ionrift.monstrousFeast.engine.scanSceneCorpses({ createChat: false, reason: "macro" })
+ *
+ * // C: Dump marker service state
+ * game.ionrift.monstrousFeast.engine.getMarkerDebugState()
+ *
+ * // D: Manually trigger death/combat-end flow for selected token
+ * (async () => {
+ *   const token = canvas.tokens.controlled[0];
+ *   const actor = token?.actor;
+ *   if (!actor) return console.warn("Select a token first.");
+ *   if (game.combat?.started) await game.ionrift.monstrousFeast.engine.onCombatEnd(game.combat);
+ *   else await game.ionrift.monstrousFeast.engine.onCreatureDeath(actor);
+ * })()
+ */
+
 export const ButcherCorpseMarker = {
     init() {
+        _markerWarn("marker service registered");
         if (game.socket) game.socket.on(SOCKET_CHANNEL, _onSocket);
 
         Hooks.on("canvasReady", () => {
+            _markerDebug("canvasReady", { pending: ButcherEngine.getPendingTargetsList?.()?.length ?? 0 });
             const pending = ButcherEngine.getPendingTargetsList?.() ?? [];
             if (pending.length) this.showTargets(pending);
+            if (game.user?.isGM) {
+                ButcherEngine.scanSceneCorpses({ createChat: false, reason: "canvasReady" });
+            }
         });
 
         Hooks.on("deleteToken", (doc) => {
@@ -350,8 +404,18 @@ export const ButcherCorpseMarker = {
      * @param {object[]} targets
      */
     showTargets(targets) {
-        if (!canvas?.ready) return;
-        if (!_userCanSeeMarkers()) return;
+        _markerDebug("showTargets", { incoming: targets?.length ?? 0, canvasReady: !!canvas?.ready });
+        if (!canvas?.ready) {
+            _markerWarn("showTargets skipped: canvas not ready");
+            return;
+        }
+        if (!_userCanSeeMarkers()) {
+            _markerWarn("showTargets skipped: user cannot see markers", {
+                isGM: !!game.user?.isGM,
+                eligibleButchers: ButcherEngine.findButcherActors().map(a => a.name)
+            });
+            return;
+        }
         if (!_ensureOverlayContainer()) return;
 
         const slice = (targets ?? []).slice(0, MAX_MARKERS);
@@ -363,16 +427,38 @@ export const ButcherCorpseMarker = {
 
         for (const target of slice) {
             const actor = _resolveTargetActor(target);
-            if (!actor) continue;
-            const token = _findTokenForActor(actor);
-            if (!token) continue;
-            const hydrated = { ...target, actor };
+            if (!actor) {
+                _markerWarn("showTargets skipped target: actor unresolved", {
+                    combatantId: target.combatantId,
+                    actorUuid: target.actorUuid ?? null
+                });
+                continue;
+            }
+            const token = _resolveTokenForTarget({ ...target, actor });
+            if (!token) {
+                _markerWarn("showTargets skipped target: no canvas token", {
+                    combatantId: target.combatantId,
+                    tokenId: target.tokenId ?? null,
+                    actorId: actor.id,
+                    actorName: target.actorName ?? actor.name
+                });
+                continue;
+            }
+            const hydrated = { ...target, actor, tokenId: target.tokenId ?? token.document?.id ?? token.id };
             this.clear(target.combatantId);
             _markers.set(target.combatantId, new CorpseMarkerOverlay(token, hydrated));
+            _markerDebug("marker placed", {
+                combatantId: target.combatantId,
+                tokenId: hydrated.tokenId,
+                actorName: hydrated.actorName ?? actor.name
+            });
         }
 
         if (_markers.size) _startTicker();
-        else _stopTickerIfEmpty();
+        else {
+            _stopTickerIfEmpty();
+            _markerDebug("showTargets finished with zero markers", { requested: slice.length });
+        }
     },
 
     /**
@@ -406,5 +492,28 @@ export const ButcherCorpseMarker = {
     /** @returns {number} */
     count() {
         return _markers.size;
+    },
+
+    canUserSeeMarkers() {
+        return _userCanSeeMarkers();
+    },
+
+    isOverlayReady() {
+        return Boolean(_overlayContainer && !_overlayContainer.destroyed && canvas?.ready);
+    },
+
+    getDebugState() {
+        return {
+            markerCount: _markers.size,
+            overlayReady: this.isOverlayReady(),
+            overlayDestroyed: _overlayContainer?.destroyed ?? null,
+            tickerActive: Boolean(_tickerBound),
+            markers: [..._markers.entries()].map(([id, overlay]) => ({
+                combatantId: id,
+                actorName: overlay.target?.actorName ?? overlay.token?.name,
+                tokenId: overlay.token?.document?.id ?? overlay.token?.id ?? null
+            })),
+            debugEnabled: _isDebugEnabled()
+        };
     }
 };

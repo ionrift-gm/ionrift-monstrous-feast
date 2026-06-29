@@ -12,6 +12,43 @@ const MODULE_ID = "ionrift-monstrous-feast";
 /** @type {Map<string, object>} Pending butcher targets keyed by combatant id. */
 const _pendingTargets = new Map();
 
+function _markerDebug(...args) {
+    const verbose = game.settings?.get?.(MODULE_ID, "debugButcherMarker");
+    if (verbose) Logger.warn("MF ButcherMarker", ...args);
+}
+
+function _markerWarn(...args) {
+    Logger.warn("MF ButcherMarker", ...args);
+}
+
+function _findCanvasTokenForActor(actor, { combatantId = null, tokenId = null } = {}) {
+    const placeables = canvas?.tokens?.placeables;
+    if (!placeables?.length) return null;
+
+    if (tokenId) {
+        const byTokenId = placeables.find(
+            entry => entry.id === tokenId || entry.document?.id === tokenId
+        );
+        if (byTokenId) return byTokenId;
+    }
+
+    if (combatantId) {
+        const byCombatant = placeables.find(entry => entry.document?.combatantId === combatantId);
+        if (byCombatant) return byCombatant;
+        const byDocId = placeables.find(
+            entry => entry.id === combatantId || entry.document?.id === combatantId
+        );
+        if (byDocId) return byDocId;
+    }
+
+    if (!actor?.id) return null;
+    return placeables.find(entry =>
+        entry.actor?.id === actor.id
+        || entry.document?.actorId === actor.id
+        || (actor.uuid && entry.actor?.uuid === actor.uuid)
+    ) ?? null;
+}
+
 export const ButcherEngine = {
     init() {
         Logger.log(`Butcher engine ready (${SystemBridge.launchLabel()}).`);
@@ -21,18 +58,27 @@ export const ButcherEngine = {
      * @param {Combat} combat
      */
     async onCombatEnd(combat) {
+        _markerDebug("onCombatEnd hook", { combatId: combat?.id, combatants: combat?.combatants?.size ?? 0 });
         const notice = SystemBridge.unsupportedNotice();
         if (notice) {
-            Logger.warn(notice);
+            _markerWarn("blocked: unsupported system", notice);
             return;
         }
-        if (!CreatureRegistry.hasEntries()) return;
+        if (!CreatureRegistry.hasEntries()) {
+            _markerWarn("blocked: creature registry empty");
+            return;
+        }
 
         const targets = this.findButcherTargets(combat);
-        if (!targets.length) return;
+        _markerDebug("combat-end targets", { count: targets.length, names: targets.map(t => t.actorName) });
+        if (!targets.length) {
+            this.scanSceneCorpses({ createChat: false, reason: "combat-end-empty" });
+            return;
+        }
 
         const butchers = this.findButcherActors();
         if (!butchers.length) {
+            _markerWarn("blocked: no eligible butcher", { requireHandbook: game.settings.get(MODULE_ID, "requireHandbook") });
             ui.notifications.info("Monstrous Feast: slain creatures found, but no eligible butcher is available.");
             return;
         }
@@ -55,18 +101,47 @@ export const ButcherEngine = {
      * @param {Actor} actor
      */
     async onCreatureDeath(actor) {
+        _markerDebug("onCreatureDeath hook", { actorId: actor?.id, actorName: actor?.name, combatStarted: !!game.combat?.started });
         const notice = SystemBridge.unsupportedNotice();
-        if (notice) return;
-        if (!CreatureRegistry.hasEntries()) return;
-        if (!actor || SystemBridge.isPlayerCharacter(actor) || !SystemBridge.isDead(actor)) return;
-        if (game.combat?.started) return;
+        if (notice) {
+            _markerWarn("blocked: unsupported system", notice);
+            return;
+        }
+        if (!CreatureRegistry.hasEntries()) {
+            _markerWarn("blocked: creature registry empty");
+            return;
+        }
+        if (!actor || SystemBridge.isPlayerCharacter(actor) || !SystemBridge.isDead(actor)) {
+            _markerDebug("skipped: actor not a dead NPC", { actorId: actor?.id });
+            return;
+        }
+        if (game.combat?.started) {
+            _markerDebug("skipped: combat still active; waiting for combat end");
+            return;
+        }
 
-        const token = canvas.tokens?.placeables?.find(entry => entry.actor?.id === actor.id) ?? null;
+        const token = _findCanvasTokenForActor(actor);
         const target = this.buildTargetFromActor(actor, token);
-        if (!target || _pendingTargets.has(target.combatantId)) return;
+        if (!target) {
+            _markerWarn("no registry match for dead actor", {
+                actorId: actor.id,
+                actorName: actor.name,
+                cr: SystemBridge.getChallengeRating(actor),
+                classification: Library.classify(actor)?.id ?? actor.system?.details?.type?.value
+            });
+            return;
+        }
+        if (_pendingTargets.has(target.combatantId)) {
+            _markerDebug("skipped: already pending", { combatantId: target.combatantId });
+            ButcherCorpseMarker.syncShow(this.getPendingTargetsList());
+            return;
+        }
 
         const butchers = this.findButcherActors();
-        if (!butchers.length) return;
+        if (!butchers.length) {
+            _markerWarn("blocked: no eligible butcher", { requireHandbook: game.settings.get(MODULE_ID, "requireHandbook") });
+            return;
+        }
 
         _pendingTargets.set(target.combatantId, target);
         await ChatMessage.create({
@@ -94,6 +169,7 @@ export const ButcherEngine = {
     serializeTargets(targets) {
         return (targets ?? []).slice(0, 3).map(target => ({
             combatantId: target.combatantId,
+            tokenId: target.tokenId ?? null,
             actorUuid: target.actor?.uuid ?? null,
             actorName: target.actorName,
             actorImg: target.actorImg,
@@ -109,8 +185,128 @@ export const ButcherEngine = {
      * Re-show markers for any pending targets (canvas refresh).
      */
     refreshMarkers() {
-        const pending = this.getPendingTargetsList();
-        if (pending.length) ButcherCorpseMarker.syncShow(pending);
+        this.scanSceneCorpses({ createChat: false, reason: "refreshMarkers" });
+    },
+
+    /**
+     * Scan the active scene for dead butcherable tokens, ensure pending entries,
+     * and sync canvas markers. Does not duplicate chat unless createChat is true.
+     * @param {{ createChat?: boolean, reason?: string }} [opts]
+     * @returns {object[]}
+     */
+    async scanSceneCorpses({ createChat = false, reason = "scan" } = {}) {
+        if (!game.user?.isGM) return [];
+        if (!game.settings.get(MODULE_ID, "promptOnCombatEnd")) return [];
+        const notice = SystemBridge.unsupportedNotice();
+        if (notice || !CreatureRegistry.hasEntries() || !canvas?.ready) return [];
+
+        const butchers = this.findButcherActors();
+        if (!butchers.length) {
+            _markerDebug("scanSceneCorpses: no eligible butcher", { reason, requireHandbook: game.settings.get(MODULE_ID, "requireHandbook") });
+            return [];
+        }
+
+        const discovered = [];
+        for (const token of canvas.tokens?.placeables ?? []) {
+            const actor = token.actor;
+            if (!actor || SystemBridge.isPlayerCharacter(actor) || !SystemBridge.isDead(actor)) continue;
+            const target = this.buildTargetFromActor(actor, token);
+            if (!target) continue;
+            discovered.push(target);
+        }
+
+        discovered.sort((a, b) => b.cr - a.cr);
+        const slice = discovered.slice(0, 3);
+        _markerDebug("scanSceneCorpses", {
+            reason,
+            discovered: slice.map(entry => ({
+                name: entry.actorName,
+                combatantId: entry.combatantId,
+                tokenId: entry.tokenId,
+                cr: entry.cr
+            }))
+        });
+
+        for (const target of slice) {
+            if (_pendingTargets.has(target.combatantId)) continue;
+            _pendingTargets.set(target.combatantId, target);
+            if (createChat) {
+                await ChatMessage.create({
+                    user: game.user.id,
+                    speaker: ChatMessage.getSpeaker(),
+                    content: buildPromptCard(target, butchers),
+                    flags: { [MODULE_ID]: { butcherPrompt: true, combatantId: target.combatantId } }
+                });
+            }
+        }
+
+        if (slice.length) ButcherCorpseMarker.syncShow(this.getPendingTargetsList());
+        return slice;
+    },
+
+    /**
+     * Debug helper for console macros: inspect butcher eligibility for a token.
+     * @param {Token} token
+     * @returns {object}
+     */
+    inspectButcherEligibility(token) {
+        const actor = token?.actor;
+        const classification = actor ? Library.classify(actor) : null;
+        const cr = actor ? SystemBridge.getChallengeRating(actor) : null;
+        const registryEntry = classification || actor?.system?.details?.type?.value
+            ? CreatureRegistry.lookup(
+                classification?.id && classification.id !== "unknown"
+                    ? classification
+                    : { id: String(actor?.system?.details?.type?.value ?? "").toLowerCase(), label: actor?.system?.details?.type?.value },
+                cr
+            )
+            : null;
+        const butchers = this.findButcherActors();
+        const target = actor ? this.buildTargetFromActor(actor, token) : null;
+        const pending = target ? this.getPendingTarget(target.combatantId) : null;
+
+        return {
+            tokenId: token?.document?.id ?? token?.id ?? null,
+            actorId: actor?.id ?? null,
+            actorName: actor?.name ?? null,
+            actorUuid: actor?.uuid ?? null,
+            linkedActorId: token?.document?.actorId ?? null,
+            hp: actor ? SystemBridge.getHP(actor) : null,
+            isDead: actor ? SystemBridge.isDead(actor) : false,
+            isPlayerCharacter: actor ? SystemBridge.isPlayerCharacter(actor) : false,
+            classification,
+            cr,
+            registryEntry: registryEntry ? { id: registryEntry.id ?? classification?.id, minCR: registryEntry.minCR, tier: registryEntry.tier } : null,
+            target,
+            pending: pending ? { combatantId: pending.combatantId, actorName: pending.actorName } : null,
+            butchers: butchers.map(entry => entry.name),
+            requireHandbook: game.settings.get(MODULE_ID, "requireHandbook"),
+            promptOnCombatEnd: game.settings.get(MODULE_ID, "promptOnCombatEnd"),
+            combatStarted: !!game.combat?.started,
+            markerCount: ButcherCorpseMarker.count(),
+            canSeeMarkers: ButcherCorpseMarker.canUserSeeMarkers?.() ?? null
+        };
+    },
+
+    /**
+     * @returns {{ pending: object[], markerCount: number }}
+     */
+    getMarkerDebugState() {
+        return {
+            pending: this.getPendingTargetsList().map(target => ({
+                combatantId: target.combatantId,
+                tokenId: target.tokenId ?? null,
+                actorName: target.actorName,
+                actorUuid: target.actor?.uuid ?? null,
+                cr: target.cr
+            })),
+            markerCount: ButcherCorpseMarker.count(),
+            overlayReady: ButcherCorpseMarker.isOverlayReady?.() ?? false
+        };
+    },
+
+    findCanvasTokenForActor(actor, hints = {}) {
+        return _findCanvasTokenForActor(actor, hints);
     },
 
     /**
@@ -134,10 +330,19 @@ export const ButcherEngine = {
             }
 
             const entry = CreatureRegistry.lookup(classification, cr);
-            if (!entry) continue;
+            if (!entry) {
+                _markerDebug("combatant skipped: registry miss", {
+                    name: actor.name,
+                    classification: classification.id,
+                    cr
+                });
+                continue;
+            }
 
+            const token = _findCanvasTokenForActor(actor, { combatantId: combatant.id });
             targets.push({
                 combatantId: combatant.id,
+                tokenId: token?.document?.id ?? token?.id ?? null,
                 actor,
                 actorName: actor.name ?? combatant.name ?? "Unknown Creature",
                 actorImg: actor.img ?? combatant.img ?? "icons/svg/mystery-man.svg",
@@ -186,8 +391,10 @@ export const ButcherEngine = {
         }
         const entry = CreatureRegistry.lookup(classification, cr);
         if (!entry) return null;
+        const tokenId = token?.document?.id ?? token?.id ?? null;
         return {
-            combatantId: token?.id ?? actor.id,
+            combatantId: tokenId ?? actor.id,
+            tokenId,
             actor,
             actorName: actor.name ?? "Unknown Creature",
             actorImg: actor.img ?? token?.texture?.src ?? "icons/svg/mystery-man.svg",
