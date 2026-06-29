@@ -5,6 +5,7 @@ import { CreatureRegistry } from "../data/CreatureRegistry.js";
 import { grantYields } from "../services/ItemFactory.js";
 import { DiscoveryService } from "../services/DiscoveryService.js";
 import { buildPromptCard, buildResultCard, buildPassedCard } from "../ui/ButcherCards.js";
+import { ButcherCorpseMarker } from "../services/ButcherCorpseMarker.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 
@@ -45,6 +46,8 @@ export const ButcherEngine = {
                 flags: { [MODULE_ID]: { butcherPrompt: true, combatantId: target.combatantId } }
             });
         }
+
+        ButcherCorpseMarker.showTargets(targets);
     },
 
     /**
@@ -254,6 +257,7 @@ export const ButcherEngine = {
             flags: { [MODULE_ID]: { butcherResult: true } }
         });
 
+        ButcherCorpseMarker.clear(target.combatantId);
         return result;
     },
 
@@ -263,6 +267,7 @@ export const ButcherEngine = {
 
     clearPendingTarget(combatantId) {
         _pendingTargets.delete(combatantId);
+        ButcherCorpseMarker.clear(combatantId);
     },
 
     async passTarget(combatantId, creatureName) {

@@ -12,6 +12,7 @@ import { bindTabs, bindFlyouts } from "../ui/TabBinder.js";
 import { attachImageFallback } from "../ui/ImageFallback.js";
 import { buildCookPhaseContext, buildCookSuccessContext } from "../engine/CookPhaseModel.js";
 import { emitCookCompleted } from "../services/CookSignal.js";
+import { MealBuffHandlers } from "../data/MealBuffHandlers.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 
@@ -485,13 +486,7 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     _buffLines(recipe) {
-        const fx = recipe.partyEffect ?? {};
-        const lines = [];
-        if (fx.tempHP) lines.push(`${fx.tempHP} temp HP`);
-        if (fx.strengthAdvantage) lines.push("Strength advantage");
-        if (fx.darkvisionFeet) lines.push(`Darkvision ${fx.darkvisionFeet} ft`);
-        if (fx.perceptionAdvantageDim) lines.push("Keen senses in dim light");
-        return lines;
+        return MealBuffHandlers.summaries(recipe.partyEffect ?? {}, false);
     }
 
     async _prepareContext() {

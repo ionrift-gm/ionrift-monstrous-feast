@@ -232,6 +232,47 @@ export const MealEffects = {
     },
 
     /**
+     * Build DAE flags and charge metadata for managed buffs.
+     * @param {Actor} actor
+     * @param {object} partyEffect
+     * @param {boolean} ambitious
+     * @returns {Promise<{ daeSpecial: string[], libFlags: object, chargeLines: string[] }>}
+     */
+    async _buildBuffFlags(actor, partyEffect, ambitious) {
+        const buffs = MealBuffHandlers.buffs(partyEffect, ambitious);
+        const cookingBuffs = Library.cooking?.buffs;
+        const daeSpecial = [];
+        const libFlags = {};
+        const chargeLines = [];
+
+        for (const buff of buffs) {
+            const built = cookingBuffs?.build?.(actor, buff) ?? null;
+            if (built?.daeSpecialDuration?.length) daeSpecial.push(...built.daeSpecialDuration);
+
+            if (buff.type === "save_bonus" && buff.uses && globalThis.Roll) {
+                const roll = await new Roll(String(buff.uses)).evaluate();
+                const charges = Math.max(1, roll.total);
+                libFlags.chargesRemaining = charges;
+                libFlags.chargesMax = charges;
+                const ability = String(buff.save?.ability ?? "con").toUpperCase();
+                chargeLines.push(`+${buff.bonus ?? 1} ${ability} saves (${charges} remaining)`);
+                daeSpecial.push(`isSave.${String(buff.save?.ability ?? "con").toLowerCase()}`);
+            }
+
+            if (buff.type === "advantage" && buff.duration === "nextSave") {
+                const ability = String(buff.save?.ability ?? buff.ability ?? "con").toLowerCase();
+                daeSpecial.push(`isSave.${ability}`);
+            }
+        }
+
+        return {
+            daeSpecial: [...new Set(daeSpecial)],
+            libFlags,
+            chargeLines
+        };
+    },
+
+    /**
      * @param {Actor} actor
      * @param {object} partyEffect
      * @param {boolean} ambitious
@@ -248,6 +289,19 @@ export const MealEffects = {
         const seconds = 28800;
 
         const parts = describePartyEffectParts(partyEffect, ambitious);
+        const { daeSpecial, libFlags, chargeLines } = await this._buildBuffFlags(actor, partyEffect, ambitious);
+        if (chargeLines.length) parts.push(...chargeLines);
+
+        const flags = {
+            [MODULE_ID]: { [MEAL_EFFECT_FLAG]: true },
+            [SHARED_BUFF_NAMESPACE]: {
+                [SHARED_BUFF_FLAG]: true,
+                ...libFlags
+            }
+        };
+        if (daeSpecial.length) {
+            flags.dae = { specialDuration: daeSpecial };
+        }
 
         const title = mealName ? `Monstrous Feast: ${mealName}` : "Monstrous Feast";
         const route = await this.applyMealEffectRouted(actor, {
@@ -257,7 +311,8 @@ export const MealEffects = {
             origin: actor.uuid,
             disabled: false,
             duration: { seconds },
-            changes
+            changes,
+            flags
         });
 
         if (route !== "blocked") lines.push(`${actor.name}: ${parts.join("; ")}`);

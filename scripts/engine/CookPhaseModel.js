@@ -5,6 +5,7 @@ import { MealEffects } from "../services/MealEffects.js";
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { CoreIcons } from "../data/CoreIcons.js";
 import { resolveIngredientIcon } from "../data/IngredientIcons.js";
+import { MealBuffHandlers } from "../data/MealBuffHandlers.js";
 
 /**
  * @param {object} partyEffect
@@ -13,15 +14,7 @@ import { resolveIngredientIcon } from "../data/IngredientIcons.js";
  */
 function buffLines(partyEffect, ambitious = false) {
     if (!partyEffect) return [];
-    const lines = [];
-    const hp = ambitious
-        ? (partyEffect.ambitiousTempHP ?? partyEffect.tempHP)
-        : partyEffect.tempHP;
-    if (hp) lines.push(`${hp} temp HP`);
-    if (partyEffect.strengthAdvantage) lines.push("Strength advantage");
-    if (partyEffect.darkvisionFeet) lines.push(`Darkvision ${partyEffect.darkvisionFeet} ft`);
-    if (ambitious && partyEffect.perceptionAdvantageDim) lines.push("Keen senses in dim light");
-    return lines;
+    return MealBuffHandlers.summaries(partyEffect, ambitious);
 }
 
 /**

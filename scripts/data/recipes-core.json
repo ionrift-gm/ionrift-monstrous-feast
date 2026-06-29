@@ -9,7 +9,7 @@
             "id": "cook_campfire_monster_roast",
             "name": "Campfire Monster Roast",
             "description": "Spit-roast rough monster cuts over a campfire. Basic but communal.",
-            "linkedCreatures": ["beast", "beast_ursine", "beast_suidae", "monstrosity", "monstrosity_owlbear"],
+            "linkedCreatures": ["beast", "beast_ursine", "beast_suidae", "beast_arachnid", "beast_reptile", "monstrosity", "monstrosity_owlbear"],
             "skill": "sur",
             "dc": 10,
             "ingredients": [
@@ -82,20 +82,21 @@
             "output": {
                 "name": "Owlbear Stew",
                 "img": "icons/consumables/food/bowl-stew-brown.webp",
-                "description": "<p>A rich, dark stew with a faintly gamey warmth. Party meal: darkvision until your next long rest.</p>",
+                "description": "<p>A rich, dark stew with a faintly gamey warmth. Party meal: temporary hit points and darkvision until your next long rest.</p>",
                 "rarity": "uncommon"
             },
             "ambitiousOutput": {
                 "name": "Seasoned Owlbear Stew",
                 "img": "icons/consumables/food/bowl-stew-brown.webp",
-                "description": "<p>Deeply flavoured, slow-simmered perfection. Party meal: darkvision and sharper senses in dim light.</p>",
+                "description": "<p>Deeply flavoured, slow-simmered perfection. Party meal: darkvision, sharper awareness, and a flash of wisdom when it counts.</p>",
                 "rarity": "rare"
             },
             "partyEffect": {
                 "tempHP": "1d4",
                 "ambitiousTempHP": "1d6",
                 "darkvisionFeet": 60,
-                "perceptionAdvantageDim": true
+                "passivePerceptionBonus": 2,
+                "wisSaveAdvantage": true
             },
             "successNarrative": "The stew darkens as it simmers. There is something primal in the smell. Everyone reaches for a bowl.",
             "failNarrative": "The owlbear meat toughens and the stew goes bitter. A waste of rare ingredients."
@@ -135,7 +136,7 @@
             "id": "cook_beast_tempura",
             "name": "Crispy Beast Tempura",
             "description": "Monster cuts battered in flour and flash-fried in hot oil. Light, crisp, deceptively filling.",
-            "linkedCreatures": ["beast", "beast_ursine", "beast_suidae"],
+            "linkedCreatures": ["beast", "beast_ursine", "beast_suidae", "beast_arachnid", "beast_reptile"],
             "skill": "sur",
             "dc": 13,
             "ingredients": [
@@ -153,12 +154,13 @@
             "ambitiousOutput": {
                 "name": "Golden Beast Tempura",
                 "img": "icons/consumables/food/drumstick-fried-brown.webp",
-                "description": "<p>Fried to a flawless gold. Party meal: a greater surge of temporary hit points.</p>",
+                "description": "<p>Fried to a flawless gold. Party meal: a greater surge of temporary hit points and resilience against poison and venom.</p>",
                 "rarity": "rare"
             },
             "partyEffect": {
                 "tempHP": "1d8",
-                "ambitiousTempHP": "2d6"
+                "ambitiousTempHP": "2d6",
+                "conSaveBonus": "1d4"
             },
             "successNarrative": "The oil sings and the batter blooms. Hot, crisp, and gone in moments.",
             "failNarrative": "The oil catches too hot. Burnt batter, greasy meat, a smoking ruin."
@@ -167,7 +169,7 @@
             "id": "cook_forest_omelet",
             "name": "Forest Omelet",
             "description": "Eggs folded around diced monster meat. Quick, hot, and sharpens the senses for the road.",
-            "linkedCreatures": ["beast", "monstrosity_owlbear"],
+            "linkedCreatures": ["beast", "beast_arachnid", "monstrosity_owlbear"],
             "skill": "sur",
             "dc": 11,
             "ingredients": [
@@ -184,16 +186,48 @@
             "ambitiousOutput": {
                 "name": "Fluffy Forest Omelet",
                 "img": "icons/consumables/eggs/egg-broken-yolk-yellow.webp",
-                "description": "<p>Light, airy, and perfectly folded. Party meal: temporary hit points and sharper senses in dim light.</p>",
+                "description": "<p>Light, airy, and perfectly folded. Party meal: temporary hit points and a sharper read on the wilds.</p>",
                 "rarity": "uncommon"
             },
             "partyEffect": {
                 "tempHP": "1d4",
                 "ambitiousTempHP": "1d6",
-                "perceptionAdvantageDim": true
+                "wisdomBonus": 1
             },
             "successNarrative": "The pan hisses and the eggs set golden. A quick, bright meal before the road.",
             "failNarrative": "The eggs catch and tear. A rubbery mess not worth serving."
+        },
+        {
+            "id": "cook_croc_stew",
+            "name": "Croc Tail Stew",
+            "description": "Tail meat simmered down with trail rations. Heavy, warming, and hard to shake off.",
+            "linkedCreatures": ["beast_reptile"],
+            "skill": "sur",
+            "dc": 11,
+            "ingredients": [
+                { "name": "Croc Tail", "quantity": 1 },
+                { "name": "Rations", "quantity": 1 }
+            ],
+            "seasoning": { "accepts": ["Salt", "Pepper"], "quantity": 1 },
+            "output": {
+                "name": "Croc Tail Stew",
+                "img": "icons/consumables/food/bowl-stew-brown.webp",
+                "description": "<p>Thick tail stew with a reptilian richness. Party meal: temporary hit points.</p>",
+                "rarity": "common"
+            },
+            "ambitiousOutput": {
+                "name": "Seasoned Croc Tail Stew",
+                "img": "icons/consumables/food/bowl-stew-brown.webp",
+                "description": "<p>Long-simmered until the meat falls apart. Party meal: temporary hit points and a steady grip against toxins.</p>",
+                "rarity": "uncommon"
+            },
+            "partyEffect": {
+                "tempHP": "1d4",
+                "ambitiousTempHP": "1d6",
+                "conSaveBonus": "1d4"
+            },
+            "successNarrative": "The tail meat softens and the broth thickens. A meal that sits heavy and reassuring.",
+            "failNarrative": "The tail toughens and the broth turns greasy. The pot is a loss."
         }
     ]
 }

@@ -1,5 +1,6 @@
 import { CoreIcons } from "../data/CoreIcons.js";
 import { attachImageFallback } from "../ui/ImageFallback.js";
+import { MealBuffHandlers } from "../data/MealBuffHandlers.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -8,13 +9,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
  * @returns {string[]}
  */
 function buffLines(recipe) {
-    const fx = recipe?.partyEffect ?? {};
-    const lines = [];
-    if (fx.tempHP) lines.push(`${fx.tempHP} temp HP`);
-    if (fx.strengthAdvantage) lines.push("Strength advantage");
-    if (fx.darkvisionFeet) lines.push(`Darkvision ${fx.darkvisionFeet} ft`);
-    if (fx.perceptionAdvantageDim) lines.push("Keen senses in dim light");
-    return lines;
+    return MealBuffHandlers.summaries(recipe?.partyEffect ?? {}, false);
 }
 
 /**

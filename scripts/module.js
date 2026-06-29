@@ -23,6 +23,7 @@ import { RespiteIntegration } from "./compat/RespiteIntegration.js";
 import { OverlayContentLoader } from "./services/OverlayContentLoader.js";
 import { ensureBuiltinBuffHandlers } from "./data/MealBuffHandlers.js";
 import { ConsolePanelRegistry } from "./ui/ConsolePanelRegistry.js";
+import { ButcherCorpseMarker } from "./services/ButcherCorpseMarker.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 
@@ -186,6 +187,7 @@ Hooks.once("ready", async () => {
     await CreatureRegistry.load();
     await RecipeRegistry.load();
     ButcherEngine.init();
+    ButcherCorpseMarker.init();
 
     // Migrate the built-in meal buffs onto the shared buff-handler seam so the
     // four core buffs register the same way overlay buffs do.

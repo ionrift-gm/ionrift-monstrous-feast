@@ -83,6 +83,46 @@
         "flavour": "Part owl, part bear, entirely edible. The dark meat near the ribs is the best."
     },
 
+    "beast_arachnid": {
+        "minCR": 0,
+        "tier": "common",
+        "label": "Giant Spider",
+        "basic": [
+            { "name": "Monster Meat", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 }
+        ],
+        "standard": [
+            { "name": "Spider Haunch", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Spider Silk", "qty": 1, "type": "loot" }
+        ],
+        "exceptional": [
+            { "name": "Spider Haunch", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Spider Silk", "qty": 2, "type": "loot" },
+            { "name": "Venom Sac", "qty": 1, "type": "loot" }
+        ],
+        "mishap": { "type": "damage", "damage": "1d4", "damageType": "piercing", "desc": "A leg hook catches the blade. The joints twitch after death." },
+        "flavour": "Eight legs, two too many. The abdomen yields dense, stringy meat the cookbook marks as safe once the venom sac is removed."
+    },
+
+    "beast_reptile": {
+        "minCR": 0,
+        "tier": "common",
+        "label": "Crocodile",
+        "basic": [
+            { "name": "Monster Meat", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 }
+        ],
+        "standard": [
+            { "name": "Croc Tail", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Croc Hide", "qty": 1, "type": "loot" }
+        ],
+        "exceptional": [
+            { "name": "Croc Tail", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Croc Hide", "qty": 1, "type": "loot" },
+            { "name": "Croc Tooth", "qty": 2, "type": "loot" }
+        ],
+        "mishap": { "type": "damage", "damage": "1d6", "damageType": "slashing", "desc": "The jaw snaps shut on reflex. Armored hide, armored reflexes." },
+        "flavour": "Tail meat is the prize. The hide is too scaly for a quick field dress but worth taking if the cut is clean."
+    },
+
     "monstrosity": {
         "minCR": 3,
         "tier": "uncommon",

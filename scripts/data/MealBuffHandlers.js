@@ -127,21 +127,110 @@ export const BUILTIN_BUFF_HANDLERS = [
         }] : [])
     },
     {
-        id: "perceptionAdvantageDim",
-        label: "Keen senses in dim light",
-        keys: ["perceptionAdvantageDim"],
+        id: "passivePerceptionBonus",
+        label: "Passive Perception bonus",
+        keys: ["passivePerceptionBonus"],
         managed: true,
-        appliesTo: (fx) => Boolean(fx?.perceptionAdvantageDim),
-        summary: (fx) => (fx?.perceptionAdvantageDim ? "Keen senses in dim light" : null),
-        // The perception buff only lands on the ambitious tier.
-        memberLine: (fx, ambitious) => (ambitious && fx?.perceptionAdvantageDim
-            ? "advantage on Perception checks until your next long rest" : null),
-        manualLine: (fx, ambitious) => (ambitious && fx?.perceptionAdvantageDim
-            ? "Party gains advantage on Perception in dim light until the next long rest (track manually)." : null),
-        buff: (fx, ambitious) => (ambitious && fx?.perceptionAdvantageDim
-            ? { type: "skill_advantage", skill: "prc", conditions: { dimLight: true }, duration: DURATION, target: PARTY } : null),
-        changes: (fx, ambitious) => (ambitious && fx?.perceptionAdvantageDim ? [{
-            key: "system.skills.prc.roll.mode",
+        appliesTo: (fx) => Boolean(fx?.passivePerceptionBonus),
+        summary: (fx, ambitious) => (ambitious && fx?.passivePerceptionBonus
+            ? `+${fx.passivePerceptionBonus} passive Perception` : null),
+        memberLine: (fx, ambitious) => (ambitious && fx?.passivePerceptionBonus
+            ? `+${fx.passivePerceptionBonus} passive Perception until your next long rest` : null),
+        manualLine: (fx, ambitious) => (ambitious && fx?.passivePerceptionBonus
+            ? `Party gains +${fx.passivePerceptionBonus} passive Perception until the next long rest (track manually).` : null),
+        buff: (fx, ambitious) => (ambitious && fx?.passivePerceptionBonus
+            ? {
+                type: "passive_perception",
+                bonus: Number(fx.passivePerceptionBonus),
+                duration: DURATION,
+                target: PARTY
+            } : null),
+        changes: (fx, ambitious) => (ambitious && fx?.passivePerceptionBonus ? [{
+            key: "system.skills.prc.passive",
+            mode: aeMode("ADD"),
+            value: String(fx.passivePerceptionBonus),
+            priority: 20
+        }] : [])
+    },
+    {
+        id: "wisdomBonus",
+        label: "Wisdom check bonus",
+        keys: ["wisdomBonus"],
+        managed: true,
+        appliesTo: (fx) => Boolean(fx?.wisdomBonus),
+        summary: (fx, ambitious) => (ambitious && fx?.wisdomBonus
+            ? `+${fx.wisdomBonus} Wisdom checks` : null),
+        memberLine: (fx, ambitious) => (ambitious && fx?.wisdomBonus
+            ? `+${fx.wisdomBonus} to Wisdom ability checks until your next long rest` : null),
+        manualLine: (fx, ambitious) => (ambitious && fx?.wisdomBonus
+            ? `Party gains +${fx.wisdomBonus} to Wisdom checks until the next long rest (track manually).` : null),
+        buff: (fx, ambitious) => (ambitious && fx?.wisdomBonus
+            ? {
+                type: "ability_bonus",
+                ability: "wis",
+                bonus: Number(fx.wisdomBonus),
+                duration: DURATION,
+                target: PARTY
+            } : null),
+        changes: (fx, ambitious) => (ambitious && fx?.wisdomBonus ? [{
+            key: "system.abilities.wis.bonuses.check",
+            mode: aeMode("ADD"),
+            value: String(fx.wisdomBonus),
+            priority: 20
+        }] : [])
+    },
+    {
+        id: "wisSaveAdvantage",
+        label: "Wisdom save advantage",
+        keys: ["wisSaveAdvantage"],
+        managed: true,
+        appliesTo: (fx) => Boolean(fx?.wisSaveAdvantage),
+        summary: (fx, ambitious) => (ambitious && fx?.wisSaveAdvantage
+            ? "Advantage on next WIS save" : null),
+        memberLine: (fx, ambitious) => (ambitious && fx?.wisSaveAdvantage
+            ? "advantage on your next Wisdom saving throw" : null),
+        manualLine: (fx, ambitious) => (ambitious && fx?.wisSaveAdvantage
+            ? "Party gains advantage on the next Wisdom save (track manually)." : null),
+        buff: (fx, ambitious) => (ambitious && fx?.wisSaveAdvantage
+            ? {
+                type: "advantage",
+                save: { ability: "wis" },
+                duration: "nextSave",
+                target: PARTY
+            } : null),
+        changes: (fx, ambitious) => (ambitious && fx?.wisSaveAdvantage ? [{
+            key: "system.abilities.wis.save.roll.mode",
+            mode: aeMode("ADD"),
+            value: "1",
+            priority: 20
+        }] : [])
+    },
+    {
+        id: "conSaveBonus",
+        label: "Constitution save bonus (limited)",
+        keys: ["conSaveBonus"],
+        managed: true,
+        appliesTo: (fx) => Boolean(fx?.conSaveBonus),
+        summary: (fx, ambitious) => {
+            if (!ambitious || !fx?.conSaveBonus) return null;
+            const uses = String(fx.conSaveBonus);
+            return `+1 CON saves (${uses} uses)`;
+        },
+        memberLine: (fx, ambitious) => (ambitious && fx?.conSaveBonus
+            ? `+1 to Constitution saves for the next ${fx.conSaveBonus} saves (until long rest)` : null),
+        manualLine: (fx, ambitious) => (ambitious && fx?.conSaveBonus
+            ? `Party gains +1 to Constitution saves for ${fx.conSaveBonus} saves (track manually).` : null),
+        buff: (fx, ambitious) => (ambitious && fx?.conSaveBonus
+            ? {
+                type: "save_bonus",
+                save: { ability: "con" },
+                bonus: 1,
+                uses: String(fx.conSaveBonus),
+                duration: DURATION,
+                target: PARTY
+            } : null),
+        changes: (fx, ambitious) => (ambitious && fx?.conSaveBonus ? [{
+            key: "system.abilities.con.bonuses.save",
             mode: aeMode("ADD"),
             value: "1",
             priority: 20
@@ -222,11 +311,11 @@ export const MealBuffHandlers = {
      * @param {object} partyEffect
      * @returns {string[]}
      */
-    summaries(partyEffect) {
+    summaries(partyEffect, ambitious = false) {
         warnUnknownKeys(partyEffect);
         const lines = [];
         for (const handler of mfHandlers()) {
-            const line = callHandler(handler, "summary", partyEffect);
+            const line = callHandler(handler, "summary", partyEffect, ambitious);
             if (line) lines.push(line);
         }
         return lines;
