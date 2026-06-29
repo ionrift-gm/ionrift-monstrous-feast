@@ -162,19 +162,16 @@ export const MealEffects = {
         await this._clearMealEffects(actor);
 
         const parts = [];
-        let seconds = 28800;
-        if (partyEffect.strengthAdvantage && !partyEffect.darkvisionFeet) {
-            seconds = 86400;
-        }
+        const seconds = 28800;
 
         if (partyEffect.strengthAdvantage) {
-            parts.push("advantage on Strength checks until dawn");
+            parts.push("advantage on Strength checks until your next long rest");
         }
         if (partyEffect.darkvisionFeet) {
-            parts.push(`${partyEffect.darkvisionFeet}ft darkvision for 8 hours`);
+            parts.push(`${partyEffect.darkvisionFeet}ft darkvision until your next long rest`);
         }
         if (ambitious && partyEffect.perceptionAdvantageDim) {
-            parts.push("advantage on Perception checks for 8 hours");
+            parts.push("advantage on Perception checks until your next long rest");
         }
 
         const title = mealName ? `Monstrous Feast: ${mealName}` : "Monstrous Feast";
@@ -216,13 +213,13 @@ export const MealEffects = {
             }
         } else {
             if (partyEffect.strengthAdvantage) {
-                lines.push("Party gains advantage on Strength checks until dawn (track manually).");
+                lines.push("Party gains advantage on Strength checks until the next long rest (track manually).");
             }
             if (partyEffect.darkvisionFeet) {
-                lines.push(`Party gains ${partyEffect.darkvisionFeet}ft darkvision for 8 hours (track manually).`);
+                lines.push(`Party gains ${partyEffect.darkvisionFeet}ft darkvision until the next long rest (track manually).`);
             }
             if (partyEffect.perceptionAdvantageDim && ambitious) {
-                lines.push("Party gains advantage on Perception in dim light until dawn (track manually).");
+                lines.push("Party gains advantage on Perception in dim light until the next long rest (track manually).");
             }
         }
 

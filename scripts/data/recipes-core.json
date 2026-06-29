@@ -82,7 +82,7 @@
             "output": {
                 "name": "Owlbear Stew",
                 "img": "icons/consumables/food/bowl-stew-brown.webp",
-                "description": "<p>A rich, dark stew with a faintly gamey warmth. Party meal: darkvision for 8 hours.</p>",
+                "description": "<p>A rich, dark stew with a faintly gamey warmth. Party meal: darkvision until your next long rest.</p>",
                 "rarity": "uncommon"
             },
             "ambitiousOutput": {

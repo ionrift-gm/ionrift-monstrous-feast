@@ -10,14 +10,14 @@
         "tier": "common",
         "label": "Bear",
         "basic": [
-            { "name": "Monster Meat", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 }
+            { "name": "Monster Meat", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 }
         ],
         "standard": [
-            { "name": "Bear Haunch", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Bear Haunch", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 },
             { "name": "Bear Fat", "qty": 1, "type": "loot" }
         ],
         "exceptional": [
-            { "name": "Bear Haunch", "qty": 3, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Bear Haunch", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
             { "name": "Bear Fat", "qty": 2, "type": "loot" },
             { "name": "Bear Hide", "qty": 1, "type": "loot" }
         ],
@@ -30,14 +30,14 @@
         "tier": "common",
         "label": "Boar",
         "basic": [
-            { "name": "Monster Meat", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 }
+            { "name": "Monster Meat", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 }
         ],
         "standard": [
-            { "name": "Boar Loin", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Boar Loin", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 },
             { "name": "Boar Tusk", "qty": 1, "type": "loot" }
         ],
         "exceptional": [
-            { "name": "Boar Loin", "qty": 3, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Boar Loin", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
             { "name": "Boar Tusk", "qty": 2, "type": "loot" },
             { "name": "Boar Hide", "qty": 1, "type": "loot" }
         ],
@@ -68,14 +68,14 @@
         "tier": "uncommon",
         "label": "Owlbear",
         "basic": [
-            { "name": "Monster Meat", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 }
+            { "name": "Monster Meat", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 }
         ],
         "standard": [
-            { "name": "Owlbear Flank", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Owlbear Flank", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 },
             { "name": "Owlbear Feather", "qty": 1, "type": "loot" }
         ],
         "exceptional": [
-            { "name": "Owlbear Flank", "qty": 3, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Owlbear Flank", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
             { "name": "Owlbear Feather", "qty": 2, "type": "loot" },
             { "name": "Owlbear Beak", "qty": 1, "type": "loot" }
         ],
