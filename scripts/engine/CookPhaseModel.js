@@ -80,7 +80,7 @@ export function buildCookPhaseContext(actor, recipe, bookItem = null) {
 
     const ingredientStatus = (recipe.ingredients ?? []).map(ing => {
         const need = Math.max(1, Number(ing.quantity) || 1);
-        const have = actor ? countIngredient(actor, ing.name) : 0;
+        const have = actor ? countIngredient(actor, ing) : 0;
         return {
             name: ing.name,
             need,

@@ -14,6 +14,7 @@ import { RecipePageHandler } from "./handlers/RecipePageHandler.js";
 import { grantRecipePage, inscribeRecipePage } from "./services/RecipePageService.js";
 import { GMRelay } from "./services/GMRelay.js";
 import { MealEffects } from "./services/MealEffects.js";
+import { registerMonsterDish } from "./services/MealBuffs.js";
 import { CompendiumService } from "./services/CompendiumService.js";
 import { DiscoveryService } from "./services/DiscoveryService.js";
 import { CookbookMirror } from "./services/CookbookMirror.js";
@@ -127,6 +128,11 @@ Hooks.once("ready", async () => {
     await CreatureRegistry.load();
     await RecipeRegistry.load();
     ButcherEngine.init();
+
+    // Register this module's dishes with the kernel feed pipeline when present.
+    // Recipes must be loaded first so buff translation can read them.
+    registerMonsterDish(Library.cooking);
+
     await ensurePartyCookbookJournal();
 
     if (game.user.isGM && DiscoveryService.findAllPartyCookbooks().length > 1) {

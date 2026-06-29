@@ -41,13 +41,11 @@
             <p class="mf-lc-cook-buff"><i class="fas fa-bolt"></i> {{#each buffs}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
             {{/if}}
             {{#if cookName}}<p class="mf-cook-by">Cooked by {{cookName}}</p>{{/if}}
+            <p class="mf-cook-served"><i class="fas fa-bowl-food"></i> Ready to serve to the whole party.</p>
         </article>
         <div class="mf-lc-cook-actions">
-            <button type="button" class="mf-lc-cook-btn-primary" data-action="serveMeal">
-                <i class="fas fa-bowl-food"></i> Serve the party now
-            </button>
-            <button type="button" class="mf-lc-cook-btn-secondary" data-action="keepMeal">
-                <i class="fas fa-box-archive"></i> Pack it away
+            <button type="button" class="mf-lc-cook-btn-primary" data-action="serveCook">
+                <i class="fas fa-bowl-food"></i> Serve to the party
             </button>
         </div>
     </div>

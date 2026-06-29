@@ -64,6 +64,14 @@ export const Library = {
         return _api()?.system ?? null;
     },
 
+    /**
+     * Shared cooking/feeding abstraction. Present on kernels that ship it, null
+     * on older libraries so callers can fall back to in-module behaviour.
+     */
+    get cooking() {
+        return _api()?.cooking ?? null;
+    },
+
     /** Overlay service used to deliver the premium depth pack. */
     get overlay() {
         return _api()?.overlay ?? null;

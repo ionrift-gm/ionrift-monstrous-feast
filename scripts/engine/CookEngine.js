@@ -18,7 +18,7 @@ export const CookEngine = {
     checkIngredients(actor, recipe) {
         const missing = [];
         for (const ing of recipe.ingredients ?? []) {
-            const have = countIngredient(actor, ing.name);
+            const have = countIngredient(actor, ing);
             if (have < ing.quantity) {
                 missing.push(`${ing.name} (${have}/${ing.quantity})`);
             }
@@ -28,7 +28,7 @@ export const CookEngine = {
 
     async _consumeIngredients(actor, ingredients) {
         for (const ing of ingredients ?? []) {
-            await consumeIngredient(actor, ing.name, ing.quantity);
+            await consumeIngredient(actor, ing, ing.quantity);
         }
     },
 
@@ -114,9 +114,12 @@ export const CookEngine = {
      * @param {Item} [opts.bookItem]
      * @param {{ total: number, natural: number }} opts.rollResult
      * @param {object} [opts.dcBreakdown]
+     * @param {boolean} [opts.serve] When true, a successful cook serves the party
+     *        immediately. The Living Cookbook session sets this false so serving
+     *        waits on an explicit player action from the success screen.
      * @returns {Promise<object|null>}
      */
-    async resolveCook(actor, recipeId, { bookItem = null, rollResult, dcBreakdown = null } = {}) {
+    async resolveCook(actor, recipeId, { bookItem = null, rollResult, dcBreakdown = null, serve = true } = {}) {
         const notice = SystemBridge.unsupportedNotice();
         if (notice) {
             ui.notifications.warn(notice);
@@ -177,6 +180,14 @@ export const CookEngine = {
 
         Logger.log(`Cooked ${recipe.name} (${ambitious ? "ambitious" : "standard"}${seasonedWith ? `, seasoned with ${seasonedWith}` : ""}).`);
 
+        // A finished Monstrous Feast meal is eaten on the spot. The programmatic
+        // entry point serves the whole party now; the Living Cookbook session
+        // passes serve:false and serves on an explicit player action from the
+        // success screen. The dish is never stored as an inventory item.
+        if (serve) {
+            await MealService.serveParty(actor, recipe, ambitious);
+        }
+
         return {
             success: true,
             recipe,
@@ -203,12 +214,6 @@ export const CookEngine = {
 
         const dcBreakdown = buildCookDcBreakdown(actor, recipe);
         const rollResult = await this.requestSurvivalRoll(actor, recipe, dcBreakdown);
-        const result = await this.resolveCook(actor, recipeId, { bookItem, rollResult, dcBreakdown });
-
-        if (result?.success) {
-            await MealService.serveParty(actor, recipe, result.ambitious);
-        }
-
-        return result;
+        return this.resolveCook(actor, recipeId, { bookItem, rollResult, dcBreakdown });
     }
 };

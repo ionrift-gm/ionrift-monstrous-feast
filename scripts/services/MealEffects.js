@@ -1,8 +1,14 @@
 import { SystemBridge } from "../compat/SystemBridge.js";
+import { Library } from "../compat/Library.js";
 import { GMRelay, decideEffectRoute } from "./GMRelay.js";
+import { describePartyEffectParts, trackManuallyLines, SHARED_BUFF_SLOT } from "./MealBuffs.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 const MEAL_EFFECT_FLAG = "mealEffect";
+
+/** Kernel shared cooking-buff slot. Must mirror the library's flag constants. */
+const SHARED_BUFF_NAMESPACE = "ionrift-library";
+const SHARED_BUFF_FLAG = "cookingBuff";
 
 /**
  * Whether a dnd5e rest result represents a completed long rest. The meal buff
@@ -69,14 +75,16 @@ export const MealEffects = {
     },
 
     /**
-     * Whether the actor already carries one of this module's meal effects.
-     * Effects from other modules (e.g. a Well Fed buff) are deliberately ignored.
+     * Whether the actor already carries a meal buff this module would replace.
+     * Covers the shared kernel cooking slot and, for older kernels, this
+     * module's own legacy meal effect. Unrelated effects are ignored.
      * @param {Actor} actor
      * @returns {boolean}
      */
     hasMealEffect(actor) {
         return Boolean(actor?.effects?.some(effect =>
-            effect.getFlag?.(MODULE_ID, MEAL_EFFECT_FLAG) === true
+            effect.flags?.[SHARED_BUFF_NAMESPACE]?.[SHARED_BUFF_FLAG] === true
+            || effect.getFlag?.(MODULE_ID, MEAL_EFFECT_FLAG) === true
         ));
     },
 
@@ -181,6 +189,22 @@ export const MealEffects = {
     async onLongRestCompleted(actor, result) {
         if (SystemBridge.systemId() !== "dnd5e") return "noop";
         if (!isLongRestResult(result)) return "noop";
+        return this.clearSharedSlot(actor);
+    },
+
+    /**
+     * Clear the served meal buff. Routes through the kernel's shared cooking
+     * slot when the abstraction is present; falls back to this module's own
+     * routed removal on older kernels.
+     * @param {Actor} actor
+     * @returns {Promise<"local"|"relay"|"blocked"|"noop">}
+     */
+    async clearSharedSlot(actor) {
+        if (!actor || !this.hasMealEffect(actor)) return "noop";
+        const cooking = Library.cooking;
+        if (cooking?.feed?.clearSlot) {
+            return cooking.feed.clearSlot(actor, { slot: SHARED_BUFF_SLOT });
+        }
         return this.removeMealEffectRouted(actor);
     },
 
@@ -249,20 +273,11 @@ export const MealEffects = {
         });
         if (!changes.length) return lines;
 
-        const parts = [];
         // Fallback expiry only. On dnd5e the long-rest hook clears the buff;
         // this bounds the effect if that signal never arrives.
         const seconds = 28800;
 
-        if (partyEffect.strengthAdvantage) {
-            parts.push("advantage on Strength checks until your next long rest");
-        }
-        if (partyEffect.darkvisionFeet) {
-            parts.push(`${partyEffect.darkvisionFeet}ft darkvision until your next long rest`);
-        }
-        if (ambitious && partyEffect.perceptionAdvantageDim) {
-            parts.push("advantage on Perception checks until your next long rest");
-        }
+        const parts = describePartyEffectParts(partyEffect, ambitious);
 
         const title = mealName ? `Monstrous Feast: ${mealName}` : "Monstrous Feast";
         const route = await this.applyMealEffectRouted(actor, {
@@ -302,15 +317,7 @@ export const MealEffects = {
                 lines.push(...buffLines);
             }
         } else {
-            if (partyEffect.strengthAdvantage) {
-                lines.push("Party gains advantage on Strength checks until the next long rest (track manually).");
-            }
-            if (partyEffect.darkvisionFeet) {
-                lines.push(`Party gains ${partyEffect.darkvisionFeet}ft darkvision until the next long rest (track manually).`);
-            }
-            if (partyEffect.perceptionAdvantageDim && ambitious) {
-                lines.push("Party gains advantage on Perception in dim light until the next long rest (track manually).");
-            }
+            lines.push(...trackManuallyLines(partyEffect, ambitious));
         }
 
         return lines;

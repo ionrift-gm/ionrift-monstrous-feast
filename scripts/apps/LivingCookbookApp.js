@@ -1,11 +1,11 @@
 import { CookEngine } from "../engine/CookEngine.js";
+import { MealService } from "../services/MealService.js";
 import { RecipeRegistry } from "../data/RecipeRegistry.js";
 import { DiscoveryService } from "../services/DiscoveryService.js";
 import { inscribeRecipePage } from "../services/RecipePageService.js";
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { buildCodex } from "../data/CodexModel.js";
 import { CodexController } from "../ui/CodexController.js";
-import { MealService } from "../services/MealService.js";
 import { CookbookMirror } from "../services/CookbookMirror.js";
 import { CookbookLauncher } from "../handlers/CookbookLauncher.js";
 import { bindTabs, bindFlyouts } from "../ui/TabBinder.js";
@@ -59,8 +59,8 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
             beginCook: LivingCookbookApp.#onBeginCook,
             rollForCook: LivingCookbookApp.#onRollForCook,
             closeFailed: LivingCookbookApp.#onCloseFailed,
-            serveMeal: LivingCookbookApp.#onServeMeal,
-            keepMeal: LivingCookbookApp.#onKeepMeal,
+            serveCook: LivingCookbookApp.#onServeCook,
+            finishCook: LivingCookbookApp.#onFinishCook,
             shareBook: LivingCookbookApp.#onShareBook
         }
     };
@@ -280,12 +280,31 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         return this.#rollForCook();
     }
 
-    static #onServeMeal() {
-        return this.#serveMeal();
+    static #onServeCook() {
+        return this.#serveCook();
     }
 
-    static #onKeepMeal() {
-        return this.#keepMeal();
+    static #onFinishCook() {
+        this.#clearCookSession();
+        this.render(false);
+    }
+
+    /**
+     * Serve the just-cooked dish to the party on an explicit player action. The
+     * cook itself only consumes ingredients and posts the splash; serving (the
+     * shared cooking-slot buff plus per-member temp HP) waits for this click.
+     * The success screen closes once serving is dispatched.
+     */
+    async #serveCook() {
+        const session = this.#cookSession;
+        if (session?.phase !== "success" || !session.result?.success || session.serving) return;
+
+        session.serving = true;
+        await MealService.serveParty(this.#actor, session.result.recipe, Boolean(session.result.ambitious));
+
+        if (this.#cookSession !== session) return;
+        this.#clearCookSession();
+        this.render(false);
     }
 
     static #onShareBook() {
@@ -345,7 +364,8 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         const result = await CookEngine.resolveCook(this.#actor, recipe.id, {
             bookItem: this.#bookItem,
             rollResult,
-            dcBreakdown: context.dcBreakdown
+            dcBreakdown: context.dcBreakdown,
+            serve: false
         });
 
         if (!this.#cookSession) return;
@@ -402,30 +422,6 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         );
         resolve(result);
         session.rollAbort?.abort();
-    }
-
-    async #serveMeal() {
-        const result = this.#cookSession?.result;
-        const actor = this.#actor;
-        this.#clearCookSession();
-        this.render(false);
-
-        if (!result?.recipe || !actor) return;
-        await MealService.serveParty(actor, result.recipe, result.ambitious);
-    }
-
-    async #keepMeal() {
-        const result = this.#cookSession?.result;
-        const actor = this.#actor;
-        this.#clearCookSession();
-        this.render(false);
-
-        if (!result?.recipe || !actor) return;
-        await MealService.addDishToInventory(actor, result.recipe, result.ambitious);
-        const output = result.ambitious
-            ? (result.recipe.ambitiousOutput ?? result.recipe.output)
-            : result.recipe.output;
-        ui.notifications.info(`${output?.name ?? result.recipe.name} stored in ${actor.name}'s pack.`);
     }
 
     #prepareReadOnlyContext() {

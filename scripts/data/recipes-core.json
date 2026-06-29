@@ -109,7 +109,7 @@
             "dc": 8,
             "ingredients": [
                 { "name": "Flour", "quantity": 2 },
-                { "name": "Water", "quantity": 1 }
+                { "name": "Water", "quantity": 1, "match": { "contents": "water", "viaCharges": true } }
             ],
             "seasoning": { "accepts": ["Salt", "Cinnamon"], "quantity": 1 },
             "output": {

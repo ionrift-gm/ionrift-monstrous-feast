@@ -1,7 +1,5 @@
 import { LivingCookbookApp } from "../apps/LivingCookbookApp.js";
 import { DiscoveryService } from "../services/DiscoveryService.js";
-import { MealService } from "../services/MealService.js";
-import { RecipeRegistry } from "../data/RecipeRegistry.js";
 import { Logger } from "../lib/Logger.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
@@ -10,41 +8,9 @@ export const ItemSheetHandler = {
     init() {
         Hooks.on("renderItemSheet", (app, html, data) => {
             ItemSheetHandler._injectOpenButton(app, html);
-            ItemSheetHandler._injectServeButton(app, html);
         });
         Hooks.on("renderItemSheet5e", (app, html, data) => {
             ItemSheetHandler._injectOpenButton(app, html);
-            ItemSheetHandler._injectServeButton(app, html);
-        });
-        Hooks.on("dnd5e.getItemContextOptions", (item, options) => {
-            ItemSheetHandler._injectServeContext(item, options);
-        });
-    },
-
-    /**
-     * Add a right-click "Serve to Party" option to a packed dish. Uses the same
-     * dnd5e inventory hook Respite uses, so it works standalone and appears
-     * alongside Respite's per-person Eat when both are installed.
-     * @param {Item} item
-     * @param {object[]} options
-     */
-    _injectServeContext(item, options) {
-        if (item?.getFlag?.(MODULE_ID, "monsterDish") !== true) return;
-
-        const actor = item.parent;
-        if (!actor?.isOwner) return;
-
-        const recipeId = item.getFlag(MODULE_ID, "recipeId");
-        const recipe = recipeId ? RecipeRegistry.get(recipeId) : null;
-        if (!recipe) return;
-
-        const ambitious = Boolean(item.getFlag(MODULE_ID, "ambitious"));
-        options.push({
-            name: "Serve to Party",
-            icon: '<i class="fas fa-bowl-food"></i>',
-            group: "action",
-            condition: () => (item.system?.quantity ?? 1) > 0,
-            callback: () => MealService.serveParty(actor, recipe, ambitious, { sourceItem: item })
         });
     },
 
@@ -74,43 +40,6 @@ export const ItemSheetHandler = {
         button.addEventListener("click", (event) => {
             event.preventDefault();
             LivingCookbookApp.open(item, actor);
-        });
-        footer.prepend(button);
-    },
-
-    /**
-     * Add a serve action to a packed dish so the owner can feed the party later.
-     * @param {Application} app
-     * @param {HTMLElement|jQuery} html
-     */
-    _injectServeButton(app, html) {
-        const item = app.item ?? app.object;
-        if (!item?.getFlag?.(MODULE_ID, "monsterDish")) return;
-
-        const actor = item.actor ?? item.parent;
-        if (!actor?.isOwner) return;
-
-        const recipeId = item.getFlag(MODULE_ID, "recipeId");
-        const recipe = recipeId ? RecipeRegistry.get(recipeId) : null;
-        if (!recipe) return;
-
-        const root = html instanceof HTMLElement ? html : html?.[0];
-        if (!root || root.querySelector(".mf-serve-dish")) return;
-
-        const footer = root.querySelector(".sheet-footer")
-            ?? root.querySelector("footer")
-            ?? root.querySelector(".window-content");
-        if (!footer) return;
-
-        const ambitious = Boolean(item.getFlag(MODULE_ID, "ambitious"));
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "mf-serve-dish";
-        button.innerHTML = '<i class="fas fa-bowl-food"></i> Serve to Party';
-        button.addEventListener("click", async (event) => {
-            event.preventDefault();
-            await MealService.serveParty(actor, recipe, ambitious, { sourceItem: item });
-            app.close();
         });
         footer.prepend(button);
     }

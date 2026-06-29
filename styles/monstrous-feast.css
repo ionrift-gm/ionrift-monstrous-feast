@@ -1150,6 +1150,10 @@ button.mf-open-party-cookbook:hover {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    /* Scoped glass fill: this AppV2 window misses the shared .ionrift-window
+       (.window-app) background, so set a solid-but-glassy panel here only. */
+    background: rgba(15, 15, 20, 0.9) !important;
+    backdrop-filter: blur(24px);
 }
 
 .application.monstrous-feast-living-cookbook .window-content {
@@ -2849,6 +2853,18 @@ button.mf-open-party-cookbook:hover {
     color: rgba(255, 255, 255, 0.45);
     opacity: 0;
     animation: mf-fade-in 0.5s ease 1.1s forwards;
+}
+
+.mf-cook-served {
+    margin: 0.2rem 0 0.6rem;
+    font-size: 0.82rem;
+    color: rgba(120, 220, 160, 0.85);
+    opacity: 0;
+    animation: mf-fade-in 0.5s ease 1.2s forwards;
+}
+
+.mf-cook-served i {
+    margin-right: 0.35rem;
 }
 
 .mf-cook-card .mf-ceremony-actions {

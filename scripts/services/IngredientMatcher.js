@@ -19,6 +19,16 @@ const GENERIC_OIL_NAMES = new Set([
 ]);
 
 /**
+ * The kernel's contents/charge-aware matcher, when an Ionrift Library that ships
+ * the cooking abstraction is active. Absent on older kernels, where the
+ * in-module name matcher below takes over.
+ * @returns {object|null}
+ */
+function cookingMatch() {
+    return globalThis.game?.ionrift?.library?.cooking?.match ?? null;
+}
+
+/**
  * @returns {boolean} Whether a plain flask of oil may stand in for Cooking Oil.
  */
 function acceptsGenericOil() {
@@ -30,33 +40,90 @@ function acceptsGenericOil() {
 }
 
 /**
- * @param {Item} item
- * @param {string} ingredientName
- * @returns {boolean}
+ * Build a kernel ingredient spec from a recipe ingredient or a bare name.
+ * Folds in this module's matching quirks: the "Monster Meat" wildcard (any
+ * butchered meat cut) and the optional generic-oil substitution. Flag and
+ * food-tag lookups are scoped to this module's namespace.
+ * @param {string|object} selector A name, or an ingredient `{ name, quantity, accepts, match }`.
+ * @returns {object} An IngredientSpec for `cooking.match`.
  */
-export function itemMatchesIngredient(item, ingredientName) {
-    if (!item || !ingredientName) return false;
-    if (item.name === ingredientName) return true;
+function buildSpec(selector) {
+    const spec = {};
 
-    if (ingredientName === COOKING_OIL && acceptsGenericOil()) {
-        return GENERIC_OIL_NAMES.has(String(item.name ?? "").trim().toLowerCase());
+    if (selector && typeof selector === "object") {
+        if (selector.name) spec.name = selector.name;
+        if (selector.quantity != null) spec.quantity = selector.quantity;
+        if (Array.isArray(selector.accepts)) spec.accepts = [...selector.accepts];
+        if (selector.match) spec.match = { ...selector.match, flagScope: MODULE_ID };
+    } else {
+        spec.name = String(selector ?? "");
     }
 
-    if (ingredientName !== GENERIC_MONSTER_MEAT) return false;
+    if (spec.name === GENERIC_MONSTER_MEAT && !spec.match) {
+        spec.match = { flag: "monsterIngredient", foodTag: "meat", flagScope: MODULE_ID };
+    }
 
-    const flags = item.getFlag?.(MODULE_ID) ?? item.flags?.[MODULE_ID] ?? {};
-    return flags.monsterIngredient === true && flags.foodTag === "meat";
+    if (spec.name === COOKING_OIL && acceptsGenericOil()) {
+        spec.accepts = [...new Set([...(spec.accepts ?? []), ...GENERIC_OIL_NAMES])];
+    }
+
+    return spec;
+}
+
+function nameEquals(item, name) {
+    if (!item || !name) return false;
+    return String(item.name ?? "").trim().toLowerCase() === String(name).trim().toLowerCase();
+}
+
+/**
+ * In-module fallback matcher for kernels that predate the cooking abstraction.
+ * Name and food-tag matching only; charge-aware contents (water) degrade to
+ * exact-name matching, which is this module's prior behaviour.
+ * @param {Item|object} item
+ * @param {object} spec
+ * @returns {boolean}
+ */
+function legacyItemMatches(item, spec) {
+    if (!item || !spec) return false;
+    if (spec.name && nameEquals(item, spec.name)) return true;
+    if (Array.isArray(spec.accepts) && spec.accepts.some(name => nameEquals(item, name))) return true;
+
+    const match = spec.match;
+    if (match?.flag || match?.foodTag) {
+        const flags = item.getFlag?.(MODULE_ID) ?? item.flags?.[MODULE_ID] ?? {};
+        const flagOk = match.flag ? Boolean(flags[match.flag]) : true;
+        const tagOk = match.foodTag ? flags.foodTag === match.foodTag : true;
+        if (flagOk && tagOk) return true;
+    }
+    return false;
+}
+
+/**
+ * @param {Item} item
+ * @param {string|object} selector Ingredient name or recipe ingredient object.
+ * @returns {boolean}
+ */
+export function itemMatchesIngredient(item, selector) {
+    if (!item || !selector) return false;
+    const spec = buildSpec(selector);
+    const match = cookingMatch();
+    if (match) return match.itemMatches(item, spec, {});
+    return legacyItemMatches(item, spec);
 }
 
 /**
  * @param {Actor} actor
- * @param {string} ingredientName
+ * @param {string|object} selector Ingredient name or recipe ingredient object.
  * @returns {number}
  */
-export function countIngredient(actor, ingredientName) {
+export function countIngredient(actor, selector) {
+    const spec = buildSpec(selector);
+    const match = cookingMatch();
+    if (match) return match.count(actor, spec, {});
+
     let total = 0;
     for (const item of actor?.items ?? []) {
-        if (!itemMatchesIngredient(item, ingredientName)) continue;
+        if (!legacyItemMatches(item, spec)) continue;
         total += Number(item.system?.quantity ?? 1);
     }
     return total;
@@ -79,12 +146,20 @@ export function findAvailable(actor, names, quantity = 1) {
 
 /**
  * @param {Actor} actor
- * @param {string} ingredientName
+ * @param {string|object} selector Ingredient name or recipe ingredient object.
  * @param {number} quantity
  */
-export async function consumeIngredient(actor, ingredientName, quantity) {
+export async function consumeIngredient(actor, selector, quantity) {
+    if (!actor) return;
+    const spec = buildSpec(selector);
+    const match = cookingMatch();
+    if (match) {
+        await match.consume(actor, spec, quantity, {});
+        return;
+    }
+
     let remaining = quantity;
-    const stacks = actor.items.filter(item => itemMatchesIngredient(item, ingredientName));
+    const stacks = actor.items.filter(item => legacyItemMatches(item, spec));
     for (const stack of stacks) {
         if (remaining <= 0) break;
         const qty = Number(stack.system?.quantity ?? 1);

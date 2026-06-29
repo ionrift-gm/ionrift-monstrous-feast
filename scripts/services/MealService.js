@@ -1,5 +1,6 @@
 import { MealEffects } from "./MealEffects.js";
-import { buildYieldItemData } from "./ItemFactory.js";
+import { Library } from "../compat/Library.js";
+import { translatePartyEffect, buildServeReportLines, SHARED_BUFF_SLOT } from "./MealBuffs.js";
 import { FeastServingApp } from "../apps/FeastServingApp.js";
 import { FeastServingRelay } from "./FeastServingRelay.js";
 import { Logger } from "../lib/Logger.js";
@@ -7,38 +8,29 @@ import { Logger } from "../lib/Logger.js";
 const MODULE_ID = "ionrift-monstrous-feast";
 
 /**
- * Owns the life of a cooked dish: building the carriable item, and serving it to
- * the party (applying the meal's effects and rolling temp HP). A dish is created
- * with no effect; serving or eating it is what feeds the party.
+ * Serves a freshly cooked dish to the whole party. A Monstrous Feast meal is
+ * eaten on the spot: it is never stored as an inventory item. Serving applies
+ * the meal's shared buff into the single cooking slot and rolls temp HP per
+ * party member. Players who want to stockpile food cook Respite meals instead.
  */
 export const MealService = {
     /**
-     * Build the createEmbeddedDocuments payload for a finished dish.
+     * Build a transient in-memory meal descriptor for a finished dish. This is
+     * not an inventory Item: it carries only what the cooking layer needs to
+     * recognise the dish (the monsterDish flag and recipe) and to label the
+     * serve. Nothing is created on an actor.
      * @param {object} recipe
      * @param {boolean} ambitious
      * @returns {object}
      */
-    buildMealItem(recipe, ambitious) {
+    buildMealDescriptor(recipe, ambitious) {
         const output = ambitious ? (recipe.ambitiousOutput ?? recipe.output) : recipe.output;
-        const base = buildYieldItemData(
-            { name: output.name, type: "food", foodTag: "prepared", spoilsAfter: 1 },
-            output.name,
-            output.rarity ?? "common"
-        );
         return {
-            ...base,
-            img: output.img,
-            system: {
-                ...base.system,
-                description: { value: output.description ?? "" },
-                rarity: output.rarity ?? "common"
-            },
+            name: output?.name ?? recipe.name,
+            img: output?.img,
             flags: {
-                ...base.flags,
                 [MODULE_ID]: {
-                    ...(base.flags?.[MODULE_ID] ?? {}),
                     monsterDish: true,
-                    partyMeal: true,
                     recipeId: recipe.id,
                     ambitious: Boolean(ambitious)
                 }
@@ -47,37 +39,23 @@ export const MealService = {
     },
 
     /**
-     * Add a finished dish to an actor's inventory without feeding anyone.
+     * Serve a freshly cooked dish to the party: apply the meal's shared buff and
+     * roll temp HP per member. No inventory item exists, so nothing is consumed.
      * @param {Actor} actor
      * @param {object} recipe
      * @param {boolean} ambitious
-     * @returns {Promise<Item|null>}
-     */
-    async addDishToInventory(actor, recipe, ambitious) {
-        if (!actor || !recipe) return null;
-        const [created] = await actor.createEmbeddedDocuments("Item", [this.buildMealItem(recipe, ambitious)]);
-        return created ?? null;
-    },
-
-    /**
-     * Serve a dish to the party: apply the meal's shared effects, roll temp HP
-     * per member, and consume the source dish if one was eaten from inventory.
-     * @param {Actor} actor
-     * @param {object} recipe
-     * @param {boolean} ambitious
-     * @param {object} [opts]
-     * @param {Item|null} [opts.sourceItem] Inventory dish to consume one of.
      * @returns {Promise<{ effectLines: string[], tempFormula: string }>}
      */
-    async serveParty(actor, recipe, ambitious, { sourceItem = null } = {}) {
+    async serveParty(actor, recipe, ambitious) {
         if (MealEffects.serveNeedsAbsentGM()) {
             ui.notifications.warn("No game master is connected to serve the feast to the party. Ask a GM to join, then serve again.");
             return { effectLines: [], tempFormula: null };
         }
 
-        const effectLines = await MealEffects.applyPartyEffect(recipe.partyEffect, ambitious, {
-            mealName: recipe.name
-        });
+        const cooking = Library.cooking;
+        const effectLines = cooking?.feed?.serveDish
+            ? await this._servePersistentBuffs(actor, recipe, ambitious, cooking)
+            : await MealEffects.applyPartyEffect(recipe.partyEffect, ambitious, { mealName: recipe.name });
         const tempFormula = MealEffects.getTempFormula(recipe.partyEffect, ambitious);
 
         const lines = effectLines.length
@@ -107,13 +85,40 @@ export const MealService = {
             }
         }
 
-        if (sourceItem) {
-            const qty = Number(sourceItem.system?.quantity ?? 1);
-            if (qty > 1) await sourceItem.update({ "system.quantity": qty - 1 });
-            else await sourceItem.delete();
-        }
-
         Logger.log(`Served ${recipe.name} to the party${ambitious ? " (ambitious)" : ""}.`);
         return { effectLines, tempFormula };
+    },
+
+    /**
+     * Apply a meal's persistent buffs through the kernel feed pipeline. The dish
+     * descriptor is recognised by this module's registered dish matcher, so the
+     * shared cooking-buff slot is cleared and rewritten (no stacking). The
+     * descriptor is transient, so nothing is consumed. Temp HP is handled
+     * separately, per member, in serveParty.
+     *
+     * Meals with no persistent buff (temp HP only) do not touch the slot, so a
+     * standing buff from an earlier meal is left in place.
+     * @param {Actor} actor
+     * @param {object} recipe
+     * @param {boolean} ambitious
+     * @param {object} cooking The game.ionrift.library.cooking namespace.
+     * @returns {Promise<string[]>}
+     */
+    async _servePersistentBuffs(actor, recipe, ambitious, cooking) {
+        const buffs = translatePartyEffect(recipe.partyEffect, ambitious);
+        if (!buffs.length) return [];
+
+        const members = MealEffects.getPartyMembers();
+        const descriptor = this.buildMealDescriptor(recipe, ambitious);
+
+        await cooking.feed.serveDish(descriptor, {
+            cookActor: actor,
+            recipients: members,
+            slot: SHARED_BUFF_SLOT,
+            title: recipe.name ? `Monstrous Feast: ${recipe.name}` : "Monstrous Feast",
+            consume: false
+        });
+
+        return buildServeReportLines(members, recipe.partyEffect, ambitious);
     }
 };
