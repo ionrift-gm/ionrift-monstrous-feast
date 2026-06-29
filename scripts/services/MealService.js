@@ -1,5 +1,6 @@
 import { MealEffects } from "./MealEffects.js";
 import { Library } from "../compat/Library.js";
+import { RespiteIntegration } from "../compat/RespiteIntegration.js";
 import { translatePartyEffect, buildServeReportLines, SHARED_BUFF_SLOT } from "./MealBuffs.js";
 import { FeastServingApp } from "../apps/FeastServingApp.js";
 import { FeastServingRelay } from "./FeastServingRelay.js";
@@ -53,7 +54,14 @@ export const MealService = {
         }
 
         const cooking = Library.cooking;
-        const effectLines = cooking?.feed?.serveDish
+        // Route the serve through the kernel feed only when integration is live.
+        // With Respite present but integration forced off, bypass the feed so
+        // Respite's serve provider does not claim the dish; the standalone path
+        // then replaces the prior meal buff on a new serve, as it does with no
+        // Respite at all. Respite absent keeps the kernel feed (default provider),
+        // so the automatic default behaves exactly as before.
+        const bypassFeed = RespiteIntegration.respitePresent() && !RespiteIntegration.isActive();
+        const effectLines = cooking?.feed?.serveDish && !bypassFeed
             ? await this._servePersistentBuffs(actor, recipe, ambitious, cooking)
             : await MealEffects.applyPartyEffect(recipe.partyEffect, ambitious, { mealName: recipe.name });
         const tempFormula = MealEffects.getTempFormula(recipe.partyEffect, ambitious);

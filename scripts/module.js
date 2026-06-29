@@ -19,6 +19,7 @@ import { CompendiumService } from "./services/CompendiumService.js";
 import { DiscoveryService } from "./services/DiscoveryService.js";
 import { CookbookMirror } from "./services/CookbookMirror.js";
 import { CookbookLauncher, ensurePartyCookbookJournal } from "./handlers/CookbookLauncher.js";
+import { RespiteIntegration } from "./compat/RespiteIntegration.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 
@@ -42,6 +43,19 @@ Hooks.once("init", () => {
             const app = LivingCookbookApp.open(book, carrier, { focusTab: "recipes" });
             if (!app?.startCookSession(recipeId)) return null;
             return app;
+        },
+        // Stable entry point for another module's cooking surface (Respite's rest
+        // cooking) to hand off into the Monstrous Feast cookbook. Opens the party
+        // cookbook on the recipes tab for the cook, no specific recipe selected.
+        openCooking: ({ actor, bookItem, onCooked } = {}) => {
+            const book = bookItem ?? DiscoveryService.findPartyCookbook();
+            if (!book) {
+                ui.notifications.warn("No Monster Cooking book found.");
+                return null;
+            }
+            const carrier = actor
+                ?? (book.parent?.documentName === "Actor" ? book.parent : null);
+            return LivingCookbookApp.open(book, carrier, { focusTab: "recipes", onCooked });
         },
         openFeastServing: (args) => FeastServingApp.open(args),
         grantBook: (actor) => grantMonsterCookingBook(actor),
@@ -73,6 +87,9 @@ Hooks.once("init", () => {
             await CreatureRegistry.reload();
             return RecipeRegistry.reload();
         },
+        // Single switch for the Respite integration, honored on both sides: the
+        // serve and butcher paths here, and Respite's cooking handoff gate.
+        isRespiteIntegrationEnabled: () => RespiteIntegration.isActive(),
         system: SystemBridge
     };
 
@@ -101,6 +118,20 @@ Hooks.once("init", () => {
         config: true,
         type: Boolean,
         default: true
+    });
+
+    game.settings.register(MODULE_ID, RespiteIntegration.SETTING_KEY, {
+        name: "Respite Integration",
+        hint: "Automatic uses Respite when it is installed. Always on keeps the shared cooking and rest handoff active. Always off keeps Monstrous Feast standalone even when Respite is installed.",
+        scope: "world",
+        config: true,
+        type: String,
+        choices: {
+            automatic: "Automatic",
+            on: "Always on",
+            off: "Always off"
+        },
+        default: "automatic"
     });
 
     game.settings.register(MODULE_ID, "debug", {

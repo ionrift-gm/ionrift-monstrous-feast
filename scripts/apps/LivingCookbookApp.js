@@ -11,6 +11,7 @@ import { CookbookLauncher } from "../handlers/CookbookLauncher.js";
 import { bindTabs, bindFlyouts } from "../ui/TabBinder.js";
 import { attachImageFallback } from "../ui/ImageFallback.js";
 import { buildCookPhaseContext, buildCookSuccessContext } from "../engine/CookPhaseModel.js";
+import { emitCookCompleted } from "../services/CookSignal.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 
@@ -43,6 +44,13 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     /** @type {boolean} */
     #readOnly = false;
+
+    /**
+     * Optional callback invoked once when a cook resolves, set by whoever opened
+     * the cookbook (Respite uses it to consume the cook's rest activity).
+     * @type {Function|null}
+     */
+    #onCooked = null;
 
     static DEFAULT_OPTIONS = {
         classes: ["ionrift-window", "monstrous-feast-living-cookbook"],
@@ -89,7 +97,7 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
      * @param {Item} bookItem
      * @param {Actor} actor
      */
-    static open(bookItem, actor, { focusTab = null } = {}) {
+    static open(bookItem, actor, { focusTab = null, onCooked = null } = {}) {
         if (!bookItem) return null;
         if (!DiscoveryService.canUserOpenCookbook(bookItem)) {
             ui.notifications.warn("Only the book keeper or the GM can open the Monster Cooking book.");
@@ -100,6 +108,7 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         const existing = OPEN_BY_BOOK.get(key);
         if (existing) {
             existing.#syncRefs(bookItem, actor);
+            if (onCooked) existing.#onCooked = onCooked;
             existing.render(false);
             existing.bringToTop?.();
             if (focusTab) existing.activateTab(focusTab);
@@ -108,6 +117,7 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
 
         const app = new LivingCookbookApp(bookItem, actor);
         app.#focusTab = focusTab;
+        app.#onCooked = onCooked;
         OPEN_BY_BOOK.set(key, app);
         app.render(true);
         return app;
@@ -369,6 +379,18 @@ export class LivingCookbookApp extends HandlebarsApplicationMixin(ApplicationV2)
         });
 
         if (!this.#cookSession) return;
+
+        // A resolved cook (pass or fail) spent ingredients: the cook committed.
+        // Signal once so a host surface can consume the cook's rest activity.
+        if (result && !this.#cookSession.cookSignalled) {
+            this.#cookSession.cookSignalled = true;
+            emitCookCompleted({
+                actor: this.#actor,
+                recipe,
+                success: Boolean(result.success),
+                onCooked: this.#onCooked
+            });
+        }
 
         if (!result?.success) {
             this.#cookSession.phase = "failed";

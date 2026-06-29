@@ -1,4 +1,5 @@
 import { SystemBridge } from "../compat/SystemBridge.js";
+import { RespiteIntegration } from "../compat/RespiteIntegration.js";
 import { CoreIcons } from "../data/CoreIcons.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
@@ -19,7 +20,7 @@ function resolveIcon(y) {
 }
 
 function respiteActive() {
-    return !!game.modules.get(RESPITE_ID)?.active;
+    return RespiteIntegration.isActive();
 }
 
 function buildRespiteFlags(y) {
