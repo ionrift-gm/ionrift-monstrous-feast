@@ -168,6 +168,21 @@ export const DiscoveryService = {
     },
 
     /**
+     * Every Monster Cooking book carried across party members. The module
+     * supports one shared cookbook; more than one here means duplicates that
+     * will not track shared progress.
+     * @returns {Item[]}
+     */
+    findAllPartyCookbooks() {
+        const books = [];
+        for (const actor of this.partyActors()) {
+            const book = this.findBookOnActor(actor);
+            if (book) books.push(book);
+        }
+        return books;
+    },
+
+    /**
      * Only the actor carrying the party cookbook (and the GM) may open it.
      * @param {Item} bookItem
      * @param {User} [user]

@@ -81,7 +81,7 @@ export async function inscribeRecipePage(pageItem, actor = null) {
         return false;
     }
 
-    const book = DiscoveryService.findBookOnActor(actor) ?? DiscoveryService.findPartyCookbook();
+    const book = DiscoveryService.findPartyCookbook();
     if (!book) {
         ui.notifications.warn("The party has no Monster Cooking book to inscribe this page into.");
         return false;
