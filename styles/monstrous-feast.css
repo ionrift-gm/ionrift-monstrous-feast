@@ -958,7 +958,8 @@
     gap: 1.4rem;
 }
 
-.application.monstrous-feast-living-cookbook .mf-lc-help {
+.application.monstrous-feast-living-cookbook .mf-lc-help,
+.application.monstrous-feast-living-cookbook .mf-lc-share {
     all: unset;
     box-sizing: border-box;
     width: 32px;
@@ -974,7 +975,8 @@
     transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.application.monstrous-feast-living-cookbook .mf-lc-help:hover {
+.application.monstrous-feast-living-cookbook .mf-lc-help:hover,
+.application.monstrous-feast-living-cookbook .mf-lc-share:hover {
     background: rgba(155, 89, 182, 0.25);
     border-color: rgba(155, 89, 182, 0.6);
 }
@@ -982,6 +984,33 @@
 .application.monstrous-feast-living-cookbook .mf-lc-help.active {
     background: rgba(155, 89, 182, 0.3);
     border-color: rgba(155, 89, 182, 0.7);
+}
+
+.mf-share-card .mf-open-party-cookbook,
+.mf-journal-page .mf-open-party-cookbook,
+a.mf-open-party-cookbook,
+button.mf-open-party-cookbook {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: auto;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    border: 1px solid rgba(155, 89, 182, 0.5);
+    background: rgba(155, 89, 182, 0.16);
+    color: inherit;
+    text-decoration: none;
+    font: inherit;
+    font-weight: 600;
+    line-height: normal;
+    cursor: pointer;
+}
+
+a.mf-open-party-cookbook:hover,
+button.mf-open-party-cookbook:hover {
+    background: rgba(155, 89, 182, 0.3);
+    text-decoration: none;
+    box-shadow: none;
 }
 
 .mf-lc-stat {
@@ -1986,9 +2015,13 @@
     margin-top: 0;
 }
 
-.mf-lc-cook-success .mf-lc-cook-foot-actions .mf-lc-cook-btn-primary,
-.mf-lc-cook-success .mf-lc-cook-actions .mf-lc-cook-btn-primary {
+.mf-lc-cook-success .mf-lc-cook-foot-actions .mf-lc-cook-btn-primary {
     width: 100%;
+}
+
+.mf-lc-cook-success .mf-lc-cook-actions .mf-lc-cook-btn-primary,
+.mf-lc-cook-success .mf-lc-cook-actions .mf-lc-cook-btn-secondary {
+    flex: 1;
 }
 
 .mf-lc-cook-wait {

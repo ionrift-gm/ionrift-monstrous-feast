@@ -6,7 +6,11 @@
             </div>
             <div>
                 <h2>{{bookName}}</h2>
+                {{#if readOnly}}
+                <p class="mf-lc-sub"><i class="fas fa-eye"></i> Read-only{{#if carrierName}} · carried by {{carrierName}}{{/if}} · {{systemLabel}}</p>
+                {{else}}
                 <p class="mf-lc-sub"><i class="fas fa-feather"></i> Carried by {{actorName}} · {{systemLabel}}</p>
+                {{/if}}
             </div>
         </div>
         <div class="mf-lc-progress">
@@ -24,6 +28,11 @@
                     <span class="mf-lc-label">recipes inscribed</span>
                 </div>
             </div>
+            {{#unless readOnly}}
+            <button type="button" class="mf-lc-share" data-action="shareBook" title="Share with the party">
+                <i class="fas fa-share-nodes"></i>
+            </button>
+            {{/unless}}
             <button type="button" class="mf-lc-help" data-mf-flyout="howto" title="How to use">
                 <i class="fas fa-question"></i>
             </button>
@@ -98,9 +107,9 @@
                     <span class="mf-lc-recipe-from">from {{recipe.creatureLabel}}</span>
                     <div class="mf-lc-ing-boxes">
                         {{#each recipe.ingredientStatus as |ing|}}
-                        <span class="mf-lc-ing {{#unless ing.satisfied}}missing{{/unless}}" title="{{ing.name}} ({{ing.have}}/{{ing.need}})">
+                        <span class="mf-lc-ing {{#unless @root.readOnly}}{{#unless ing.satisfied}}missing{{/unless}}{{/unless}}" title="{{ing.name}}{{#unless @root.readOnly}} ({{ing.have}}/{{ing.need}}){{/unless}}">
                             <img src="{{ing.icon}}" alt="{{ing.name}}" />
-                            <span class="mf-lc-ing-qty">{{ing.have}}/{{ing.need}}</span>
+                            {{#unless @root.readOnly}}<span class="mf-lc-ing-qty">{{ing.have}}/{{ing.need}}</span>{{/unless}}
                         </span>
                         {{/each}}
                         {{#if recipe.seasoning}}
@@ -113,6 +122,7 @@
                     <p class="mf-lc-recipe-buff"><i class="fas fa-bolt"></i> {{#each recipe.buffs}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
                     {{/if}}
                 </div>
+                {{#unless @root.readOnly}}
                 <button type="button"
                     class="mf-lc-cook-btn{{#unless recipe.canCook}} is-disabled{{/unless}}"
                     data-action="cookRecipe"
@@ -121,6 +131,7 @@
                     {{#unless recipe.canCook}}disabled{{/unless}}>
                     <i class="fas fa-fire"></i> Cook
                 </button>
+                {{/unless}}
             </li>
             {{/each}}
         </ul>

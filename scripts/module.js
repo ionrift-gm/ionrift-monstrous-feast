@@ -15,6 +15,8 @@ import { grantRecipePage, inscribeRecipePage } from "./services/RecipePageServic
 import { GMRelay } from "./services/GMRelay.js";
 import { CompendiumService } from "./services/CompendiumService.js";
 import { DiscoveryService } from "./services/DiscoveryService.js";
+import { CookbookMirror } from "./services/CookbookMirror.js";
+import { CookbookLauncher, ensurePartyCookbookJournal } from "./handlers/CookbookLauncher.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 
@@ -26,6 +28,7 @@ Hooks.once("init", () => {
         openCookbook: () => new CookbookApp().render(true),
         openStarterCompendium: () => CompendiumService.openStarterCompendium(),
         openLivingCookbook: (bookItem, actor) => LivingCookbookApp.open(bookItem, actor),
+        openPartyCookbook: () => LivingCookbookApp.openReadOnly(),
         openCookPhase: ({ actor, recipeId, bookItem } = {}) => {
             const book = bookItem ?? DiscoveryService.findPartyCookbook();
             if (!book) {
@@ -106,6 +109,8 @@ Hooks.once("init", () => {
         type: Boolean,
         default: false
     });
+
+    CookbookMirror.registerSetting(() => LivingCookbookApp.refreshReadOnly());
 });
 
 Hooks.once("ready", async () => {
@@ -115,10 +120,19 @@ Hooks.once("ready", async () => {
     ItemSheetHandler.init();
     RecipePageHandler.init();
     GMRelay.init();
+    CookbookLauncher.init();
+    CookbookMirror.initHooks();
 
     await CreatureRegistry.load();
     await RecipeRegistry.load();
     ButcherEngine.init();
+    await ensurePartyCookbookJournal();
+
+    if (game.user.isGM && DiscoveryService.findAllPartyCookbooks().length > 1) {
+        const message = "Multiple Monster Cooking books detected in the party. Only one shared cookbook is supported; extra copies will not track party progress.";
+        ui.notifications.warn(message);
+        Logger.warn(message);
+    }
 
     try {
         await foundry.applications.handlebars.loadTemplates([
