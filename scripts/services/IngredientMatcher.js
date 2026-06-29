@@ -72,7 +72,9 @@ function buildSpec(selector) {
 
 function nameEquals(item, name) {
     if (!item || !name) return false;
-    return String(item.name ?? "").trim().toLowerCase() === String(name).trim().toLowerCase();
+    const left = String(item.name ?? "").replace(/\s+\((\d+d|<\d+h|\d+h)\)$/i, "").trim().toLowerCase();
+    const right = String(name ?? "").trim().toLowerCase();
+    return Boolean(left && right && left === right);
 }
 
 /**

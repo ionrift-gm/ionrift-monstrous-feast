@@ -43,7 +43,7 @@
             <div class="mf-codex-art {{#if entry.hasArt}}has-art{{else}}icon-only{{/if}}">
                 {{#if entry.unlocked}}
                 <span class="mf-codex-tier-badge tier-{{entry.tier}}">Tier {{entry.tierNum}}</span>
-                {{#if entry.cookableNow}}<span class="mf-codex-ready-badge"><i class="fas fa-fire"></i> Ready</span>{{/if}}
+                {{#if entry.cookableNow}}<span class="mf-codex-ready-badge" title="Ingredients available to cook"><i class="fas fa-fire"></i> Ready</span>{{/if}}
                 {{#if entry.audit}}
                 <span class="mf-codex-audit-badge {{#if entry.partyDiscovered}}in-book{{else}}absent{{/if}}" title="{{#if entry.partyDiscovered}}Logged in the party cookbook{{else}}Not yet logged by the party{{/if}}">
                     {{#if entry.partyDiscovered}}<i class="fas fa-check"></i> In book{{else}}<i class="fas fa-eye-slash"></i> Not logged{{/if}}

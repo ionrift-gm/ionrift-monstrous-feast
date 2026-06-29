@@ -145,14 +145,16 @@
 
         <footer class="mf-lc-cook-foot">
             {{#if overwriteNames}}
-            <p class="mf-lc-cook-note">
-                <i class="fas fa-triangle-exclamation"></i>
-                Replaces the active meal buff on <strong>{{overwriteNames}}</strong>.
-            </p>
+            <div class="mf-lc-cook-foot-warn">
+                <p class="mf-lc-cook-note">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    Replaces the active meal buff on <strong>{{overwriteNames}}</strong>.
+                </p>
+            </div>
             {{/if}}
             {{#if partyMembers.length}}
             <div class="mf-lc-cook-foot-party">
-                <span class="mf-lc-cook-label mf-lc-cook-label--inline">Party served</span>
+                <span class="mf-lc-cook-label mf-lc-cook-label--stack">Party served</span>
                 <div class="mf-lc-cook-party-row">
                     {{#each partyMembers}}
                     <span class="mf-lc-cook-party-member" title="{{name}}">

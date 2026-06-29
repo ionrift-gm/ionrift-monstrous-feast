@@ -117,6 +117,29 @@ export async function grantYields(actor, yields, creatureName, tier) {
         else aggregated.set(key, { ...y, qty });
     }
 
+    if (respiteActive()) {
+        const { ItemOutcomeHandler } = await import(
+            "/modules/ionrift-respite/scripts/services/ItemOutcomeHandler.js"
+        );
+        const grants = [...aggregated.values()].map(y => {
+            const payload = buildYieldItemData(y, creatureName, tier, y.qty);
+            return {
+                name: payload.name,
+                type: payload.type,
+                img: payload.img,
+                quantity: payload.system?.quantity ?? y.qty,
+                system: payload.system,
+                flags: payload.flags
+            };
+        });
+        await ItemOutcomeHandler.grantItemsToActor(actor, grants);
+        const summary = [...aggregated.values()]
+            .map(row => `${row.qty}x ${row.name}`)
+            .join(", ");
+        ui.notifications.info(`Monstrous Feast: ${summary} added to ${actor.name}.`);
+        return actor.items.filter(i => i.getFlag?.(MODULE_ID, "monsterIngredient"));
+    }
+
     const toCreate = [];
     const toUpdate = [];
     const results = [];
