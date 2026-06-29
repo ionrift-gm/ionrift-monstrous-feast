@@ -20,8 +20,26 @@ import { DiscoveryService } from "./services/DiscoveryService.js";
 import { CookbookMirror } from "./services/CookbookMirror.js";
 import { CookbookLauncher, ensurePartyCookbookJournal } from "./handlers/CookbookLauncher.js";
 import { RespiteIntegration } from "./compat/RespiteIntegration.js";
+import { OverlayContentLoader } from "./services/OverlayContentLoader.js";
+import { ensureBuiltinBuffHandlers } from "./data/MealBuffHandlers.js";
+import { ConsolePanelRegistry } from "./ui/ConsolePanelRegistry.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
+
+/**
+ * Re-render any open GM console and player cookbook windows. Called after the
+ * overlay resolver adds or drops content so newly discovered creatures and
+ * recipes surface without a reload.
+ */
+function refreshOpenWindows() {
+    const instances = foundry.applications?.instances;
+    const apps = instances?.values ? [...instances.values()] : [];
+    for (const app of apps) {
+        if ((app instanceof CookbookApp || app instanceof LivingCookbookApp) && app.rendered) {
+            app.render(false);
+        }
+    }
+}
 
 Hooks.once("init", () => {
     Logger.log("Initializing...");
@@ -85,7 +103,16 @@ Hooks.once("init", () => {
         recipes: RecipeRegistry,
         reloadRegistries: async () => {
             await CreatureRegistry.reload();
-            return RecipeRegistry.reload();
+            await RecipeRegistry.reload();
+            await OverlayContentLoader.loadAll({ onChanged: refreshOpenWindows });
+            return RecipeRegistry.all().length;
+        },
+        reloadOverlays: () => OverlayContentLoader.loadAll({ onChanged: refreshOpenWindows }),
+        // Lets an installed premium tool contribute a GM console panel/tab.
+        registerConsolePanel: (panel) => {
+            const ok = ConsolePanelRegistry.register(panel);
+            if (ok) refreshOpenWindows();
+            return ok;
         },
         // Single switch for the Respite integration, honored on both sides: the
         // serve and butcher paths here, and Respite's cooking handoff gate.
@@ -159,6 +186,14 @@ Hooks.once("ready", async () => {
     await CreatureRegistry.load();
     await RecipeRegistry.load();
     ButcherEngine.init();
+
+    // Migrate the built-in meal buffs onto the shared buff-handler seam so the
+    // four core buffs register the same way overlay buffs do.
+    ensureBuiltinBuffHandlers();
+
+    // Pull in any installed overlay content (creatures, recipes, buff handlers)
+    // through the registration seams. Degrades to bundled-only when none exists.
+    await OverlayContentLoader.loadAll({ onChanged: refreshOpenWindows });
 
     // Register this module's dishes with the kernel feed pipeline when present.
     // Recipes must be loaded first so buff translation can read them.

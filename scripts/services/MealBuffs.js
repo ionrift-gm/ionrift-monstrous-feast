@@ -1,5 +1,6 @@
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { RecipeRegistry } from "../data/RecipeRegistry.js";
+import { MealBuffHandlers } from "../data/MealBuffHandlers.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 
@@ -23,30 +24,7 @@ export const SHARED_BUFF_SLOT = "cooking";
  */
 export function translatePartyEffect(partyEffect, ambitious = false) {
     if (!partyEffect) return [];
-    const buffs = [];
-
-    if (partyEffect.strengthAdvantage) {
-        buffs.push({ type: "check_advantage", ability: "str", duration: "untilLongRest", target: "party" });
-    }
-    if (partyEffect.darkvisionFeet) {
-        buffs.push({
-            type: "sense_darkvision",
-            feet: Number(partyEffect.darkvisionFeet),
-            duration: "untilLongRest",
-            target: "party"
-        });
-    }
-    if (ambitious && partyEffect.perceptionAdvantageDim) {
-        buffs.push({
-            type: "skill_advantage",
-            skill: "prc",
-            conditions: { dimLight: true },
-            duration: "untilLongRest",
-            target: "party"
-        });
-    }
-
-    return buffs;
+    return MealBuffHandlers.buffs(partyEffect, ambitious);
 }
 
 /**
@@ -58,17 +36,7 @@ export function translatePartyEffect(partyEffect, ambitious = false) {
  */
 export function describePartyEffectParts(partyEffect, ambitious = false) {
     if (!partyEffect) return [];
-    const parts = [];
-    if (partyEffect.strengthAdvantage) {
-        parts.push("advantage on Strength checks until your next long rest");
-    }
-    if (partyEffect.darkvisionFeet) {
-        parts.push(`${partyEffect.darkvisionFeet}ft darkvision until your next long rest`);
-    }
-    if (ambitious && partyEffect.perceptionAdvantageDim) {
-        parts.push("advantage on Perception checks until your next long rest");
-    }
-    return parts;
+    return MealBuffHandlers.memberLines(partyEffect, ambitious);
 }
 
 /**
@@ -80,17 +48,7 @@ export function describePartyEffectParts(partyEffect, ambitious = false) {
  */
 export function trackManuallyLines(partyEffect, ambitious = false) {
     if (!partyEffect) return [];
-    const lines = [];
-    if (partyEffect.strengthAdvantage) {
-        lines.push("Party gains advantage on Strength checks until the next long rest (track manually).");
-    }
-    if (partyEffect.darkvisionFeet) {
-        lines.push(`Party gains ${partyEffect.darkvisionFeet}ft darkvision until the next long rest (track manually).`);
-    }
-    if (ambitious && partyEffect.perceptionAdvantageDim) {
-        lines.push("Party gains advantage on Perception in dim light until the next long rest (track manually).");
-    }
-    return lines;
+    return MealBuffHandlers.manualLines(partyEffect, ambitious);
 }
 
 /**

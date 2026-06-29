@@ -5,6 +5,7 @@ import { countIngredient, findAvailable } from "../services/IngredientMatcher.js
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { CoreIcons } from "./CoreIcons.js";
 import { resolveIngredientIcon } from "./IngredientIcons.js";
+import { MealBuffHandlers } from "./MealBuffHandlers.js";
 
 const TYPE_ICONS = {
     beast: CoreIcons.bear,
@@ -51,19 +52,14 @@ function collectIngredients(entry) {
 }
 
 /**
- * Human-readable buff summary from a recipe partyEffect. Display only; the
- * dedicated buff pass will turn these into applied effects.
+ * Human-readable buff summary from a recipe partyEffect. Display only. Driven by
+ * the registered buff handlers, so an overlay buff surfaces on the card without
+ * a code change here; unknown keys are logged once and skipped.
  * @param {object} recipe
  * @returns {string[]}
  */
 function buffSummary(recipe) {
-    const fx = recipe.partyEffect ?? {};
-    const lines = [];
-    if (fx.tempHP) lines.push(`${fx.tempHP} temp HP`);
-    if (fx.strengthAdvantage) lines.push("Strength advantage");
-    if (fx.darkvisionFeet) lines.push(`Darkvision ${fx.darkvisionFeet} ft`);
-    if (fx.perceptionAdvantageDim) lines.push("Keen senses in dim light");
-    return lines;
+    return MealBuffHandlers.summaries(recipe.partyEffect ?? {});
 }
 
 /**

@@ -12,8 +12,9 @@ import { CompendiumService } from "../services/CompendiumService.js";
 import { bindTabs, bindFlyouts } from "../ui/TabBinder.js";
 import { attachImageFallback } from "../ui/ImageFallback.js";
 import { resolveBookImg } from "../data/BookAssets.js";
-
-const PREMIUM_MODULE_ID = "ionrift-monstrous-feast-premium";
+import { ConsolePanelRegistry } from "../ui/ConsolePanelRegistry.js";
+import { Premium } from "../compat/Premium.js";
+import { Logger } from "../lib/Logger.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -44,12 +45,6 @@ function buildPartyBookSnapshot() {
  * GM console: registry browse, system status, and GM test hooks.
  */
 export class CookbookApp extends HandlebarsApplicationMixin(ApplicationV2) {
-    static PREMIUM_MODULE_ID = PREMIUM_MODULE_ID;
-
-    static isPremiumAuthoringAvailable() {
-        return Boolean(game.modules.get(PREMIUM_MODULE_ID)?.active);
-    }
-
     static DEFAULT_OPTIONS = {
         id: "monstrous-feast-cookbook",
         classes: ["ionrift-window", "monstrous-feast-cookbook"],
@@ -101,7 +96,13 @@ export class CookbookApp extends HandlebarsApplicationMixin(ApplicationV2) {
             partyBook,
             starterPackReady: Boolean(CompendiumService.getStarterPack()),
             homebrewPath: "modules/ionrift-monstrous-feast/data/homebrew/",
-            premiumAuthoring: CookbookApp.isPremiumAuthoringAvailable()
+            premiumPresent: Premium.isPresent(),
+            consolePanels: ConsolePanelRegistry.list().map(panel => ({
+                id: panel.id,
+                label: panel.label,
+                icon: panel.icon ?? "fas fa-gem",
+                content: panel.content ?? ""
+            }))
         };
     }
 
@@ -110,6 +111,15 @@ export class CookbookApp extends HandlebarsApplicationMixin(ApplicationV2) {
         CodexController.attach(this.element);
         bindTabs(this.element);
         bindFlyouts(this.element);
+
+        for (const panel of ConsolePanelRegistry.list()) {
+            if (typeof panel.onRender !== "function") continue;
+            const panelEl = this.element.querySelector(`[data-mf-panel="${panel.id}"]`);
+            if (panelEl) {
+                try { panel.onRender(panelEl, this); }
+                catch (e) { Logger.warn("Console panel render failed:", e); }
+            }
+        }
     }
 
     static #partyBookOrWarn() {
@@ -264,9 +274,8 @@ export class CookbookApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     static async #onReloadRegistry() {
         if (!game.user.isGM) return;
-        await CreatureRegistry.reload();
-        await RecipeRegistry.reload();
-        ui.notifications.info("Monstrous Feast registries reloaded from bundled and homebrew JSON.");
+        await game.ionrift.monstrousFeast.reloadRegistries();
+        ui.notifications.info("Monstrous Feast registries reloaded.");
         await this.render(false);
     }
 }

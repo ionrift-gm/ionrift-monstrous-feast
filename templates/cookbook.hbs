@@ -69,14 +69,11 @@
         <button type="button" class="mf-gm-tab active" data-mf-tab="registry">
             <i class="fas fa-paw"></i> Registry
         </button>
-        <button type="button" class="mf-gm-tab" data-mf-tab="pages">
-            <i class="fas fa-scroll"></i> Recipe Pages
-            {{#unless premiumAuthoring}}<span class="mf-premium-badge">Premium</span>{{/unless}}
+        {{#each consolePanels as |panel|}}
+        <button type="button" class="mf-gm-tab" data-mf-tab="{{panel.id}}">
+            <i class="{{panel.icon}}"></i> {{panel.label}}
         </button>
-        <button type="button" class="mf-gm-tab" data-mf-tab="authoring">
-            <i class="fas fa-dragon"></i> Monster Authoring
-            {{#unless premiumAuthoring}}<span class="mf-premium-badge">Premium</span>{{/unless}}
-        </button>
+        {{/each}}
     </nav>
 
     <div class="mf-gm-panel active" data-mf-panel="registry">
@@ -84,6 +81,12 @@
             {{> "modules/ionrift-monstrous-feast/templates/partials/codex.hbs"}}
         </section>
     </div>
+
+    {{#each consolePanels as |panel|}}
+    <div class="mf-gm-panel" data-mf-panel="{{panel.id}}">
+        {{{panel.content}}}
+    </div>
+    {{/each}}
 
     {{#if isGM}}
     <aside class="mf-flyout" data-mf-flyout-panel="setup">
@@ -124,6 +127,17 @@
                     <button type="button" data-action="grantBook">
                         <i class="fas fa-book"></i> Grant Monster Cooking Book
                     </button>
+                </div>
+
+                <div class="mf-cookbook-dev-block">
+                    <p class="mf-cookbook-dev-lede">Grant a bundled recipe page to the selected token or your assigned character.</p>
+                    <div class="mf-cookbook-page-buttons">
+                        {{#each recipePages as |page|}}
+                        <button type="button" data-action="grantRecipePage" data-recipe-id="{{page.id}}">
+                            <i class="fas fa-file"></i> {{page.name}}
+                        </button>
+                        {{/each}}
+                    </div>
                 </div>
 
                 {{#if partyBook}}
@@ -185,51 +199,4 @@
         </div>
     </aside>
     {{/if}}
-
-    <div class="mf-gm-panel" data-mf-panel="pages">
-        {{#if premiumAuthoring}}
-        <section class="mf-gm-premium-shell">
-            <p class="mf-gm-premium-lede">Mint recipe page items and push them to party tokens from the premium authoring overlay.</p>
-        </section>
-        {{else}}
-        <section class="mf-gm-premium-lock">
-            <div class="mf-gm-premium-lock-icon"><i class="fas fa-gem"></i></div>
-            <h3>Recipe page minting</h3>
-            <p>Mint physical recipe pages, preview parchment layouts, and grant them to tokens from the premium Monstrous Feast overlay.</p>
-        </section>
-
-        {{#if isGM}}
-        <details class="mf-cookbook-dev mf-cookbook-dev-inline">
-            <summary>GM testing shortcuts</summary>
-            <p class="mf-cookbook-dev-lede">Grant bundled recipe pages to the selected token or your assigned character.</p>
-            <div class="mf-cookbook-page-buttons">
-                {{#each recipePages as |page|}}
-                <button type="button" data-action="grantRecipePage" data-recipe-id="{{page.id}}">
-                    <i class="fas fa-file"></i> {{page.name}}
-                </button>
-                {{/each}}
-            </div>
-        </details>
-        {{/if}}
-        {{/if}}
-    </div>
-
-    <div class="mf-gm-panel" data-mf-panel="authoring">
-        {{#if premiumAuthoring}}
-        <section class="mf-gm-premium-shell">
-            <p class="mf-gm-premium-lede">Drag-drop monster registry authoring ships with the premium overlay.</p>
-        </section>
-        {{else}}
-        <section class="mf-gm-premium-lock">
-            <div class="mf-gm-premium-lock-icon"><i class="fas fa-gem"></i></div>
-            <h3>Monster authoring</h3>
-            <p>Configure harvested ingredients, linked recipes, and creature outputs in a drag-drop editor. Part of the premium Monstrous Feast overlay.</p>
-            <ul class="mf-gm-authoring-preview">
-                <li><i class="fas fa-paw"></i> Creature fields and tier badges</li>
-                <li><i class="fas fa-drumstick-bite"></i> Harvested ingredient slots</li>
-                <li><i class="fas fa-utensils"></i> Linked recipes and meal outputs</li>
-            </ul>
-        </section>
-        {{/if}}
-    </div>
 </section>

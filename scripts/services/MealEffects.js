@@ -2,6 +2,7 @@ import { SystemBridge } from "../compat/SystemBridge.js";
 import { Library } from "../compat/Library.js";
 import { GMRelay, decideEffectRoute } from "./GMRelay.js";
 import { describePartyEffectParts, trackManuallyLines, SHARED_BUFF_SLOT } from "./MealBuffs.js";
+import { MealBuffHandlers } from "../data/MealBuffHandlers.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 const MEAL_EFFECT_FLAG = "mealEffect";
@@ -106,9 +107,7 @@ export const MealEffects = {
      */
     producesManagedBuff(partyEffect) {
         if (!partyEffect || SystemBridge.systemId() !== "dnd5e") return false;
-        return Boolean(partyEffect.strengthAdvantage
-            || partyEffect.darkvisionFeet
-            || partyEffect.perceptionAdvantageDim);
+        return MealBuffHandlers.producesManaged(partyEffect);
     },
 
     /**
@@ -221,40 +220,15 @@ export const MealEffects = {
     },
 
     /**
-     * @param {string} label
-     * @param {object} [opts]
-     * @param {number} [opts.seconds]
+     * dnd5e Active Effect changes for a recipe's party effect, gathered from the
+     * registered buff handlers. Empty off dnd5e.
+     * @param {object} partyEffect
+     * @param {boolean} [ambitious]
      * @returns {object[]}
      */
-    _buildDnd5eChanges(opts = {}) {
+    _buildDnd5eChanges(partyEffect, ambitious = false) {
         if (SystemBridge.systemId() !== "dnd5e") return [];
-
-        const changes = [];
-        if (opts.strengthAdvantage) {
-            changes.push({
-                key: "system.abilities.str.check.roll.mode",
-                mode: CONST.ACTIVE_EFFECT_MODES.ADD,
-                value: "1",
-                priority: 20
-            });
-        }
-        if (opts.darkvisionFeet) {
-            changes.push({
-                key: "system.attributes.senses.darkvision",
-                mode: CONST.ACTIVE_EFFECT_MODES.UPGRADE,
-                value: String(opts.darkvisionFeet),
-                priority: 20
-            });
-        }
-        if (opts.perceptionAdvantage) {
-            changes.push({
-                key: "system.skills.prc.roll.mode",
-                mode: CONST.ACTIVE_EFFECT_MODES.ADD,
-                value: "1",
-                priority: 20
-            });
-        }
-        return changes;
+        return MealBuffHandlers.changes(partyEffect, ambitious);
     },
 
     /**
@@ -266,11 +240,7 @@ export const MealEffects = {
      */
     async _applyBuffEffects(actor, partyEffect, ambitious, mealName = "") {
         const lines = [];
-        const changes = this._buildDnd5eChanges({
-            strengthAdvantage: partyEffect.strengthAdvantage,
-            darkvisionFeet: partyEffect.darkvisionFeet,
-            perceptionAdvantage: ambitious && partyEffect.perceptionAdvantageDim
-        });
+        const changes = this._buildDnd5eChanges(partyEffect, ambitious);
         if (!changes.length) return lines;
 
         // Fallback expiry only. On dnd5e the long-rest hook clears the buff;
@@ -307,9 +277,7 @@ export const MealEffects = {
         const lines = [];
 
         const canApplyEffects = SystemBridge.systemId() === "dnd5e"
-            && (partyEffect.strengthAdvantage
-                || partyEffect.darkvisionFeet
-                || (ambitious && partyEffect.perceptionAdvantageDim));
+            && this._buildDnd5eChanges(partyEffect, ambitious).length > 0;
 
         if (canApplyEffects) {
             for (const member of members) {
