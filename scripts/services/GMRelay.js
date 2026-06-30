@@ -9,6 +9,7 @@ const ACTION_SERVING = "openFeastServing";
 const ACTION_APPLY_EFFECT = "applyMealEffect";
 const ACTION_CLEAR_EFFECT = "clearMealEffect";
 const ACTION_PERSIST_BUTCHER = "persistButcherState";
+const ACTION_GRANT_YIELDS = "grantButcherYields";
 
 /** @type {((data: object) => void)|null} */
 let _bound = null;
@@ -136,6 +137,28 @@ export const GMRelay = {
     },
 
     /**
+     * Grant butcher harvest items on a PC the caller does not own. Players only
+     * receive inventory writes on actors they own; cross-owner grants run on
+     * the responsible GM.
+     * @param {string} actorUuid
+     * @param {object[]} yields
+     * @param {string} creatureName
+     * @param {string} tier
+     * @returns {Promise<void>}
+     */
+    async grantButcherYields(actorUuid, yields, creatureName, tier) {
+        if (!actorUuid || !yields?.length) return;
+        const actor = await fromUuid(actorUuid);
+        if (!actor) return;
+        if (actor.isOwner) {
+            const { grantYields } = await import("./ItemFactory.js");
+            await grantYields(actor, yields, creatureName, tier, { skipRelay: true });
+            return;
+        }
+        GMRelay._emit(ACTION_GRANT_YIELDS, { actorUuid, yields, creatureName, tier });
+    },
+
+    /**
      * @param {string} action
      * @param {object} payload
      */
@@ -173,6 +196,11 @@ export const GMRelay = {
 
         if (data.action === ACTION_PERSIST_BUTCHER) {
             await GMRelay._applyButcherState(data);
+            return;
+        }
+
+        if (data.action === ACTION_GRANT_YIELDS) {
+            await GMRelay._applyGrantYields(data);
             return;
         }
 
@@ -282,5 +310,22 @@ export const GMRelay = {
         }
         target.actor = actor;
         await setButcherState(token, data.state ?? null, target);
+
+        const { ButcherEngine } = await import("../engine/ButcherEngine.js");
+        const { ButcherCorpseMarker } = await import("./ButcherCorpseMarker.js");
+        ButcherCorpseMarker.syncShow(ButcherEngine.getCorpseMarkerEntries());
+    },
+
+    /**
+     * @param {object} data
+     */
+    async _applyGrantYields(data) {
+        const actor = data.actorUuid ? await fromUuid(data.actorUuid) : null;
+        if (!actor) {
+            Logger.warn(`GMRelay: actor not found for ${data.actorUuid}.`);
+            return;
+        }
+        const { grantYields } = await import("./ItemFactory.js");
+        await grantYields(actor, data.yields, data.creatureName, data.tier, { skipRelay: true });
     }
 };

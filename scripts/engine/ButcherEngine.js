@@ -8,6 +8,7 @@ import { buildPromptCard, buildResultCard, buildPassedCard } from "../ui/Butcher
 import { ButcherCorpseMarker } from "../services/ButcherCorpseMarker.js";
 import {
     BUTCHER_STATE,
+    clearButcherState,
     getButcherState,
     getSceneCorpseRegistry,
     isButcherableState,
@@ -54,6 +55,38 @@ function _tokenForTarget(target) {
 function _isTargetButcherable(target) {
     const token = _tokenForTarget(target);
     return isButcherableState(getButcherState(token));
+}
+
+function _collectRevokeOfferIds(actor, token, target) {
+    const ids = new Set();
+    const tokenId = token?.document?.id ?? token?.id ?? null;
+    if (target?.combatantId) ids.add(target.combatantId);
+    if (tokenId) ids.add(tokenId);
+    if (actor?.id) ids.add(actor.id);
+
+    for (const [id, pending] of _pendingTargets.entries()) {
+        if (pending.actor?.id === actor?.id) ids.add(id);
+        if (tokenId && pending.tokenId === tokenId) ids.add(id);
+    }
+
+    for (const [regTokenId, entry] of Object.entries(getSceneCorpseRegistry())) {
+        if (tokenId && regTokenId === tokenId) ids.add(regTokenId);
+        if (entry?.actorUuid && entry.actorUuid === actor?.uuid) ids.add(regTokenId);
+    }
+
+    return ids;
+}
+
+async function _withdrawButcherPrompts(offerIds) {
+    if (!game.user?.isGM || !offerIds?.size) return;
+    for (const msg of game.messages ?? []) {
+        const flag = msg.flags?.[MODULE_ID];
+        if (!flag?.butcherPrompt || !offerIds.has(flag.combatantId)) continue;
+        await msg.update({
+            content: `<p class="mf-passed">Butchering offer withdrawn.</p>`,
+            flags: { [MODULE_ID]: { butcherPrompt: false } }
+        });
+    }
 }
 
 async function _markCorpseReady(target) {
@@ -154,6 +187,34 @@ export const ButcherEngine = {
      * Offer butchering when a registry creature dies outside an active combat.
      * @param {Actor} actor
      */
+    /**
+     * Drop butcher offers when a creature is no longer dead (healed, revived, etc.).
+     * @param {Actor} actor
+     * @returns {Promise<boolean>}
+     */
+    async revokeButcherOffer(actor) {
+        if (!actor || SystemBridge.isDead(actor)) return false;
+
+        const token = _findCanvasTokenForActor(actor);
+        const state = token ? getButcherState(token) : null;
+        const inPending = [..._pendingTargets.values()].some(entry => entry.actor?.id === actor.id);
+        if (!state && !inPending) return false;
+
+        const target = this.buildTargetFromActor(actor, token, { allowResolved: true });
+        const offerIds = _collectRevokeOfferIds(actor, token, target);
+
+        await clearButcherState(token, target);
+
+        for (const id of offerIds) {
+            _pendingTargets.delete(id);
+            ButcherCorpseMarker.clear(id);
+        }
+
+        await _withdrawButcherPrompts(offerIds);
+        ButcherCorpseMarker.syncShow(this.getCorpseMarkerEntries());
+        return true;
+    },
+
     async onCreatureDeath(actor) {
         _markerDebug("onCreatureDeath hook", { actorId: actor?.id, actorName: actor?.name, combatStarted: !!game.combat?.started });
         const notice = SystemBridge.unsupportedNotice();
@@ -747,14 +808,76 @@ export const ButcherEngine = {
         return _pendingTargets.get(combatantId) ?? null;
     },
 
+    /**
+     * Rebuild a butcher prompt target on clients that never received the GM
+     * pending queue. Chat cards and markers carry enough ids to locate the
+     * corpse token on the active scene.
+     * @param {string} combatantId
+     * @param {{ actorId?: string|null, tokenId?: string|null }} [hints]
+     * @returns {object|null}
+     */
+    resolvePromptTarget(combatantId, { actorId = null, tokenId = null } = {}) {
+        const pending = this.getPendingTarget(combatantId);
+        if (pending) return pending;
+
+        const resolvedTokenId = tokenId ?? combatantId;
+        let actor = actorId ? game.actors.get(actorId) : null;
+        let token = this.findCanvasTokenForActor(actor, {
+            combatantId,
+            tokenId: resolvedTokenId
+        });
+
+        if (!token && resolvedTokenId) {
+            token = canvas?.tokens?.placeables?.find(
+                entry => entry.id === resolvedTokenId || entry.document?.id === resolvedTokenId
+            ) ?? null;
+            actor = actor ?? token?.actor ?? null;
+        }
+
+        if (!actor) return null;
+        return this.buildTargetFromActor(actor, token);
+    },
+
+    /**
+     * The PC who should resolve a butcher prompt for the connected user.
+     * Players act as their assigned character; the GM keeps the existing
+     * selection and book-carrier heuristics.
+     * @param {User} [user]
+     * @returns {Actor|null}
+     */
+    resolveActingButcher(user = game.user) {
+        if (!user) return null;
+
+        if (user.isGM) {
+            return this.resolveButcherActor();
+        }
+
+        const assigned = user.character;
+        if (assigned && this.isEligibleButcher(assigned)) {
+            return assigned;
+        }
+
+        for (const token of canvas?.tokens?.controlled ?? []) {
+            const actor = token?.actor;
+            if (actor?.isOwner && this.isEligibleButcher(actor)) return actor;
+        }
+
+        const ownedEligible = game.actors.filter(
+            actor => actor.isOwner && this.isEligibleButcher(actor)
+        );
+        if (ownedEligible.length === 1) return ownedEligible[0];
+
+        return null;
+    },
+
     clearPendingTarget(combatantId) {
         _pendingTargets.delete(combatantId);
         ButcherCorpseMarker.clear(combatantId);
     },
 
-    async passTarget(combatantId, creatureName) {
-        const pending = _pendingTargets.get(combatantId);
-        if (pending) await _markCorpsePassed(pending);
+    async passTarget(combatantId, creatureName, target = null) {
+        const resolved = target ?? _pendingTargets.get(combatantId);
+        if (resolved) await _markCorpsePassed(resolved);
         this.clearPendingTarget(combatantId);
         ButcherCorpseMarker.syncShow(this.getCorpseMarkerEntries());
         await ChatMessage.create({

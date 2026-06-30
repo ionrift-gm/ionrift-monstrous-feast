@@ -304,7 +304,11 @@ Hooks.on("updateActor", async (actor, changes) => {
     if (!game.user.isGM) return;
     if (!game.settings.get(MODULE_ID, "promptOnCombatEnd")) return;
     const hp = foundry.utils.getProperty(changes, "system.attributes.hp.value");
-    if (hp === undefined || Number(hp) > 0) return;
+    if (hp === undefined) return;
+    if (Number(hp) > 0) {
+        await ButcherEngine.revokeButcherOffer(actor);
+        return;
+    }
     await ButcherEngine.onCreatureDeath(actor);
     await ButcherEngine.scanSceneCorpses({ createChat: false, reason: "updateActor-death" });
 });

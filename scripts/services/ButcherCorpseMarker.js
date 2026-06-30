@@ -1,7 +1,7 @@
 import { Logger } from "../lib/Logger.js";
 import { ButcherEngine } from "../engine/ButcherEngine.js";
 import { SystemBridge } from "../compat/SystemBridge.js";
-import { BUTCHER_STATE, clearButcherState, clearSceneCorpseEntry } from "./ButcherTokenState.js";
+import { BUTCHER_STATE, clearLocalButcherStateOverrides, clearSceneCorpseEntry } from "./ButcherTokenState.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 const MAX_MARKERS = 3;
@@ -437,11 +437,12 @@ class CorpseMarkerOverlay {
             ButcherCorpseMarker.clear(this.combatantId);
             return;
         }
-        const butcher = ButcherEngine.resolveButcherActor();
+        const butcher = ButcherEngine.resolveActingButcher();
         if (!butcher) {
             ui.notifications.warn("No eligible butcher available.");
             return;
         }
+        ButcherEngine.clearPendingTarget(this.combatantId);
         await ButcherEngine.resolve(butcher, target);
     }
 
@@ -578,6 +579,7 @@ export const ButcherCorpseMarker = {
         if (game.socket) game.socket.on(SOCKET_CHANNEL, _onSocket);
 
         Hooks.on("canvasTearDown", () => {
+            clearLocalButcherStateOverrides();
             _resetCanvasGraphics();
         });
 
@@ -603,11 +605,7 @@ export const ButcherCorpseMarker = {
         Hooks.on("updateToken", (doc) => {
             const actor = doc.actor;
             if (!actor || SystemBridge.isDead(actor)) return;
-            const token = canvas.tokens?.get?.(doc.id);
-            if (token) clearButcherState(token).catch(() => {});
-            for (const [id, overlay] of _markers) {
-                if (overlay.token?.id === doc.id) this.clear(id);
-            }
+            void ButcherEngine.revokeButcherOffer(actor);
         });
     },
 

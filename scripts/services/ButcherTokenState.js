@@ -10,6 +10,16 @@ export const BUTCHER_STATE = Object.freeze({
     PASSED: "passed"
 });
 
+/** Client-side overrides until a GM relay writes token flags. @type {Map<string, string>} */
+const _localStateOverrides = new Map();
+
+/**
+ * Drop relay overrides, e.g. on canvas tear-down.
+ */
+export function clearLocalButcherStateOverrides() {
+    _localStateOverrides.clear();
+}
+
 /**
  * @param {Scene|null} [scene]
  * @returns {Record<string, object>}
@@ -56,6 +66,13 @@ function _tokenDocumentId(token) {
 export function getButcherState(token) {
     const tokenId = _tokenDocumentId(token);
     const fromToken = token?.document?.getFlag?.(MODULE_ID, "butcherState");
+
+    if (tokenId && _localStateOverrides.has(tokenId)) {
+        const override = _localStateOverrides.get(tokenId);
+        if (fromToken === override) _localStateOverrides.delete(tokenId);
+        else return override;
+    }
+
     if (fromToken) return fromToken;
 
     const fromActor = token?.actor?.getFlag?.(MODULE_ID, "butcherState");
@@ -106,8 +123,13 @@ export async function persistButcherState(token, target, state) {
         await setButcherState(token, state, target);
         return;
     }
+    const tokenId = _tokenDocumentId(token) ?? target?.tokenId ?? null;
+    if (tokenId) {
+        if (state == null) _localStateOverrides.delete(tokenId);
+        else _localStateOverrides.set(tokenId, state);
+    }
     GMRelay.persistButcherState({
-        tokenId: _tokenDocumentId(token) ?? target?.tokenId ?? null,
+        tokenId,
         actorUuid: target?.actor?.uuid ?? token?.actor?.uuid ?? null,
         actorName: target?.actorName ?? token?.actor?.name ?? null,
         state

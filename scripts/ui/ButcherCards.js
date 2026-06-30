@@ -21,10 +21,10 @@ export function buildPromptCard(target, butcherActors) {
         </div>
         <p class="mf-butcher-who"><i class="fas fa-user"></i> ${butcherNames} can butcher this creature.</p>
         <div class="mf-butcher-actions">
-            <button type="button" class="mf-btn-butcher" data-action="butcher" data-combatant-id="${target.combatantId}" data-target-actor-id="${target.actor.id}">
+            <button type="button" class="mf-btn-butcher" data-action="butcher" data-combatant-id="${target.combatantId}" data-target-actor-id="${target.actor.id}" data-token-id="${target.tokenId ?? target.combatantId}">
                 <i class="fas fa-drumstick-bite"></i> Butcher
             </button>
-            <button type="button" class="mf-btn-pass" data-action="pass" data-combatant-id="${target.combatantId}">
+            <button type="button" class="mf-btn-pass" data-action="pass" data-combatant-id="${target.combatantId}" data-target-actor-id="${target.actor.id}" data-token-id="${target.tokenId ?? target.combatantId}">
                 <i class="fas fa-times"></i> Pass
             </button>
         </div>

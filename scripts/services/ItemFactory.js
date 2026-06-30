@@ -1,6 +1,7 @@
 import { SystemBridge } from "../compat/SystemBridge.js";
 import { RespiteIntegration } from "../compat/RespiteIntegration.js";
 import { CoreIcons } from "../data/CoreIcons.js";
+import { GMRelay } from "./GMRelay.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 const RESPITE_ID = "ionrift-respite";
@@ -168,10 +169,16 @@ function yieldAggregateKey(y) {
  * @param {object[]} yields
  * @param {string} creatureName
  * @param {string} tier
+ * @param {{ skipRelay?: boolean }} [opts]
  * @returns {Promise<Item[]>}
  */
-export async function grantYields(actor, yields, creatureName, tier) {
+export async function grantYields(actor, yields, creatureName, tier, { skipRelay = false } = {}) {
     if (!actor || !yields?.length) return [];
+
+    if (!skipRelay && !actor.isOwner) {
+        await GMRelay.grantButcherYields(actor.uuid, yields, creatureName, tier);
+        return [];
+    }
 
     const aggregated = new Map();
     for (const y of yields) {
