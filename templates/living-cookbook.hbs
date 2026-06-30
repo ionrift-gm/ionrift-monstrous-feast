@@ -59,7 +59,7 @@
                     <li><span class="mf-howto-num">2</span><div><strong>Find recipe pages.</strong> Pages turn up as loot. Using a page inscribes its recipe into this cookbook, even if someone else carries the book.</div></li>
                     <li><span class="mf-howto-num">3</span><div><strong>Cook at camp.</strong> Open the Recipes tab. When you hold the ingredients, cook the dish to feed the party a shared meal.</div></li>
                 </ol>
-                <p class="mf-howto-foot">A creature must be logged before its ingredients show. A recipe must be inscribed before it can be cooked.</p>
+                <p class="mf-howto-foot">Log creatures on the Creatures tab. Generic and signature dishes live on the Recipes tab once inscribed; method meals unlock when you butcher matching quarry.</p>
             </div>
         </div>
     </aside>
@@ -94,47 +94,22 @@
             </ul>
         </section>
         {{/if}}
-        {{#if recipeList.length}}
-        <ul class="mf-lc-recipe-list">
-            {{#each recipeList as |recipe|}}
-            <li class="{{#if recipe.canCook}}cookable{{/if}}">
-                <img src="{{recipe.img}}" alt="" class="mf-lc-recipe-art" />
-                <div class="mf-lc-recipe-body">
-                    <div class="mf-lc-recipe-head">
-                        <strong>{{recipe.name}}</strong>
-                        <span class="mf-lc-recipe-dc">DC {{recipe.dc}}</span>
-                    </div>
-                    <span class="mf-lc-recipe-from">from {{recipe.creatureLabel}}</span>
-                    <div class="mf-lc-ing-boxes">
-                        {{#each recipe.ingredientStatus as |ing|}}
-                        <span class="mf-lc-ing {{#unless @root.readOnly}}{{#unless ing.satisfied}}missing{{/unless}}{{/unless}}" title="{{ing.name}}{{#unless @root.readOnly}} ({{ing.have}}/{{ing.need}}){{/unless}}">
-                            <img src="{{ing.icon}}" alt="{{ing.name}}" />
-                            {{#unless @root.readOnly}}<span class="mf-lc-ing-qty">{{ing.have}}/{{ing.need}}</span>{{/unless}}
-                        </span>
-                        {{/each}}
-                        {{#if recipe.seasoning}}
-                        <span class="mf-lc-ing seasoning {{#unless recipe.seasoning.active}}inactive{{/unless}}" title="Optional seasoning: {{recipe.seasoning.label}}. {{#if recipe.seasoning.active}}On hand. A pinch makes this the better meal.{{else}}Add {{recipe.seasoning.label}} for the better meal.{{/if}}">
-                            <i class="fas fa-mortar-pestle"></i>
-                        </span>
-                        {{/if}}
-                    </div>
-                    {{#if recipe.buffs.length}}
-                    <p class="mf-lc-recipe-buff"><i class="fas fa-bolt"></i> {{#each recipe.buffs}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
-                    {{/if}}
-                </div>
-                {{#unless @root.readOnly}}
-                <button type="button"
-                    class="mf-lc-cook-btn{{#unless recipe.canCook}} is-disabled{{/unless}}"
-                    data-action="cookRecipe"
-                    data-recipe-id="{{recipe.id}}"
-                    title="{{recipe.cookTooltip}}"
-                    {{#unless recipe.canCook}}disabled{{/unless}}>
-                    <i class="fas fa-fire"></i> Cook
-                </button>
-                {{/unless}}
-            </li>
-            {{/each}}
-        </ul>
+        {{#if recipeSections.length}}
+        {{#each recipeSections as |section|}}
+        <section class="mf-lc-recipe-section mf-lc-recipe-section--{{section.id}}">
+            <header class="mf-lc-recipe-section-head">
+                <h3 class="mf-lc-recipe-section-title">{{section.title}}</h3>
+                {{#if section.subtitle}}
+                <p class="mf-lc-recipe-section-subtitle">{{section.subtitle}}</p>
+                {{/if}}
+            </header>
+            <ul class="mf-lc-recipe-list">
+                {{#each section.recipes as |recipe|}}
+                {{> "modules/ionrift-monstrous-feast/templates/partials/lc-recipe-row.hbs" recipe=recipe}}
+                {{/each}}
+            </ul>
+        </section>
+        {{/each}}
         {{else}}
         {{#unless pendingPages.length}}
         <div class="mf-lc-empty">

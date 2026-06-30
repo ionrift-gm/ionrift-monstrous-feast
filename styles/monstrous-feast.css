@@ -1353,6 +1353,64 @@ button.mf-open-party-cookbook:hover {
     color: rgba(255, 255, 255, 0.45);
 }
 
+.mf-lc-recipes-intro {
+    margin: 0 0 0.75rem;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.4;
+}
+
+.mf-lc-recipe-section {
+    margin-bottom: 1.1rem;
+}
+
+.mf-lc-recipe-section:last-child {
+    margin-bottom: 0;
+}
+
+.mf-lc-recipe-section-head {
+    margin: 0 0 0.55rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid rgba(140, 100, 200, 0.35);
+}
+
+.mf-lc-recipe-section-title {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.mf-lc-recipe-section-subtitle {
+    margin: 0.2rem 0 0;
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.45);
+    line-height: 1.35;
+}
+
+.mf-lc-recipe-method {
+    display: inline-block;
+    margin-top: 0.15rem;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(160, 200, 255, 0.75);
+}
+
+.mf-lc-recipe-lock {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.68rem;
+    color: rgba(255, 180, 120, 0.8);
+}
+
+.mf-lc-recipe-list li.discovery-locked {
+    opacity: 0.72;
+}
+
 .mf-lc-recipe-need {
     margin: 0.2rem 0 0;
     font-size: 0.74rem;
@@ -3193,9 +3251,57 @@ button.mf-open-party-cookbook:hover {
     white-space: nowrap;
 }
 
+.mf-codex-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.mf-codex-section-block[hidden] {
+    display: none !important;
+}
+
+.mf-codex-section-head {
+    margin: 0 0 0.45rem;
+    padding: 0.35rem 0 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mf-codex-section-head--methods {
+    border-bottom-color: rgba(212, 175, 55, 0.22);
+}
+
+.mf-codex-section-head--creatures {
+    border-bottom-color: rgba(155, 89, 182, 0.28);
+}
+
+.mf-codex-section-title {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.mf-codex-section-head--methods .mf-codex-section-title {
+    color: rgba(212, 175, 55, 0.95);
+}
+
+.mf-codex-section-head--creatures .mf-codex-section-title {
+    color: rgba(186, 140, 220, 0.95);
+}
+
+.mf-codex-section-subtitle {
+    margin: 0.2rem 0 0;
+    font-size: 0.7rem;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.48);
+}
+
 .mf-codex-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(198px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
     gap: 0.7rem;
     align-items: stretch;
 }
@@ -3219,6 +3325,19 @@ button.mf-open-party-cookbook:hover {
 .mf-codex-card.locked {
     border-style: dashed;
     border-color: rgba(155, 89, 182, 0.16);
+}
+
+.mf-codex-card--method {
+    border-left: 3px solid rgba(212, 175, 55, 0.55);
+}
+
+.mf-codex-card--method.unlocked:hover {
+    border-color: rgba(212, 175, 55, 0.45);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 16px rgba(212, 175, 55, 0.12);
+}
+
+.mf-codex-card--method .mf-codex-art {
+    height: 108px;
 }
 
 .mf-codex-card.cookable-ready {

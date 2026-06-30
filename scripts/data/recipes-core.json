@@ -9,7 +9,7 @@
             "id": "cook_campfire_monster_roast",
             "name": "Campfire Monster Roast",
             "description": "Spit-roast rough monster cuts over a campfire. Basic but communal.",
-            "linkedCreatures": ["beast", "beast_ursine", "beast_suidae", "beast_arachnid", "beast_reptile", "monstrosity", "monstrosity_owlbear"],
+            "linkedCreatures": ["beast", "monstrosity"],
             "skill": "sur",
             "dc": 10,
             "ingredients": [
@@ -29,8 +29,8 @@
                 "rarity": "uncommon"
             },
             "partyEffect": {
-                "tempHP": "1d4",
-                "ambitiousTempHP": "1d6"
+                "tempHP": "@prof",
+                "ambitiousTempHP": "@prof + 1d4"
             },
             "successNarrative": "The meat crackles and spits. Strange, but the smell draws the whole camp.",
             "failNarrative": "The meat fights the fire. Charred outside, raw inside. The cuts are ruined."
@@ -60,12 +60,44 @@
                 "rarity": "rare"
             },
             "partyEffect": {
-                "tempHP": "1d8",
-                "ambitiousTempHP": "2d8",
-                "strengthAdvantage": true
+                "tempHP": "@prof + 1d4",
+                "ambitiousTempHP": "@prof * 2",
+                "strengthAdvantage": "1d4"
             },
             "successNarrative": "The haunch roasts slowly, fat rendering into the coals. The camp fills with a primal, savoury warmth.",
             "failNarrative": "Overcooked and dry. The bear deserved better. Ingredients lost."
+        },
+        {
+            "id": "cook_boar_loin_roast",
+            "name": "Boar Loin Roast",
+            "description": "Score and roast boar loin over the fire. Lean, dense, and filling.",
+            "linkedCreatures": ["beast_suidae"],
+            "skill": "sur",
+            "dc": 11,
+            "ingredients": [
+                { "name": "Boar Loin", "quantity": 1 },
+                { "name": "Rations", "quantity": 1 }
+            ],
+            "seasoning": { "accepts": ["Salt", "Pepper"], "quantity": 1 },
+            "output": {
+                "name": "Boar Loin Roast",
+                "img": "icons/consumables/food/steak-cooked-grilled-brown.webp",
+                "description": "<p>Well-browned loin with a pepper crust. Party meal: a sturdier surge of temporary hit points than rough campfire cuts.</p>",
+                "rarity": "common"
+            },
+            "ambitiousOutput": {
+                "name": "Crackling Boar Loin",
+                "img": "icons/consumables/food/steak-cooked-grilled-brown.webp",
+                "description": "<p>Crisp fat cap and a deep savoury pull. Party meal: a hearty surge of temporary hit points.</p>",
+                "rarity": "uncommon"
+            },
+            "partyEffect": {
+                "tempHP": "@prof + 1d4",
+                "ambitiousTempHP": "@prof * 2",
+                "conSaveBonus": "1d4"
+            },
+            "successNarrative": "The loin hisses over the coals. Dense meat, honest heat, nothing wasted.",
+            "failNarrative": "The loin seizes up and chars. The good cut is ruined."
         },
         {
             "id": "cook_owlbear_stew",
@@ -92,8 +124,8 @@
                 "rarity": "rare"
             },
             "partyEffect": {
-                "tempHP": "1d4",
-                "ambitiousTempHP": "1d6",
+                "tempHP": "@prof",
+                "ambitiousTempHP": "@prof + 1d4",
                 "darkvisionFeet": 60,
                 "passivePerceptionBonus": 2,
                 "wisSaveAdvantage": true
@@ -116,18 +148,18 @@
             "output": {
                 "name": "Camp Bread",
                 "img": "icons/consumables/grains/bread-loaf-wheat-brown.webp",
-                "description": "<p>A dense, warm loaf split around the fire. Party meal: a little temporary hit points to start the day.</p>",
+                "description": "<p>A dense, warm loaf split around the fire. Party meal: advantage on the party's next Constitution save.</p>",
                 "rarity": "common"
             },
             "ambitiousOutput": {
                 "name": "Golden Camp Loaf",
                 "img": "icons/consumables/grains/bread-loaf-wheat-brown.webp",
-                "description": "<p>Risen high with a crackling crust. Party meal: more temporary hit points to start the day.</p>",
+                "description": "<p>Risen high with a crackling crust. Party meal: temporary hit points to start the day.</p>",
                 "rarity": "uncommon"
             },
             "partyEffect": {
-                "tempHP": "1d4",
-                "ambitiousTempHP": "1d6"
+                "conSaveAdvantage": true,
+                "ambitiousTempHP": "@prof + 1d4"
             },
             "successNarrative": "The dough puffs and browns on the stone. Warm bread in the wilds lifts everyone.",
             "failNarrative": "Scorched on one side, raw in the middle. The loaf is a loss."
@@ -136,7 +168,7 @@
             "id": "cook_beast_tempura",
             "name": "Crispy Beast Tempura",
             "description": "Monster cuts battered in flour and flash-fried in hot oil. Light, crisp, deceptively filling.",
-            "linkedCreatures": ["beast", "beast_ursine", "beast_suidae", "beast_arachnid", "beast_reptile"],
+            "linkedCreatures": ["beast"],
             "skill": "sur",
             "dc": 13,
             "ingredients": [
@@ -158,8 +190,8 @@
                 "rarity": "rare"
             },
             "partyEffect": {
-                "tempHP": "1d8",
-                "ambitiousTempHP": "2d6",
+                "tempHP": "@prof + 1d4",
+                "ambitiousTempHP": "@prof * 2",
                 "conSaveBonus": "1d4"
             },
             "successNarrative": "The oil sings and the batter blooms. Hot, crisp, and gone in moments.",
@@ -169,7 +201,7 @@
             "id": "cook_forest_omelet",
             "name": "Forest Omelet",
             "description": "Eggs folded around diced monster meat. Quick, hot, and sharpens the senses for the road.",
-            "linkedCreatures": ["beast", "beast_arachnid", "monstrosity_owlbear"],
+            "linkedCreatures": ["beast", "monstrosity"],
             "skill": "sur",
             "dc": 11,
             "ingredients": [
@@ -180,19 +212,19 @@
             "output": {
                 "name": "Forest Omelet",
                 "img": "icons/consumables/eggs/egg-broken-yolk-yellow.webp",
-                "description": "<p>Soft folds of egg around savoury meat. Party meal: temporary hit points.</p>",
+                "description": "<p>Soft folds of egg around savoury meat. Party meal: +1 to Wisdom ability checks until your next long rest.</p>",
                 "rarity": "common"
             },
             "ambitiousOutput": {
                 "name": "Fluffy Forest Omelet",
                 "img": "icons/consumables/eggs/egg-broken-yolk-yellow.webp",
-                "description": "<p>Light, airy, and perfectly folded. Party meal: temporary hit points and a sharper read on the wilds.</p>",
+                "description": "<p>Light, airy, and perfectly folded. Party meal: temporary hit points and advantage on the next Wisdom save.</p>",
                 "rarity": "uncommon"
             },
             "partyEffect": {
-                "tempHP": "1d4",
-                "ambitiousTempHP": "1d6",
-                "wisdomBonus": 1
+                "wisdomBonus": 1,
+                "ambitiousTempHP": "@prof + 1d4",
+                "wisSaveAdvantage": true
             },
             "successNarrative": "The pan hisses and the eggs set golden. A quick, bright meal before the road.",
             "failNarrative": "The eggs catch and tear. A rubbery mess not worth serving."
@@ -222,12 +254,43 @@
                 "rarity": "uncommon"
             },
             "partyEffect": {
-                "tempHP": "1d4",
-                "ambitiousTempHP": "1d6",
+                "tempHP": "@prof",
+                "ambitiousTempHP": "@prof + 1d4",
                 "conSaveBonus": "1d4"
             },
             "successNarrative": "The tail meat softens and the broth thickens. A meal that sits heavy and reassuring.",
             "failNarrative": "The tail toughens and the broth turns greasy. The pot is a loss."
+        },
+        {
+            "id": "cook_spider_skewers",
+            "name": "Spider Skewers",
+            "description": "Spider haunch threaded over the fire once the venom sac is gone. Crisp outside, dense within.",
+            "linkedCreatures": ["beast_arachnid"],
+            "skill": "sur",
+            "dc": 10,
+            "ingredients": [
+                { "name": "Spider Haunch", "quantity": 1 }
+            ],
+            "seasoning": { "accepts": ["Salt", "Pepper"], "quantity": 1 },
+            "output": {
+                "name": "Spider Skewers",
+                "img": "icons/consumables/food/drumstick-fried-brown.webp",
+                "description": "<p>Charred haunch on a stick, safe once the venom is cleared. Party meal: temporary hit points and poison resistance for the next few poison hits.</p>",
+                "rarity": "common"
+            },
+            "ambitiousOutput": {
+                "name": "Crisp Spider Skewers",
+                "img": "icons/consumables/food/drumstick-fried-brown.webp",
+                "description": "<p>Evenly browned and well seasoned. Party meal: more temporary hit points and poison resistance for the next few poison hits.</p>",
+                "rarity": "uncommon"
+            },
+            "partyEffect": {
+                "tempHP": "@prof",
+                "ambitiousTempHP": "@prof + 1d4",
+                "poisonResistance": "1d4"
+            },
+            "successNarrative": "The haunch firms on the skewers and the char smells almost normal. Almost.",
+            "failNarrative": "The meat seizes and smokes. Whatever made it safe to eat is gone with the fire."
         }
     ]
 }

@@ -11,6 +11,10 @@ const MEAL_EFFECT_FLAG = "mealEffect";
 const SHARED_BUFF_NAMESPACE = "ionrift-library";
 const SHARED_BUFF_FLAG = "cookingBuff";
 
+/** Mirror `CookingBuffs.LONG_REST_FALLBACK_SECONDS` / `SHORT_REST_FALLBACK_SECONDS`. */
+const LONG_REST_FALLBACK_SECONDS = 28800;
+const SHORT_REST_FALLBACK_SECONDS = 4 * 3600;
+
 /**
  * Whether a dnd5e rest result represents a completed long rest. The meal buff
  * is meant to last until the next long rest, so only a long rest clears it.
@@ -20,6 +24,15 @@ const SHARED_BUFF_FLAG = "cookingBuff";
  */
 export function isLongRestResult(result) {
     return result?.longRest === true || result?.type === "long";
+}
+
+/**
+ * Whether a dnd5e rest result represents a completed short rest.
+ * @param {object} result
+ * @returns {boolean}
+ */
+export function isShortRestResult(result) {
+    return result?.shortRest === true || result?.type === "short";
 }
 
 /**
@@ -192,6 +205,37 @@ export const MealEffects = {
     },
 
     /**
+     * Clear short-rest-scoped meal buffs when an actor completes a short rest.
+     * @param {Actor} actor
+     * @param {object} result
+     * @returns {Promise<"local"|"relay"|"blocked"|"noop">}
+     */
+    async onShortRestCompleted(actor, result) {
+        if (SystemBridge.systemId() !== "dnd5e") return "noop";
+        if (!isShortRestResult(result)) return "noop";
+        if (isLongRestResult(result)) return "noop";
+
+        const shortRestEffects = actor?.effects?.filter(effect =>
+            effect.flags?.[SHARED_BUFF_NAMESPACE]?.[SHARED_BUFF_FLAG] === true
+            && effect.flags?.[SHARED_BUFF_NAMESPACE]?.expiresOnShortRest === true
+        ) ?? [];
+        if (!shortRestEffects.length) return "noop";
+
+        if (actor.isOwner) {
+            await actor.deleteEmbeddedDocuments("ActiveEffect", shortRestEffects.map(effect => effect.id));
+            return "local";
+        }
+
+        const mealEffects = actor?.effects?.filter(effect =>
+            effect.flags?.[SHARED_BUFF_NAMESPACE]?.[SHARED_BUFF_FLAG] === true
+        ) ?? [];
+        if (mealEffects.length === shortRestEffects.length) {
+            return GMRelay.clearMealEffect(actor?.uuid);
+        }
+        return "noop";
+    },
+
+    /**
      * Clear the served meal buff. Routes through the kernel's shared cooking
      * slot when the abstraction is present; falls back to this module's own
      * routed removal on older kernels.
@@ -248,20 +292,35 @@ export const MealEffects = {
         for (const buff of buffs) {
             let rolledCharges = null;
 
-            if (buff.type === "save_bonus" && buff.uses && globalThis.Roll) {
+            if ((buff.type === "save_bonus" || buff.type === "check_advantage" || buff.type === "resistance")
+                && buff.uses && globalThis.Roll) {
                 const roll = await new Roll(String(buff.uses)).evaluate();
                 rolledCharges = Math.max(1, roll.total);
                 libFlags.chargesRemaining = rolledCharges;
                 libFlags.chargesMax = rolledCharges;
-                const ability = String(buff.save?.ability ?? "con").toUpperCase();
-                chargeLines.push(`+${buff.bonus ?? 1} ${ability} saves (${rolledCharges} remaining)`);
+                if (buff.type === "save_bonus") {
+                    const ability = String(buff.save?.ability ?? "con").toUpperCase();
+                    chargeLines.push(`+${buff.bonus ?? 1} ${ability} saves (${rolledCharges} remaining)`);
+                } else if (buff.type === "check_advantage") {
+                    const ability = String(buff.ability ?? "str").toUpperCase();
+                    chargeLines.push(`${ability} check advantage (${rolledCharges} remaining)`);
+                } else {
+                    const damageType = String(buff.damageType ?? "poison");
+                    chargeLines.push(`${damageType} resistance (${rolledCharges} hits remaining)`);
+                }
+            }
+
+            if (buff.duration === "untilShortRest") {
+                libFlags.expiresOnShortRest = true;
             }
 
             const built = cookingBuffs?.build?.(actor, buff) ?? null;
             if (built?.daeSpecialDuration?.length) {
-                const skipIsSave = buff.type === "save_bonus" && rolledCharges > 1;
-                const durations = skipIsSave
-                    ? built.daeSpecialDuration.filter(entry => !entry.startsWith("isSave"))
+                const skipLimitedSpecial = (buff.type === "save_bonus" || buff.type === "check_advantage")
+                    && rolledCharges > 1;
+                const durations = skipLimitedSpecial
+                    ? built.daeSpecialDuration.filter(entry =>
+                        !entry.startsWith("isSave") && !entry.startsWith("isCheck"))
                     : built.daeSpecialDuration;
                 if (durations.length) daeSpecial.push(...durations);
             }
@@ -273,6 +332,10 @@ export const MealEffects = {
 
             if (buff.type === "save_bonus" && rolledCharges === 1) {
                 daeSpecial.push(`isSave.${String(buff.save?.ability ?? "con").toLowerCase()}`);
+            }
+
+            if (buff.type === "check_advantage" && rolledCharges === 1) {
+                daeSpecial.push(`isCheck.${String(buff.ability ?? "str").toLowerCase()}`);
             }
         }
 
@@ -295,13 +358,15 @@ export const MealEffects = {
         const changes = this._buildDnd5eChanges(partyEffect, ambitious);
         if (!changes.length) return lines;
 
-        // Fallback expiry only. On dnd5e the long-rest hook clears the buff;
-        // this bounds the effect if that signal never arrives.
-        const seconds = 28800;
-
         const parts = describePartyEffectParts(partyEffect, ambitious);
         const { daeSpecial, libFlags, chargeLines } = await this._buildBuffFlags(actor, partyEffect, ambitious);
         if (chargeLines.length) parts.push(...chargeLines);
+
+        // Fallback expiry only. On dnd5e the rest hook clears the buff;
+        // this bounds the effect if that signal never arrives.
+        const seconds = libFlags.expiresOnShortRest
+            ? SHORT_REST_FALLBACK_SECONDS
+            : LONG_REST_FALLBACK_SECONDS;
 
         const flags = {
             [MODULE_ID]: { [MEAL_EFFECT_FLAG]: true },

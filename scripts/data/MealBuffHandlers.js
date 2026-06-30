@@ -68,10 +68,86 @@ export function buffRegistry() {
 }
 
 const DURATION = "untilLongRest";
+const SHORT_DURATION = "untilShortRest";
 const PARTY = "party";
 
 /** Compact duration qualifier for codex card summaries (Green, rest-scoped). */
 const UNTIL_LONG_REST = "until long rest";
+const UNTIL_SHORT_REST = "until short rest";
+
+/**
+ * Append the meal-slot ceiling on player-facing copy. Lines that already name
+ * a rest window (short or long) are left alone; the slot cap is implied there.
+ * Single-use and unqualified lines still get an explicit long-rest ceiling.
+ * @param {string|null|undefined} line
+ * @returns {string|null}
+ */
+export function applyMealBuffCeiling(line) {
+    if (!line) return null;
+    if (/\buntil long rest\b/i.test(line)) return line;
+    if (/\buntil short rest\b/i.test(line)) return line;
+    return `${line} (${UNTIL_LONG_REST})`;
+}
+
+function withMealBuffCeiling(line) {
+    return applyMealBuffCeiling(line);
+}
+
+const LONG_REST_PAREN_SUFFIX = ` (${UNTIL_LONG_REST})`;
+const LONG_REST_MEMBER_SUFFIX = " until your next long rest";
+
+/**
+ * Drop repeated long-rest qualifiers when several buff lines share the same
+ * window. Keeps the suffix on the last matching line only.
+ * @param {string[]} lines
+ * @returns {string[]}
+ */
+export function compactBuffDurations(lines) {
+    if (!lines || lines.length < 2) return [...(lines ?? [])];
+
+    let compacted = [...lines];
+    for (const suffix of [LONG_REST_PAREN_SUFFIX, LONG_REST_MEMBER_SUFFIX]) {
+        const indices = compacted
+            .map((line, index) => (line.endsWith(suffix) ? index : -1))
+            .filter(index => index >= 0);
+        if (indices.length < 2) continue;
+
+        const last = indices[indices.length - 1];
+        compacted = compacted.map((line, index) => {
+            if (line.endsWith(suffix) && index !== last) {
+                return line.slice(0, -suffix.length);
+            }
+            return line;
+        });
+    }
+    return compacted;
+}
+
+/**
+ * Resolve strengthAdvantage recipe value to an Amber use cap (e.g. "1d4").
+ * Legacy boolean recipes treat as "1d4".
+ * @param {object} fx
+ * @returns {string|null}
+ */
+function strengthUsesValue(fx) {
+    const raw = fx?.strengthAdvantage;
+    if (!raw) return null;
+    if (raw === true) return "1d4";
+    return String(raw);
+}
+
+/**
+ * Resolve poisonResistance recipe value to an Amber hit cap (e.g. "1d4").
+ * Legacy boolean recipes treat as "1d4".
+ * @param {object} fx
+ * @returns {string|null}
+ */
+function poisonUsesValue(fx) {
+    const raw = fx?.poisonResistance;
+    if (!raw) return null;
+    if (raw === true) return "1d4";
+    return String(raw);
+}
 
 /** The four built-in Monstrous Feast buff handlers. */
 export const BUILTIN_BUFF_HANDLERS = [
@@ -94,15 +170,33 @@ export const BUILTIN_BUFF_HANDLERS = [
         label: "Strength advantage",
         keys: ["strengthAdvantage"],
         managed: true,
-        appliesTo: (fx) => Boolean(fx?.strengthAdvantage),
-        summary: (fx) => (fx?.strengthAdvantage ? `Strength advantage (${UNTIL_LONG_REST})` : null),
-        memberLine: (fx) => (fx?.strengthAdvantage
-            ? "advantage on Strength checks until your next long rest" : null),
-        manualLine: (fx) => (fx?.strengthAdvantage
-            ? "Party gains advantage on Strength checks until the next long rest (track manually)." : null),
-        buff: (fx) => (fx?.strengthAdvantage
-            ? { type: "check_advantage", ability: "str", duration: DURATION, target: PARTY } : null),
-        changes: (fx) => (fx?.strengthAdvantage ? [{
+        appliesTo: (fx) => Boolean(strengthUsesValue(fx)),
+        summary: (fx) => {
+            const uses = strengthUsesValue(fx);
+            return uses ? `Strength advantage (next ${uses} checks)` : null;
+        },
+        memberLine: (fx) => {
+            const uses = strengthUsesValue(fx);
+            return uses
+                ? `advantage on Strength checks for the next ${uses} checks (until long rest)` : null;
+        },
+        manualLine: (fx) => {
+            const uses = strengthUsesValue(fx);
+            return uses
+                ? `Party gains Strength check advantage for ${uses} checks (track manually).` : null;
+        },
+        buff: (fx) => {
+            const uses = strengthUsesValue(fx);
+            return uses
+                ? {
+                    type: "check_advantage",
+                    ability: "str",
+                    uses,
+                    duration: DURATION,
+                    target: PARTY
+                } : null;
+        },
+        changes: (fx) => (strengthUsesValue(fx) ? [{
             key: "system.abilities.str.check.roll.mode",
             mode: aeMode("ADD"),
             value: "1",
@@ -126,6 +220,44 @@ export const BUILTIN_BUFF_HANDLERS = [
             key: "system.attributes.senses.darkvision",
             mode: aeMode("UPGRADE"),
             value: String(fx.darkvisionFeet),
+            priority: 20
+        }] : [])
+    },
+    {
+        id: "poisonResistance",
+        label: "Poison resistance",
+        keys: ["poisonResistance"],
+        managed: true,
+        appliesTo: (fx) => Boolean(poisonUsesValue(fx)),
+        summary: (fx) => {
+            const uses = poisonUsesValue(fx);
+            return uses ? `Poison resistance (next ${uses} poison hits, until short rest)` : null;
+        },
+        memberLine: (fx) => {
+            const uses = poisonUsesValue(fx);
+            return uses
+                ? `poison damage resistance for the next ${uses} times you take poison damage (until short rest or 4 hours, whichever comes first)` : null;
+        },
+        manualLine: (fx) => {
+            const uses = poisonUsesValue(fx);
+            return uses
+                ? `Party gains poison resistance for ${uses} poison hits (track manually).` : null;
+        },
+        buff: (fx) => {
+            const uses = poisonUsesValue(fx);
+            return uses
+                ? {
+                    type: "resistance",
+                    damageType: "poison",
+                    uses,
+                    duration: SHORT_DURATION,
+                    target: PARTY
+                } : null;
+        },
+        changes: (fx) => (poisonUsesValue(fx) ? [{
+            key: "system.traits.dr.value",
+            mode: aeMode("ADD"),
+            value: "poison",
             priority: 20
         }] : [])
     },
@@ -161,13 +293,13 @@ export const BUILTIN_BUFF_HANDLERS = [
         keys: ["wisdomBonus"],
         managed: true,
         appliesTo: (fx) => Boolean(fx?.wisdomBonus),
-        summary: (fx, ambitious) => (ambitious && fx?.wisdomBonus
+        summary: (fx, ambitious) => (fx?.wisdomBonus
             ? `+${fx.wisdomBonus} Wisdom checks (${UNTIL_LONG_REST})` : null),
-        memberLine: (fx, ambitious) => (ambitious && fx?.wisdomBonus
+        memberLine: (fx, ambitious) => (fx?.wisdomBonus
             ? `+${fx.wisdomBonus} to Wisdom ability checks until your next long rest` : null),
-        manualLine: (fx, ambitious) => (ambitious && fx?.wisdomBonus
+        manualLine: (fx, ambitious) => (fx?.wisdomBonus
             ? `Party gains +${fx.wisdomBonus} to Wisdom checks until the next long rest (track manually).` : null),
-        buff: (fx, ambitious) => (ambitious && fx?.wisdomBonus
+        buff: (fx, ambitious) => (fx?.wisdomBonus
             ? {
                 type: "ability_bonus",
                 ability: "wis",
@@ -175,10 +307,36 @@ export const BUILTIN_BUFF_HANDLERS = [
                 duration: DURATION,
                 target: PARTY
             } : null),
-        changes: (fx, ambitious) => (ambitious && fx?.wisdomBonus ? [{
+        changes: (fx, ambitious) => (fx?.wisdomBonus ? [{
             key: "system.abilities.wis.bonuses.check",
             mode: aeMode("ADD"),
             value: String(fx.wisdomBonus),
+            priority: 20
+        }] : [])
+    },
+    {
+        id: "conSaveAdvantage",
+        label: "Constitution save advantage",
+        keys: ["conSaveAdvantage"],
+        managed: true,
+        appliesTo: (fx) => Boolean(fx?.conSaveAdvantage),
+        summary: (fx, ambitious) => (fx?.conSaveAdvantage && !ambitious
+            ? "Advantage on next CON save" : null),
+        memberLine: (fx, ambitious) => (fx?.conSaveAdvantage && !ambitious
+            ? "advantage on your next Constitution saving throw" : null),
+        manualLine: (fx, ambitious) => (fx?.conSaveAdvantage && !ambitious
+            ? "Party gains advantage on the next Constitution save (track manually)." : null),
+        buff: (fx, ambitious) => (fx?.conSaveAdvantage && !ambitious
+            ? {
+                type: "advantage",
+                save: { ability: "con" },
+                duration: "nextSave",
+                target: PARTY
+            } : null),
+        changes: (fx, ambitious) => (fx?.conSaveAdvantage && !ambitious ? [{
+            key: "system.abilities.con.save.roll.mode",
+            mode: aeMode("ADD"),
+            value: "1",
             priority: 20
         }] : [])
     },
@@ -217,10 +375,10 @@ export const BUILTIN_BUFF_HANDLERS = [
         summary: (fx, ambitious) => {
             if (!ambitious || !fx?.conSaveBonus) return null;
             const uses = String(fx.conSaveBonus);
-            return `+1 CON saves (next ${uses} saves)`;
+            return `+1 CON saves (next ${uses} saves, ${UNTIL_SHORT_REST})`;
         },
         memberLine: (fx, ambitious) => (ambitious && fx?.conSaveBonus
-            ? `+1 to Constitution saves for the next ${fx.conSaveBonus} saves (until long rest)` : null),
+            ? `+1 to Constitution saves for the next ${fx.conSaveBonus} saves (${UNTIL_SHORT_REST})` : null),
         manualLine: (fx, ambitious) => (ambitious && fx?.conSaveBonus
             ? `Party gains +1 to Constitution saves for ${fx.conSaveBonus} saves (track manually).` : null),
         buff: (fx, ambitious) => (ambitious && fx?.conSaveBonus
@@ -229,7 +387,7 @@ export const BUILTIN_BUFF_HANDLERS = [
                 save: { ability: "con" },
                 bonus: 1,
                 uses: String(fx.conSaveBonus),
-                duration: DURATION,
+                duration: SHORT_DURATION,
                 target: PARTY
             } : null),
         changes: (fx, ambitious) => (ambitious && fx?.conSaveBonus ? [{
@@ -319,9 +477,9 @@ export const MealBuffHandlers = {
         const lines = [];
         for (const handler of mfHandlers()) {
             const line = callHandler(handler, "summary", partyEffect, ambitious);
-            if (line) lines.push(line);
+            if (line) lines.push(withMealBuffCeiling(line));
         }
-        return lines;
+        return compactBuffDurations(lines);
     },
 
     /**
@@ -334,9 +492,9 @@ export const MealBuffHandlers = {
         const lines = [];
         for (const handler of mfHandlers()) {
             const line = callHandler(handler, "memberLine", partyEffect, ambitious);
-            if (line) lines.push(line);
+            if (line) lines.push(withMealBuffCeiling(line));
         }
-        return lines;
+        return compactBuffDurations(lines);
     },
 
     /**
@@ -349,7 +507,7 @@ export const MealBuffHandlers = {
         const lines = [];
         for (const handler of mfHandlers()) {
             const line = callHandler(handler, "manualLine", partyEffect, ambitious);
-            if (line) lines.push(line);
+            if (line) lines.push(withMealBuffCeiling(line));
         }
         return lines;
     },

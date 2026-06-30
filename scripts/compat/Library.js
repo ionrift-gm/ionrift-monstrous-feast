@@ -75,5 +75,10 @@ export const Library = {
     /** Overlay service used to deliver the premium depth pack. */
     get overlay() {
         return _api()?.overlay ?? null;
+    },
+
+    /** Shared token reach checks (Arms Reach delegation + grid fallback). */
+    get reach() {
+        return _api()?.reach ?? null;
     }
 };

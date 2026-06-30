@@ -229,7 +229,8 @@ Hooks.once("ready", async () => {
     try {
         await foundry.applications.handlebars.loadTemplates([
             "modules/ionrift-monstrous-feast/templates/partials/codex.hbs",
-            "modules/ionrift-monstrous-feast/templates/partials/cook-session.hbs"
+            "modules/ionrift-monstrous-feast/templates/partials/cook-session.hbs",
+            "modules/ionrift-monstrous-feast/templates/partials/lc-recipe-row.hbs"
         ]);
     } catch (e) {
         Logger.warn("Failed to register codex partial:", e);
@@ -303,5 +304,6 @@ Hooks.on("updateActor", async (actor, changes) => {
 });
 
 Hooks.on("dnd5e.restCompleted", (actor, result) => {
+    MealEffects.onShortRestCompleted(actor, result);
     MealEffects.onLongRestCompleted(actor, result);
 });

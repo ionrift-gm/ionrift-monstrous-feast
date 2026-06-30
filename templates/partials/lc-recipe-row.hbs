@@ -1,0 +1,43 @@
+<li class="{{#if recipe.canCook}}cookable{{/if}}{{#unless recipe.discoveryUnlocked}} discovery-locked{{/unless}}">
+    <img src="{{recipe.img}}" alt="" class="mf-lc-recipe-art" />
+    <div class="mf-lc-recipe-body">
+        <div class="mf-lc-recipe-head">
+            <strong>{{recipe.name}}</strong>
+            <span class="mf-lc-recipe-dc">DC {{recipe.dc}}</span>
+        </div>
+        {{#if recipe.methodFamily}}
+        <span class="mf-lc-recipe-method">{{recipe.methodFamily}}</span>
+        {{/if}}
+        {{#if recipe.lockReason}}
+        <span class="mf-lc-recipe-lock"><i class="fas fa-lock"></i> {{recipe.lockReason}}</span>
+        {{else}}
+        <span class="mf-lc-recipe-from">from {{recipe.creatureLabel}}</span>
+        {{/if}}
+        <div class="mf-lc-ing-boxes">
+            {{#each recipe.ingredientStatus as |ing|}}
+            <span class="mf-lc-ing {{#unless @root.readOnly}}{{#unless ing.satisfied}}missing{{/unless}}{{/unless}}" title="{{ing.name}}{{#unless @root.readOnly}} ({{ing.have}}/{{ing.need}}){{/unless}}">
+                <img src="{{ing.icon}}" alt="{{ing.name}}" />
+                {{#unless @root.readOnly}}<span class="mf-lc-ing-qty">{{ing.have}}/{{ing.need}}</span>{{/unless}}
+            </span>
+            {{/each}}
+            {{#if recipe.seasoning}}
+            <span class="mf-lc-ing seasoning {{#unless recipe.seasoning.active}}inactive{{/unless}}" title="Optional seasoning: {{recipe.seasoning.label}}. {{#if recipe.seasoning.active}}On hand. A pinch makes this the better meal.{{else}}Add {{recipe.seasoning.label}} for the better meal.{{/if}}">
+                <i class="fas fa-mortar-pestle"></i>
+            </span>
+            {{/if}}
+        </div>
+        {{#if recipe.buffs.length}}
+        <p class="mf-lc-recipe-buff"><i class="fas fa-bolt"></i> {{#each recipe.buffs}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+        {{/if}}
+    </div>
+    {{#unless @root.readOnly}}
+    <button type="button"
+        class="mf-lc-cook-btn{{#unless recipe.canCook}} is-disabled{{/unless}}"
+        data-action="cookRecipe"
+        data-recipe-id="{{recipe.id}}"
+        title="{{recipe.cookTooltip}}"
+        {{#unless recipe.canCook}}disabled{{/unless}}>
+        <i class="fas fa-fire"></i> Cook
+    </button>
+    {{/unless}}
+</li>

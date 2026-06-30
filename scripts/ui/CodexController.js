@@ -21,7 +21,9 @@ export class CodexController {
     /** @param {HTMLElement} codex */
     constructor(codex) {
         this.codex = codex;
-        this.grid = codex.querySelector("[data-codex-grid]");
+        this.sectionBlocks = Array.from(codex.querySelectorAll("[data-codex-section]"));
+        this.grid = codex.querySelector("[data-codex-section-grid]")
+            ?? codex.querySelector("[data-codex-grid]");
         this.cards = Array.from(codex.querySelectorAll("[data-codex-card]"));
         this.empty = codex.querySelector("[data-codex-empty]");
         this.pager = codex.querySelector("[data-codex-pager]");
@@ -104,7 +106,7 @@ export class CodexController {
     _sorted(cards) {
         const { sort } = this.state;
         const knownRank = card => (card.dataset.unlocked === "true" ? 0 : 1);
-        return [...cards].sort((a, b) => {
+        const compare = (a, b) => {
             const byKnown = knownRank(a) - knownRank(b);
             if (byKnown) return byKnown;
             if (sort === "name") {
@@ -116,7 +118,11 @@ export class CodexController {
             }
             return (TIER_ORDER[a.dataset.tier] ?? 9) - (TIER_ORDER[b.dataset.tier] ?? 9)
                 || a.dataset.label.localeCompare(b.dataset.label);
-        });
+        };
+
+        const methods = cards.filter(card => card.dataset.section === "methods").sort(compare);
+        const creatures = cards.filter(card => card.dataset.section !== "methods").sort(compare);
+        return [...methods, ...creatures];
     }
 
     apply() {
@@ -130,9 +136,17 @@ export class CodexController {
         const start = this.state.page * pageSize;
         const slice = visible.slice(start, start + pageSize);
 
-        for (const card of slice) {
-            card.style.display = "";
-            this.grid.appendChild(card);
+        for (const block of this.sectionBlocks) {
+            const sectionId = block.dataset.codexSection;
+            const grid = block.querySelector("[data-codex-section-grid]");
+            const sectionVisible = visible.filter(card => card.dataset.section === sectionId);
+            const sectionOnPage = slice.filter(card => card.dataset.section === sectionId);
+            block.hidden = sectionVisible.length === 0;
+            if (!grid) continue;
+            for (const card of sectionOnPage) {
+                card.style.display = "";
+                grid.appendChild(card);
+            }
         }
 
         if (this.empty) this.empty.hidden = visible.length !== 0;

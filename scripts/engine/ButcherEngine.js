@@ -596,6 +596,58 @@ export const ButcherEngine = {
         return eligible[0];
     },
 
+    /**
+     * Whether the butcher's token can reach the corpse on the active scene.
+     * Uses the library reach service when available.
+     * @param {Actor} butcher
+     * @param {object} target
+     * @param {object} [options]
+     * @returns {{ ok: boolean, reason?: string|null }}
+     */
+    canReachCorpse(butcher, target, options = {}) {
+        const reach = Library.reach;
+        if (!reach?.canReachToken) {
+            return { ok: true, reason: "unavailable" };
+        }
+
+        const sourceToken = this.findCanvasTokenForActor(butcher);
+        const corpseToken = _tokenForTarget(target);
+        if (!sourceToken) {
+            return { ok: false, reason: "no_butcher_token" };
+        }
+        if (!corpseToken) {
+            return { ok: false, reason: "no_corpse_token" };
+        }
+
+        const result = reach.canReachToken(sourceToken, corpseToken, {
+            squares: options.squares ?? 1,
+            ...options
+        });
+        return { ok: result.ok, reason: result.reason ?? null, result };
+    },
+
+    /**
+     * @param {Actor} butcher
+     * @param {object} target
+     * @param {object} [options]
+     * @returns {boolean}
+     */
+    assertButcherReach(butcher, target, options = {}) {
+        const check = this.canReachCorpse(butcher, target, options);
+        if (check.ok) return true;
+
+        const reach = Library.reach;
+        const message = check.reason === "no_butcher_token"
+            ? "Place your character on the scene to butcher this creature."
+            : check.reason === "no_corpse_token"
+                ? "Could not find that creature on the map."
+                : reach?.reachFailureMessage?.(check.result, options)
+                    ?? "Move closer to butcher this creature.";
+
+        ui.notifications.warn(message);
+        return false;
+    },
+
     calculateDC(cr) {
         return 10 + Math.floor(Number(cr) / 2);
     },
@@ -617,6 +669,10 @@ export const ButcherEngine = {
         const notice = SystemBridge.unsupportedNotice();
         if (notice) {
             ui.notifications.warn(notice);
+            return null;
+        }
+
+        if (!this.assertButcherReach(butcher, target)) {
             return null;
         }
 
