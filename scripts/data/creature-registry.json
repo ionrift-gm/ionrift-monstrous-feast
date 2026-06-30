@@ -97,7 +97,7 @@
         "exceptional": [
             { "name": "Spider Haunch", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
             { "name": "Spider Silk", "qty": 2, "type": "loot" },
-            { "name": "Venom Sac", "qty": 1, "type": "loot" }
+            { "itemRef": "venom_sac", "name": "Venom Sac", "qty": 1, "type": "loot" }
         ],
         "mishap": { "type": "damage", "damage": "1d4", "damageType": "piercing", "desc": "A leg hook catches the blade. The joints twitch after death." },
         "flavour": "Eight legs, two too many. The abdomen yields dense, stringy meat the cookbook marks as safe once the venom sac is removed."
