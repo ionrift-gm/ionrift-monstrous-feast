@@ -570,6 +570,95 @@
     word-break: break-all;
 }
 
+.mf-homebrew-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.35rem;
+}
+
+.mf-homebrew-head h4 {
+    margin: 0;
+}
+
+.mf-homebrew-guide {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.74rem;
+    color: rgba(200, 160, 220, 0.95);
+    text-decoration: none;
+}
+
+.mf-homebrew-guide:hover {
+    color: rgba(230, 200, 255, 1);
+}
+
+.mf-homebrew-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin: 0.75rem 0;
+}
+
+.mf-homebrew-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.65rem;
+    border: 1px solid rgba(155, 89, 182, 0.25);
+    border-radius: 999px;
+    background: rgba(155, 89, 182, 0.08);
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.mf-homebrew-stat i {
+    color: rgba(200, 160, 220, 0.95);
+}
+
+.mf-homebrew-actions {
+    margin-top: 0.35rem;
+}
+
+.mf-homebrew-actions .mf-homebrew-clear {
+    border-color: rgba(220, 120, 120, 0.35);
+    color: rgba(255, 190, 190, 0.95);
+}
+
+.mf-homebrew-messages {
+    margin-top: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    border-radius: 8px;
+    background: rgba(212, 175, 55, 0.06);
+}
+
+.mf-homebrew-messages-title {
+    margin: 0 0 0.35rem;
+    font-size: 0.76rem;
+    color: rgba(240, 220, 180, 0.95);
+}
+
+.mf-homebrew-messages ul {
+    margin: 0;
+    padding-left: 1rem;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.45;
+}
+
+.mf-homebrew-file-fallback {
+    margin-top: 0.85rem;
+}
+
+.mf-homebrew-file-fallback summary {
+    cursor: pointer;
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
 .mf-cookbook-note {
     margin: 0.75rem 0 0;
     padding: 0.65rem 0.75rem;

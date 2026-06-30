@@ -72,11 +72,11 @@
         ],
         "standard": [
             { "name": "Owlbear Flank", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 },
-            { "name": "Owlbear Feather", "qty": 1, "type": "loot" }
+            { "itemRef": "owlbear_feather", "name": "Owlbear Feather", "qty": 1, "type": "loot" }
         ],
         "exceptional": [
             { "name": "Owlbear Flank", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
-            { "name": "Owlbear Feather", "qty": 2, "type": "loot" },
+            { "itemRef": "owlbear_feather", "name": "Owlbear Feather", "qty": 2, "type": "loot" },
             { "name": "Owlbear Beak", "qty": 1, "type": "loot" }
         ],
         "mishap": { "type": "damage", "damage": "1d6", "damageType": "slashing", "desc": "Talons spring open under pressure. The cookbook warned about this." },

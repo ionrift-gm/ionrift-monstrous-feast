@@ -110,14 +110,61 @@
             </section>
 
             <section class="mf-cookbook-homebrew-inline">
-                <h4>Homebrew JSON</h4>
-                <p class="mf-cookbook-homebrew-lede">Drop creature and recipe JSON into the module homebrew folder. Reload after edits.</p>
-                <p class="mf-cookbook-homebrew-path"><code>{{homebrewPath}}</code></p>
-                <div class="mf-cookbook-actions">
+                <div class="mf-homebrew-head">
+                    <h4>World homebrew</h4>
+                    <a class="mf-homebrew-guide" href="{{homebrewGuideUrl}}" target="_blank" rel="noopener noreferrer">
+                        <i class="fas fa-book"></i> JSON guide
+                    </a>
+                </div>
+                <p class="mf-cookbook-homebrew-lede">Import custom creatures and recipes for this world, or export what you have to share. World homebrew overrides bundled and pack content when ids match.</p>
+
+                <div class="mf-homebrew-stats">
+                    <div class="mf-homebrew-stat">
+                        <i class="fas fa-paw"></i>
+                        <span><b>{{homebrew.creatureCount}}</b> / {{homebrewLimits.maxCreatures}} creatures</span>
+                    </div>
+                    <div class="mf-homebrew-stat">
+                        <i class="fas fa-utensils"></i>
+                        <span><b>{{homebrew.recipeCount}}</b> / {{homebrewLimits.maxRecipes}} recipes</span>
+                    </div>
+                </div>
+
+                <div class="mf-cookbook-actions mf-homebrew-actions">
+                    <button type="button" data-action="importHomebrew">
+                        <i class="fas fa-upload"></i> Import JSON
+                    </button>
+                    <button type="button" data-action="exportHomebrew">
+                        <i class="fas fa-download"></i> Export JSON
+                    </button>
                     <button type="button" data-action="reloadRegistry">
                         <i class="fas fa-rotate"></i> Reload Registry
                     </button>
+                    {{#if homebrew.hasContent}}
+                    <button type="button" class="mf-homebrew-clear" data-action="clearHomebrew">
+                        <i class="fas fa-trash"></i> Clear world homebrew
+                    </button>
+                    {{/if}}
                 </div>
+
+                {{#if homebrew.messages.length}}
+                <div class="mf-homebrew-messages">
+                    <p class="mf-homebrew-messages-title"><i class="fas fa-triangle-exclamation"></i> Last validation notes</p>
+                    <ul>
+                        {{#each homebrew.messages as |line|}}
+                        <li>{{line}}</li>
+                        {{/each}}
+                    </ul>
+                    {{#if homebrew.messagesTruncated}}
+                    <p class="mf-homebrew-messages-more">More issues were logged to the browser console.</p>
+                    {{/if}}
+                </div>
+                {{/if}}
+
+                <details class="mf-homebrew-file-fallback">
+                    <summary>File drop-in folder (advanced)</summary>
+                    <p class="mf-cookbook-homebrew-lede">You can also edit JSON directly in the module folder. Reload after saving.</p>
+                    <p class="mf-cookbook-homebrew-path"><code>{{homebrewPath}}</code></p>
+                </details>
             </section>
 
             <details class="mf-cookbook-dev">

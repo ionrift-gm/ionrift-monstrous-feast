@@ -20,6 +20,7 @@ export class FeastServingApp extends HandlebarsApplicationMixin(ApplicationV2) {
     /** @type {Map<string, { id: string, name: string, img: string, status: string, total: number|null, rolling: boolean }>} */
     #members = new Map();
     #servingStarted = false;
+    #concluding = false;
 
     static DEFAULT_OPTIONS = {
         id: "monstrous-feast-serving",
@@ -99,9 +100,45 @@ export class FeastServingApp extends HandlebarsApplicationMixin(ApplicationV2) {
             members,
             rolledCount,
             totalCount: members.length,
-            allRolled: members.length > 0 && rolledCount === members.length,
+            allRolled: this.#isAllRolled(),
             servingStarted: this.#servingStarted
         };
+    }
+
+    #isAllRolled() {
+        const members = [...this.#members.values()];
+        return members.length > 0 && members.every(entry => entry.status === "rolled");
+    }
+
+    /**
+     * Finish any outstanding temp HP rolls. Called before the panel closes so
+     * a dismiss never leaves the party without their meal benefit.
+     * @param {object} [opts]
+     * @param {boolean} [opts.gmDirect] Roll locally without player prompts.
+     */
+    async #concludeServing({ gmDirect = true } = {}) {
+        const deadline = Date.now() + 30_000;
+        while ([...this.#members.values()].some(entry => entry.rolling) && Date.now() < deadline) {
+            await foundry.utils.delay(50);
+        }
+        const pending = [...this.#members.values()].filter(entry => entry.status !== "rolled");
+        for (const entry of pending) {
+            await this.#rollForMember(entry.id, gmDirect);
+        }
+    }
+
+    async close(options = {}) {
+        if (this.#concluding) return this;
+        if (!options?.skipConclude && !this.#isAllRolled()) {
+            this.#concluding = true;
+            try {
+                await this.#concludeServing({ gmDirect: true });
+            } finally {
+                this.#concluding = false;
+            }
+        }
+        if (OPEN === this) OPEN = null;
+        return super.close(options);
     }
 
     _onRender(context, options) {
@@ -109,7 +146,6 @@ export class FeastServingApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _onClose(options) {
-        if (OPEN === this) OPEN = null;
         return super._onClose(options);
     }
 
@@ -128,7 +164,7 @@ export class FeastServingApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     static #onCloseServing() {
-        this.close();
+        return this.close();
     }
 
     async #beginServing() {
@@ -154,6 +190,7 @@ export class FeastServingApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const actor = game.actors.get(memberId);
         if (!entry || !actor || entry.status === "rolled" || entry.rolling) return;
 
+        if (!this.#servingStarted) this.#servingStarted = true;
         entry.rolling = true;
         this.render(false);
 

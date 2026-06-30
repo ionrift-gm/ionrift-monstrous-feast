@@ -15,6 +15,7 @@ import { resolveBookImg } from "../data/BookAssets.js";
 import { ConsolePanelRegistry } from "../ui/ConsolePanelRegistry.js";
 import { Premium } from "../compat/Premium.js";
 import { Logger } from "../lib/Logger.js";
+import { HomebrewStore } from "../services/HomebrewStore.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -65,7 +66,10 @@ export class CookbookApp extends HandlebarsApplicationMixin(ApplicationV2) {
             removeDiscoveredType: CookbookApp.#onRemoveDiscoveredType,
             clearDiscoveredTypes: CookbookApp.#onClearDiscoveredTypes,
             resetCookbook: CookbookApp.#onResetCookbook,
-            reloadRegistry: CookbookApp.#onReloadRegistry
+            reloadRegistry: CookbookApp.#onReloadRegistry,
+            exportHomebrew: CookbookApp.#onExportHomebrew,
+            importHomebrew: CookbookApp.#onImportHomebrew,
+            clearHomebrew: CookbookApp.#onClearHomebrew
         }
     };
 
@@ -96,6 +100,9 @@ export class CookbookApp extends HandlebarsApplicationMixin(ApplicationV2) {
             partyBook,
             starterPackReady: Boolean(CompendiumService.getStarterPack()),
             homebrewPath: "modules/ionrift-monstrous-feast/data/homebrew/",
+            homebrewGuideUrl: "https://github.com/ionrift-gm/ionrift-library/wiki/15-Monstrous-Feast-Homebrew-JSON",
+            homebrew: HomebrewStore.summary(),
+            homebrewLimits: HomebrewStore.LIMITS,
             premiumPresent: Premium.isPresent(),
             consolePanels: ConsolePanelRegistry.list().map(panel => ({
                 id: panel.id,
@@ -277,5 +284,78 @@ export class CookbookApp extends HandlebarsApplicationMixin(ApplicationV2) {
         await game.ionrift.monstrousFeast.reloadRegistries();
         ui.notifications.info("Monstrous Feast registries reloaded.");
         await this.render(false);
+    }
+
+    static #onExportHomebrew() {
+        if (!game.user.isGM) return;
+        HomebrewStore.exportJsonFile();
+        ui.notifications.info("Homebrew JSON exported.");
+    }
+
+    static async #onImportHomebrew() {
+        if (!game.user.isGM) return;
+        const summary = HomebrewStore.summary();
+        if (summary.hasContent) {
+            const confirmed = await Dialog.confirm({
+                title: "Import homebrew JSON",
+                content: `<p>This replaces the world's custom content (${summary.creatureCount} creatures, ${summary.recipeCount} recipes). Export first if you want a backup.</p>`,
+                yes: () => true,
+                no: () => false,
+                defaultYes: false
+            });
+            if (!confirmed) return;
+        }
+
+        const result = await HomebrewStore.importJsonFile();
+        await CookbookApp.#reportHomebrewResult(result);
+        if (result?.ok) await this.render(false);
+    }
+
+    static async #onClearHomebrew() {
+        if (!game.user.isGM) return;
+        const summary = HomebrewStore.summary();
+        if (!summary.hasContent) {
+            ui.notifications.info("No world homebrew to clear.");
+            return;
+        }
+
+        const confirmed = await Dialog.confirm({
+            title: "Clear world homebrew",
+            content: `<p>Remove all custom creatures and recipes stored in this world (${summary.creatureCount} creatures, ${summary.recipeCount} recipes)? File-based homebrew in the module folder is not affected.</p>`,
+            yes: () => true,
+            no: () => false,
+            defaultYes: false
+        });
+        if (!confirmed) return;
+
+        await HomebrewStore.clear();
+        await game.ionrift.monstrousFeast.reloadRegistries();
+        ui.notifications.info("World homebrew cleared.");
+        await this.render(false);
+    }
+
+    /**
+     * @param {{ ok: boolean, errors: string[], dropped?: { creatures: number, recipes: number } }|null} result
+     */
+    static async #reportHomebrewResult(result) {
+        if (!result) return;
+
+        if (!result.ok) {
+            const preview = result.errors.slice(0, 2).join(" ");
+            ui.notifications.error(preview || "Homebrew import failed.");
+            if (result.errors.length > 2) {
+                Logger.warn(`Homebrew import: ${result.errors.length} issues`, result.errors);
+            }
+            return;
+        }
+
+        await game.ionrift.monstrousFeast.reloadRegistries();
+        const summary = HomebrewStore.summary();
+        let message = `Homebrew loaded (${summary.creatureCount} creatures, ${summary.recipeCount} recipes).`;
+        if (result.errors?.length) {
+            message += ` ${result.errors.length} entries skipped. Check the GM console for details.`;
+            Logger.warn("Homebrew import warnings:", result.errors);
+        }
+        ui.notifications.info(message);
     }
 }

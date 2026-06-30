@@ -27,6 +27,19 @@ export const RecipeRegistry = {
         Logger.log(`Recipe registry loaded (${this._recipes.size} recipes).`);
     },
 
+    /**
+     * Register world-scoped homebrew recipes. Called after bundled, file, and
+     * overlay loads so equal-precedence homebrew sources can layer cleanly.
+     * @returns {number}
+     */
+    applyWorldHomebrew(recipes = []) {
+        let count = 0;
+        for (const recipe of recipes ?? []) {
+            if (this.register(recipe, { source: "homebrew" })) count++;
+        }
+        return count;
+    },
+
     async reload() {
         this._loaded = false;
         await this.load(true);

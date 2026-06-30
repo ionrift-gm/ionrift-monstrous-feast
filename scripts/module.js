@@ -24,6 +24,7 @@ import { OverlayContentLoader } from "./services/OverlayContentLoader.js";
 import { ensureBuiltinBuffHandlers } from "./data/MealBuffHandlers.js";
 import { ConsolePanelRegistry } from "./ui/ConsolePanelRegistry.js";
 import { ButcherCorpseMarker } from "./services/ButcherCorpseMarker.js";
+import { HomebrewStore } from "./services/HomebrewStore.js";
 
 const MODULE_ID = "ionrift-monstrous-feast";
 
@@ -113,6 +114,7 @@ Hooks.once("init", () => {
             await CreatureRegistry.reload();
             await RecipeRegistry.reload();
             await OverlayContentLoader.loadAll({ onChanged: refreshOpenWindows });
+            HomebrewStore.applyToRegistries();
             return RecipeRegistry.all().length;
         },
         reloadOverlays: () => OverlayContentLoader.loadAll({ onChanged: refreshOpenWindows }),
@@ -125,8 +127,11 @@ Hooks.once("init", () => {
         // Single switch for the Respite integration, honored on both sides: the
         // serve and butcher paths here, and Respite's cooking handoff gate.
         isRespiteIntegrationEnabled: () => RespiteIntegration.isActive(),
+        homebrew: HomebrewStore,
         system: SystemBridge
     };
+
+    HomebrewStore.registerSetting();
 
     game.settings.register(MODULE_ID, "promptOnCombatEnd", {
         name: "Offer Butchering After Combat",
@@ -213,6 +218,7 @@ Hooks.once("ready", async () => {
     // Pull in any installed overlay content (creatures, recipes, buff handlers)
     // through the registration seams. Degrades to bundled-only when none exists.
     await OverlayContentLoader.loadAll({ onChanged: refreshOpenWindows });
+    HomebrewStore.applyToRegistries();
 
     // Register this module's dishes with the kernel feed pipeline when present.
     // Recipes must be loaded first so buff translation can read them.

@@ -1,6 +1,8 @@
 {
     "_meta": {
-        "description": "Optional homebrew recipes. Same shape as scripts/data/recipes-core.json. Matching recipe ids override bundled entries after a registry reload."
+        "description": "Optional homebrew recipes. Same shape as scripts/data/recipes-core.json. Matching recipe ids override bundled entries after a registry reload.",
+        "guide": "https://github.com/ionrift-gm/ionrift-library/wiki/15-Monstrous-Feast-Homebrew-JSON",
+        "reload": "game.ionrift.monstrousFeast.reloadRegistries()"
     },
     "recipes": []
 }

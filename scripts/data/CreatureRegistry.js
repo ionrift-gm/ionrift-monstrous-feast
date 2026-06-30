@@ -37,6 +37,20 @@ export const CreatureRegistry = {
         Logger.log(`Creature registry loaded (${this._entries.size} entries).`);
     },
 
+    /**
+     * Register world-scoped homebrew entries. Called after bundled, file, and
+     * overlay loads so equal-precedence homebrew sources can layer cleanly.
+     * @returns {number}
+     */
+    applyWorldHomebrew(creatures = {}) {
+        let count = 0;
+        for (const [id, entry] of Object.entries(creatures ?? {})) {
+            if (!entry || typeof entry !== "object") continue;
+            if (this.register({ id, ...entry }, { source: "homebrew" })) count++;
+        }
+        return count;
+    },
+
     async reload() {
         this._loaded = false;
         await this.load(true);
