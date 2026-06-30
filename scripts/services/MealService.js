@@ -66,6 +66,11 @@ export const MealService = {
             : await MealEffects.applyPartyEffect(recipe.partyEffect, ambitious, { mealName: recipe.name });
         const tempFormula = MealEffects.getTempFormula(recipe.partyEffect, ambitious);
 
+        // One GM advisory when the detected automation stack cannot fully scope
+        // the meal's buffs. Posted here so it covers both serve paths (the kernel
+        // feed and the standalone applier).
+        await MealEffects._postStackAdvisory(recipe.partyEffect, ambitious, recipe.name, effectLines.length > 0);
+
         const lines = effectLines.length
             ? `<ul class="mf-meal-effects">${effectLines.map(line => `<li>${line}</li>`).join("")}</ul>`
             : "";

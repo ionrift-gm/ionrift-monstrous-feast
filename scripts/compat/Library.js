@@ -1,6 +1,6 @@
 import { Logger } from "../lib/Logger.js";
 
-const MIN_LIBRARY_VERSION = "2.5.2";
+const MIN_LIBRARY_VERSION = "2.5.3";
 let _warned = false;
 
 function _api() {

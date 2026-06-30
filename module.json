@@ -51,6 +51,18 @@
                     "minimum": "2.5.3"
                 }
             }
+        ],
+        "recommends": [
+            {
+                "id": "dae",
+                "type": "module",
+                "reason": "Expires meal buffs at the right moment: after the next save or check, and at rest."
+            },
+            {
+                "id": "midi-qol",
+                "type": "module",
+                "reason": "Drives advantage and save bonuses on rolls during play."
+            }
         ]
     },
     "authors": [

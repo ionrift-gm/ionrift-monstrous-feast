@@ -375,12 +375,9 @@ export const MealEffects = {
                 ...libFlags
             }
         };
-        if (daeSpecial.length) {
-            flags.dae = { specialDuration: daeSpecial };
-        }
 
         const title = mealName ? `Monstrous Feast: ${mealName}` : "Monstrous Feast";
-        const route = await this.applyMealEffectRouted(actor, {
+        const effectData = {
             name: title,
             icon: "icons/consumables/food/bowl-stew-brown.webp",
             description: `<p>${parts.join(", ")}.</p>`,
@@ -389,10 +386,82 @@ export const MealEffects = {
             duration: { seconds },
             changes,
             flags
-        });
+        };
+
+        // DAE special durations expire the buff at the right moment: after the
+        // next qualifying save or check, and at rest. Stamp through the shared
+        // kernel helper so stack detection lives in one place; fall back to a
+        // direct flag write on kernels that predate the helper.
+        if (daeSpecial.length) {
+            const fx = game.ionrift?.library?.effects ?? null;
+            if (fx?.stampDaeDuration) fx.stampDaeDuration(effectData, daeSpecial);
+            else effectData.flags.dae = { specialDuration: daeSpecial };
+        }
+
+        const route = await this.applyMealEffectRouted(actor, effectData);
 
         if (route !== "blocked") lines.push(`${actor.name}: ${parts.join("; ")}`);
         return lines;
+    },
+
+    /**
+     * A GM-facing note when the detected effect-automation stack cannot deliver
+     * the full scoping a recipe's buffs imply. The buffs still apply (their
+     * changes use native dnd5e keys), but limited-use scoping and any roll
+     * portions need the matching engine. Returns null when nothing is degraded
+     * or when the stack helper is absent.
+     * @param {object} partyEffect
+     * @param {boolean} ambitious
+     * @param {object|null} fx Shared effect-automation helper.
+     * @returns {string|null}
+     */
+    _stackShortfallNote(partyEffect, ambitious, fx) {
+        if (!fx) return null;
+
+        const notes = [];
+
+        const changes = this._buildDnd5eChanges(partyEffect, ambitious);
+        const reliesOnMidi = changes.some(change =>
+            String(change?.key ?? "").startsWith("flags.midi-qol."));
+        if (reliesOnMidi && fx.supportsRollChanges?.() === false) {
+            notes.push("Without Midi-QoL, the advantage and disadvantage parts do not change rolls on their own. Apply them by hand.");
+        }
+
+        const buffs = MealBuffHandlers.buffs(partyEffect, ambitious);
+        const reliesOnDae = buffs.some(buff =>
+            (buff?.type === "advantage" && buff?.duration === "nextSave")
+            || buff?.type === "save_bonus"
+            || buff?.type === "check_advantage");
+        if (reliesOnDae && fx.hasDae?.() === false) {
+            notes.push("Without Dynamic Active Effects, a single-use benefit (advantage on the next save or check) stays active until the next rest instead of clearing after the first roll. Track the limit by hand.");
+        }
+
+        return notes.length ? notes.join(" ") : null;
+    },
+
+    /**
+     * Whisper one GM advisory for a served meal when the detected automation
+     * stack cannot fully scope its buffs. Called from MealService.serveParty so
+     * it covers both serve paths (the kernel feed and the standalone applier).
+     * No-op when the stack is complete, nothing was applied, or chat is
+     * unavailable.
+     * @param {object} partyEffect
+     * @param {boolean} ambitious
+     * @param {string} mealName
+     * @param {boolean} applied Whether any member received the buff.
+     */
+    async _postStackAdvisory(partyEffect, ambitious, mealName, applied) {
+        if (!applied) return;
+        const fx = game.ionrift?.library?.effects ?? null;
+        const note = this._stackShortfallNote(partyEffect, ambitious, fx);
+        if (!note || !fx?.buildGmAdvisory) return;
+        if (!globalThis.ChatMessage?.create) return;
+
+        await ChatMessage.create(fx.buildGmAdvisory({
+            title: mealName ? `Monstrous Feast: ${mealName}` : "Monstrous Feast",
+            duration: "until the next rest",
+            note
+        }));
     },
 
     /**
