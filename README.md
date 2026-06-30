@@ -89,7 +89,9 @@ Loop ingredients for a smoke test:
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Source code (scripts, styles, templates) and the bundled starter content are released under the [MIT License](LICENSE).
+
+Premium creature and recipe expansion packs, delivered as separate content overlays, are copyright Ionrift and may not be redistributed separately.
 
 ---
 
