@@ -74,8 +74,8 @@ Loop ingredients for a smoke test:
 
 ## Documentation
 
-- **[Setup: Monstrous Feast](https://github.com/ionrift-gm/ionrift-library/wiki/13-Setup-Monstrous-Feast)** — Installation, settings, starter compendium
-- **[Butchering and Cooking](https://github.com/ionrift-gm/ionrift-library/wiki/14-Monstrous-Feast-Butchering-and-Cooking)** — Full hunt-to-table loop
+- **[Setup: Monstrous Feast](https://github.com/ionrift-gm/ionrift-library/wiki/13-Setup-Monstrous-Feast)**: Installation, settings, starter compendium
+- **[Butchering and Cooking](https://github.com/ionrift-gm/ionrift-library/wiki/14-Monstrous-Feast-Butchering-and-Cooking)**: Full hunt-to-table loop
 
 ---
 
