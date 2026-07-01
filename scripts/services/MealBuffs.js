@@ -1,4 +1,5 @@
 import { SystemBridge } from "../compat/SystemBridge.js";
+import { Library } from "../compat/Library.js";
 import { RecipeRegistry } from "../data/RecipeRegistry.js";
 import { MealBuffHandlers } from "../data/MealBuffHandlers.js";
 
@@ -62,7 +63,9 @@ export function trackManuallyLines(partyEffect, ambitious = false) {
 export function buildServeReportLines(members, partyEffect, ambitious) {
     const parts = describePartyEffectParts(partyEffect, ambitious);
     if (!parts.length) return [];
-    if (SystemBridge.systemId() === "dnd5e") {
+    const buffs = MealBuffHandlers.buffs(partyEffect, ambitious);
+    const canAutomate = Library.cooking?.applicator?.hasAutomatableBuffs?.(buffs) ?? false;
+    if (SystemBridge.systemId() === "dnd5e" || canAutomate) {
         return (members ?? []).map(member => `${member.name}: ${parts.join("; ")}`);
     }
     return trackManuallyLines(partyEffect, ambitious);

@@ -84,8 +84,17 @@ export const MealEffects = {
         const existing = actor.effects?.filter(effect =>
             effect.getFlag?.(MODULE_ID, MEAL_EFFECT_FLAG) === true
         ) ?? [];
-        if (!existing.length) return;
-        await actor.deleteEmbeddedDocuments("ActiveEffect", existing.map(effect => effect.id));
+        if (existing.length) {
+            await actor.deleteEmbeddedDocuments("ActiveEffect", existing.map(effect => effect.id));
+        }
+
+        const cookingItems = actor.items?.filter(item =>
+            item.getFlag?.(MODULE_ID, MEAL_EFFECT_FLAG) === true
+            || item.flags?.[SHARED_BUFF_NAMESPACE]?.[SHARED_BUFF_FLAG] === true
+        ) ?? [];
+        if (cookingItems.length) {
+            await actor.deleteEmbeddedDocuments("Item", cookingItems.map(item => item.id));
+        }
     },
 
     /**
@@ -96,9 +105,13 @@ export const MealEffects = {
      * @returns {boolean}
      */
     hasMealEffect(actor) {
-        return Boolean(actor?.effects?.some(effect =>
+        if (actor?.effects?.some(effect =>
             effect.flags?.[SHARED_BUFF_NAMESPACE]?.[SHARED_BUFF_FLAG] === true
             || effect.getFlag?.(MODULE_ID, MEAL_EFFECT_FLAG) === true
+        )) return true;
+        return Boolean(actor?.items?.some(item =>
+            item.flags?.[SHARED_BUFF_NAMESPACE]?.[SHARED_BUFF_FLAG] === true
+            || item.getFlag?.(MODULE_ID, MEAL_EFFECT_FLAG) === true
         ));
     },
 
@@ -118,8 +131,12 @@ export const MealEffects = {
      * @param {boolean} [ambitious]
      * @returns {boolean}
      */
-    producesManagedBuff(partyEffect) {
-        if (!partyEffect || SystemBridge.systemId() !== "dnd5e") return false;
+    producesManagedBuff(partyEffect, ambitious = false) {
+        if (!partyEffect) return false;
+        const buffs = MealBuffHandlers.buffs(partyEffect, ambitious);
+        const applicator = Library.cooking?.applicator;
+        if (applicator?.hasAutomatableBuffs?.(buffs)) return true;
+        if (SystemBridge.systemId() !== "dnd5e") return false;
         return MealBuffHandlers.producesManaged(partyEffect);
     },
 
@@ -404,6 +421,32 @@ export const MealEffects = {
         return lines;
     },
 
+    async _applyPf2eBuffEffects(actor, partyEffect, ambitious, mealName = "") {
+        const applicator = Library.cooking?.applicator;
+        if (!applicator) return [];
+
+        const route = decideEffectRoute({
+            isOwner: Boolean(actor?.isOwner),
+            hasActiveGM: GMRelay.hasActiveGM()
+        });
+        if (route === "blocked") return [];
+        if (route === "relay") {
+            return [];
+        }
+
+        const buffs = MealBuffHandlers.buffs(partyEffect, ambitious);
+        const result = await applicator.applyBuffs(actor, buffs, {
+            title: mealName ? `Monstrous Feast: ${mealName}` : "Monstrous Feast",
+            slot: SHARED_BUFF_SLOT,
+            extraFlags: { [MODULE_ID]: { [MEAL_EFFECT_FLAG]: true } },
+            clearSlot: true
+        });
+
+        const lines = [...(result.lines ?? [])];
+        if (result.approximateNotes?.length) lines.push(...result.approximateNotes);
+        return lines;
+    },
+
     /**
      * A GM-facing note when the detected effect-automation stack cannot deliver
      * the full scoping a recipe's buffs imply. The buffs still apply (their
@@ -475,17 +518,27 @@ export const MealEffects = {
         if (!partyEffect) return [];
         const members = this.getPartyMembers();
         const lines = [];
+        const buffs = MealBuffHandlers.buffs(partyEffect, ambitious);
+        const applicator = Library.cooking?.applicator;
+        const sys = SystemBridge.systemId();
 
-        const canApplyEffects = SystemBridge.systemId() === "dnd5e"
+        const canApplyPf2e = sys === "pf2e" && applicator?.hasAutomatableBuffs?.(buffs);
+        const canApplyDnd5e = sys === "dnd5e"
             && this._buildDnd5eChanges(partyEffect, ambitious).length > 0;
 
-        if (canApplyEffects) {
+        if (canApplyPf2e) {
+            for (const member of members) {
+                const buffLines = await this._applyPf2eBuffEffects(member, partyEffect, ambitious, mealName);
+                lines.push(...buffLines);
+            }
+        } else if (canApplyDnd5e) {
             for (const member of members) {
                 const buffLines = await this._applyBuffEffects(member, partyEffect, ambitious, mealName);
                 lines.push(...buffLines);
             }
         } else {
             lines.push(...trackManuallyLines(partyEffect, ambitious));
+            if (applicator) lines.push(...applicator.advisoryLines(buffs));
         }
 
         return lines;
