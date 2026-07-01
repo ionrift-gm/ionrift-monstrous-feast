@@ -1,7 +1,7 @@
 # Ionrift Monstrous Feast
 
 ![Foundry v12+](https://img.shields.io/badge/Foundry-v12%2B-333333?style=flat&logo=foundryvirtualtabletop)
-![Systems](https://img.shields.io/badge/system-dnd5e-blue)
+![Systems](https://img.shields.io/badge/system-dnd5e%20%7C%20pf2e-blue)
 ![Status](https://img.shields.io/badge/status-Early%20Access-8b5cf6)
 
 **Butcher and cook the monsters you kill.** Turn slain creatures into ingredients, track discoveries in a shared party cookbook, and serve fresh meals with real mechanical buffs.
@@ -51,7 +51,7 @@ Full walkthrough: **[Setup: Monstrous Feast](https://github.com/ionrift-gm/ionri
 | Module / system | Required? | What it enables |
 |-----------------|-----------|-----------------|
 | [`ionrift-library`](https://github.com/ionrift-gm/ionrift-library) v2.5.3+ | **Yes** | Creature classification, system bridge, cooking buff pipeline |
-| DnD 5e | **Yes** | Butcher and cook rolls, meal buffs |
+| DnD 5e or Pathfinder 2e | **Yes** | Butcher and cook rolls, meal buffs (PF2e uses Effect items; some buffs are approximate) |
 | [`ionrift-respite`](https://github.com/ionrift-gm/ionrift-respite) | Optional | Rest cooking handoff, ingredient spoilage metadata |
 
 ---

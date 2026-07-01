@@ -425,22 +425,15 @@ export const MealEffects = {
         const applicator = Library.cooking?.applicator;
         if (!applicator) return [];
 
-        const route = decideEffectRoute({
-            isOwner: Boolean(actor?.isOwner),
-            hasActiveGM: GMRelay.hasActiveGM()
-        });
-        if (route === "blocked") return [];
-        if (route === "relay") {
-            return [];
-        }
-
         const buffs = MealBuffHandlers.buffs(partyEffect, ambitious);
-        const result = await applicator.applyBuffs(actor, buffs, {
+        const result = await applicator.applyBuffsRouted(actor, buffs, {
             title: mealName ? `Monstrous Feast: ${mealName}` : "Monstrous Feast",
             slot: SHARED_BUFF_SLOT,
             extraFlags: { [MODULE_ID]: { [MEAL_EFFECT_FLAG]: true } },
             clearSlot: true
         });
+
+        if (result.route === "blocked") return [];
 
         const lines = [...(result.lines ?? [])];
         if (result.approximateNotes?.length) lines.push(...result.approximateNotes);

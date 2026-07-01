@@ -12,6 +12,7 @@ All notable changes to Monstrous Feast are documented here. Format follows
 - Cookbook review panel with registry browse and GM **Test Butcher** action.
 - Chat commands `/feast` and `/monstrousfeast`, plus token toolbar entry.
 - **Monster Cooking** book item, Living Cookbook UI with progressive discovery, and three free recipes with party meal effects.
+- PF2e party meal buffs through the kernel `BuffApplicator`, with GM relay for cross-owner applies.
 
 ### Changed
-- Documented and gated launch support to DnD 5e only until PF2e meal effects are validated end to end.
+- Pathfinder 2e launch support restored alongside DnD 5e.

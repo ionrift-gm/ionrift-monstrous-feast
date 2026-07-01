@@ -2,7 +2,7 @@ import { Logger } from "../lib/Logger.js";
 import { Library } from "./Library.js";
 
 /** Systems supported at the Monstrous Feast launch. */
-export const LAUNCH_SYSTEMS = Object.freeze(["dnd5e"]);
+export const LAUNCH_SYSTEMS = Object.freeze(["dnd5e", "pf2e"]);
 
 /**
  * Butcher-specific system bridge. Delegates shared actor and item queries to
