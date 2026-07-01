@@ -529,15 +529,25 @@ export const MealBuffHandlers = {
 
     /**
      * dnd5e Active Effect changes for the standalone applier.
+     * Delegates to the kernel resolver from each handler's buff descriptor.
      * @param {object} partyEffect
      * @param {boolean} [ambitious]
      * @returns {object[]}
      */
     changes(partyEffect, ambitious = false) {
         const changes = [];
+        const buffs = Library.cooking?.buffs;
         for (const handler of mfHandlers()) {
-            const built = callHandler(handler, "changes", partyEffect, ambitious);
-            if (Array.isArray(built) && built.length) changes.push(...built);
+            const buff = callHandler(handler, "buff", partyEffect, ambitious);
+            if (buff && buffs?.toActiveEffectChanges) {
+                const built = buffs.toActiveEffectChanges(null, buff);
+                if (Array.isArray(built) && built.length) {
+                    changes.push(...built);
+                    continue;
+                }
+            }
+            const legacy = callHandler(handler, "changes", partyEffect, ambitious);
+            if (Array.isArray(legacy) && legacy.length) changes.push(...legacy);
         }
         return changes;
     },
