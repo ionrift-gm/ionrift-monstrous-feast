@@ -5,14 +5,16 @@ All notable changes to Monstrous Feast are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-07-02
+
 ### Added
-- Initial module skeleton: manifest, bootstrap, kernel access adapter, butcher engine and creature registry stubs, and the cookbook shell.
-- Butcher loop with 16-creature registry, combat-end chat prompts, survival rolls, and ingredient grants.
-- System bridge via `game.ionrift.library.system` with D&D 5e launch support.
-- Cookbook review panel with registry browse and GM **Test Butcher** action.
-- Chat commands `/feast` and `/monstrousfeast`, plus token toolbar entry.
-- **Monster Cooking** book item, Living Cookbook UI with progressive discovery, and three free recipes with party meal effects.
-- PF2e party meal buffs through the kernel `BuffApplicator`, with GM relay for cross-owner applies.
+- Butcher the monsters you kill. 16-creature registry with combat-end prompts, survival rolls, and ingredient grants.
+- Living Cookbook with progressive recipe discovery. Cook ingredients at camp and feed the party.
+- Three starter recipes with party-wide meal effects that buff the next day of adventuring.
+- Cookbook review panel with creature browse and GM Test Butcher action.
+- Chat commands `/feast` and `/monstrousfeast`, plus token toolbar entry for quick access.
+- D&D 5e and Pathfinder 2e system support at launch.
+- PF2e meal buffs routed through the kernel BuffApplicator with GM relay for cross-owner applies.
 
 ### Changed
-- Pathfinder 2e launch support restored alongside DnD 5e.
+- Pathfinder 2e launch support restored alongside D&D 5e.
