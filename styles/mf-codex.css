@@ -1,0 +1,613 @@
+/* ── Codex (shared registry + living cookbook view) ───────────── */
+.mf-codex {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    min-height: 0;
+    flex: 1;
+}
+
+.mf-codex-toolbar {
+    display: grid;
+    grid-template-columns: minmax(160px, 1fr) repeat(3, minmax(88px, 110px)) auto;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.mf-codex-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.35rem 0.2rem 0.2rem;
+}
+
+.application.monstrous-feast-living-cookbook .mf-codex-scroll {
+    max-height: none;
+}
+
+.application.monstrous-feast-living-cookbook .mf-lc-panel[data-mf-panel="creatures"] > .mf-codex {
+    flex: 1;
+    min-height: 0;
+}
+
+.mf-codex-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.mf-codex-search i {
+    position: absolute;
+    left: 0.55rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.75rem;
+}
+
+.mf-codex-search input {
+    width: 100%;
+    padding: 0.4rem 0.5rem 0.4rem 1.7rem;
+    border: 1px solid rgba(155, 89, 182, 0.3);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.78rem;
+}
+
+.mf-codex-filter {
+    padding: 0.35rem 0.4rem;
+    border: 1px solid rgba(155, 89, 182, 0.3);
+    border-radius: 6px;
+    background: rgba(20, 12, 28, 0.95);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.72rem;
+    min-width: 0;
+}
+
+.mf-codex-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.74rem;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+}
+
+.mf-codex-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.mf-codex-section-block[hidden] {
+    display: none !important;
+}
+
+.mf-codex-section-head {
+    margin: 0 0 0.45rem;
+    padding: 0.35rem 0 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mf-codex-section-head--methods {
+    border-bottom-color: rgba(212, 175, 55, 0.22);
+}
+
+.mf-codex-section-head--creatures {
+    border-bottom-color: rgba(155, 89, 182, 0.28);
+}
+
+.mf-codex-section-title {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.mf-codex-section-head--methods .mf-codex-section-title {
+    color: rgba(212, 175, 55, 0.95);
+}
+
+.mf-codex-section-head--creatures .mf-codex-section-title {
+    color: rgba(186, 140, 220, 0.95);
+}
+
+.mf-codex-section-subtitle {
+    margin: 0.2rem 0 0;
+    font-size: 0.7rem;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.48);
+}
+
+.mf-codex-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 0.7rem;
+    align-items: stretch;
+}
+
+.mf-codex-card {
+    position: relative;
+    background: linear-gradient(160deg, rgba(20, 12, 28, 0.96), rgba(13, 8, 19, 0.98));
+    border: 1px solid rgba(155, 89, 182, 0.22);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mf-codex-card.unlocked:hover {
+    border-color: rgba(155, 89, 182, 0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(155, 89, 182, 0.15);
+}
+
+.mf-codex-card.locked {
+    border-style: dashed;
+    border-color: rgba(155, 89, 182, 0.16);
+}
+
+.mf-codex-card--method {
+    border-left: 3px solid rgba(212, 175, 55, 0.55);
+}
+
+.mf-codex-card--method.unlocked:hover {
+    border-color: rgba(212, 175, 55, 0.45);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 16px rgba(212, 175, 55, 0.12);
+}
+
+.mf-codex-card--method .mf-codex-art {
+    height: 108px;
+}
+
+.mf-codex-card.cookable-ready {
+    border-color: rgba(46, 204, 113, 0.45);
+    box-shadow: 0 0 16px rgba(46, 204, 113, 0.12);
+}
+
+.mf-codex-card.cookable-ready:hover {
+    border-color: rgba(46, 204, 113, 0.65);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(46, 204, 113, 0.2);
+}
+
+.mf-codex-ready-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.45rem;
+    border-radius: 5px;
+    color: rgba(126, 223, 154, 0.98);
+    background: rgba(10, 30, 18, 0.7);
+    border: 1px solid rgba(46, 204, 113, 0.5);
+}
+
+.mf-codex-audit-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.45rem;
+    border-radius: 5px;
+}
+
+.mf-codex-audit-badge.in-book {
+    color: rgba(126, 223, 154, 0.98);
+    background: rgba(10, 30, 18, 0.78);
+    border: 1px solid rgba(46, 204, 113, 0.5);
+}
+
+.mf-codex-audit-badge.absent {
+    color: rgba(255, 255, 255, 0.55);
+    background: rgba(10, 8, 14, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.mf-codex-recipe-audit {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    z-index: 2;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.52rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.mf-codex-recipe-audit.inscribed {
+    color: rgba(126, 223, 154, 0.98);
+    background: rgba(12, 34, 20, 0.95);
+    border: 1px solid rgba(46, 204, 113, 0.55);
+}
+
+.mf-codex-recipe-audit.absent {
+    color: rgba(255, 200, 150, 0.9);
+    background: rgba(34, 22, 12, 0.95);
+    border: 1px solid rgba(255, 160, 90, 0.4);
+}
+
+.mf-gm-stat-audit b {
+    color: rgba(126, 223, 154, 0.97);
+}
+
+.mf-codex-toggle-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.1rem;
+    height: 1.1rem;
+    padding: 0 0.25rem;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: rgba(126, 223, 154, 0.98);
+    background: rgba(46, 204, 113, 0.18);
+    border: 1px solid rgba(46, 204, 113, 0.4);
+}
+
+/* ── Card art ────────────────────────────────────────────────── */
+.mf-codex-art {
+    position: relative;
+    height: 148px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 32%, rgba(58, 38, 78, 0.55), rgba(10, 6, 16, 0.96));
+}
+
+.mf-codex-art::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 62%;
+    background: linear-gradient(to top, rgba(8, 5, 12, 0.96), rgba(8, 5, 12, 0));
+    pointer-events: none;
+}
+
+.mf-codex-art-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mf-codex-art-icon {
+    width: 84px;
+    height: 84px;
+    object-fit: contain;
+    padding: 0.6rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(58, 38, 78, 0.45), transparent 72%);
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7));
+    opacity: 0.97;
+}
+
+.mf-codex-name {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    padding: 0.4rem 0.6rem 0.5rem;
+    text-align: center;
+}
+
+.mf-codex-name h3 {
+    margin: 0;
+    font-size: 1.02rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.97);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+}
+
+.mf-codex-tier-badge {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 3;
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.mf-codex-tier-badge.tier-common { color: #7ddf9a; border-color: rgba(46, 204, 113, 0.5); }
+.mf-codex-tier-badge.tier-uncommon { color: #b794f4; border-color: rgba(155, 89, 182, 0.55); }
+.mf-codex-tier-badge.tier-rare { color: #63b3ed; border-color: rgba(52, 152, 219, 0.55); }
+.mf-codex-tier-badge.tier-legendary { color: #f6c560; border-color: rgba(212, 175, 55, 0.55); }
+
+/* ── Locked card ─────────────────────────────────────────────── */
+.mf-codex-silhouette {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3.2rem;
+    color: rgba(255, 255, 255, 0.1);
+    background: radial-gradient(circle at 50% 35%, rgba(38, 28, 52, 0.5), rgba(8, 5, 12, 0.96));
+}
+
+.mf-codex-locked-body {
+    padding: 0.7rem 0.7rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.mf-codex-locked-body p {
+    margin: 0;
+    font-size: 0.74rem;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.mf-codex-lock {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(155, 89, 182, 0.3);
+    color: rgba(155, 89, 182, 0.6);
+}
+
+/* ── Card body ───────────────────────────────────────────────── */
+.mf-codex-body {
+    padding: 0.55rem 0.7rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.mf-codex-section h4 {
+    margin: 0 0 0.4rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(180, 150, 205, 0.75);
+    border-bottom: 1px solid rgba(155, 89, 182, 0.15);
+}
+
+.mf-codex-ingredients {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+}
+
+.mf-codex-ingredients li {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.76rem;
+}
+
+.mf-ing-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex: 0 0 auto;
+}
+
+.mf-ing-name {
+    flex: 1;
+    min-width: 0;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.mf-ing-qty {
+    color: rgba(255, 255, 255, 0.5);
+    font-variant-numeric: tabular-nums;
+}
+
+.mf-codex-recipes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.mf-codex-recipe {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.mf-codex-recipe.cookable {
+    border-color: rgba(46, 204, 113, 0.3);
+    background: rgba(46, 204, 113, 0.06);
+}
+
+.mf-codex-recipe-art {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex: 0 0 auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mf-codex-recipe-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.mf-codex-recipe-info strong {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.mf-recipe-buffs {
+    margin: 0.3rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.mf-recipe-buff-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.mf-recipe-buff-duration {
+    margin: 0 0 0.1rem;
+    font-size: 0.66rem;
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(180, 210, 190, 0.72);
+    text-transform: lowercase;
+}
+
+.mf-recipe-buff-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.mf-recipe-buff {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    line-height: 1.25;
+    color: rgba(126, 223, 154, 0.92);
+}
+
+.mf-recipe-buff > i {
+    flex: 0 0 auto;
+    margin-top: 0.12rem;
+    color: rgba(126, 223, 154, 0.8);
+}
+
+.mf-recipe-buff-label {
+    min-width: 0;
+    color: rgba(126, 223, 154, 0.95);
+}
+
+.mf-codex-cook {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    border: 1px solid rgba(230, 126, 34, 0.55);
+    background: rgba(230, 126, 34, 0.18);
+    color: rgba(245, 200, 160, 0.97);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.mf-codex-cook:hover {
+    background: rgba(230, 126, 34, 0.34);
+}
+
+.mf-codex-cook:disabled,
+.mf-codex-cook.is-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.mf-codex-cook:disabled:hover,
+.mf-codex-cook.is-disabled:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.mf-codex-recipe-missing {
+    flex: 0 0 auto;
+    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.mf-codex-note {
+    margin: 0;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.mf-codex-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1.5rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.8rem;
+}
+
+.mf-codex-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.mf-codex-pager button {
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(155, 89, 182, 0.35);
+    border-radius: 6px;
+    background: rgba(155, 89, 182, 0.12);
+    color: rgba(220, 190, 235, 0.95);
+    cursor: pointer;
+}
+
+.mf-codex-pager button:hover {
+    background: rgba(155, 89, 182, 0.25);
+}

@@ -1,0 +1,129 @@
+/* ── Feast serving panel ─────────────────────────────────────── */
+.monstrous-feast-serving .window-content {
+    padding: 0 !important;
+}
+
+.mf-serving {
+    /* Standard inner gutter (UI Handbook §4) */
+    padding: 0.75rem 1.25rem 1rem;
+}
+
+.mf-serving-head {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid rgba(155, 89, 182, 0.22);
+}
+
+.mf-serving-title {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.mf-serving-meta {
+    margin: 0;
+    font-size: 0.82rem;
+    opacity: 0.85;
+    line-height: 1.45;
+}
+
+.mf-serving-ambitious {
+    display: inline-block;
+    margin-top: 0.45rem;
+    font-size: 0.75rem;
+    color: rgba(255, 210, 120, 0.95);
+}
+
+.mf-serving-progress {
+    margin: 0 0 0.75rem;
+    font-size: 0.78rem;
+    opacity: 0.8;
+}
+
+.mf-serving-roster {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.mf-serving-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto auto;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.mf-serving-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.mf-serving-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mf-serving-name {
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.mf-serving-status {
+    font-size: 0.75rem;
+    opacity: 0.85;
+    white-space: nowrap;
+}
+
+.application.monstrous-feast-serving .mf-serving-roll-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.72rem;
+    padding: 0.45rem 1rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: inherit;
+    cursor: pointer;
+}
+
+.mf-serving-actions {
+    display: flex;
+    gap: 0.55rem;
+    margin-top: 0.85rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.application.monstrous-feast-serving .mf-serving-primary,
+.application.monstrous-feast-serving .mf-serving-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    flex: 1;
+    padding: 0.45rem 1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    cursor: pointer;
+}
+
+.mf-serving-primary {
+    background: rgba(120, 80, 200, 0.35);
+}
+
+.mf-serving-secondary {
+    background: rgba(255, 255, 255, 0.06);
+}
+

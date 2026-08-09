@@ -1,0 +1,124 @@
+import { MealEffects } from "./MealEffects.js";
+import { Library } from "../../compat/Library.js";
+import { RespiteIntegration } from "../../compat/RespiteIntegration.js";
+import { translatePartyEffect, buildServeReportLines, SHARED_BUFF_SLOT } from "./MealBuffs.js";
+import { FeastServingApp } from "../../apps/FeastServingApp.js";
+import { FeastServingRelay } from "./FeastServingRelay.js";
+import { Logger } from "../../lib/Logger.js";
+import { MODULE_ID } from "../../data/moduleId.js";
+
+/** Serve cooked dishes to the party (buffs + per-member temp HP). */
+export const MealService = {
+    /**
+     * Build a transient in-memory meal descriptor for a finished dish. This is
+     * not an inventory Item: it carries only what the cooking layer needs to
+     * recognise the dish (the monsterDish flag and recipe) and to label the
+     * serve. Nothing is created on an actor.
+     * @param {object} recipe
+     * @param {boolean} ambitious
+     * @returns {object}
+     */
+    buildMealDescriptor(recipe, ambitious) {
+        const output = ambitious ? (recipe.ambitiousOutput ?? recipe.output) : recipe.output;
+        return {
+            name: output?.name ?? recipe.name,
+            img: output?.img,
+            flags: {
+                [MODULE_ID]: {
+                    monsterDish: true,
+                    recipeId: recipe.id,
+                    ambitious: Boolean(ambitious)
+                }
+            }
+        };
+    },
+
+    /**
+     * Serve a freshly cooked dish to the party: apply the meal's shared buff and
+     * roll temp HP per member. No inventory item exists, so nothing is consumed.
+     * @param {Actor} actor
+     * @param {object} recipe
+     * @param {boolean} ambitious
+     * @returns {Promise<{ effectLines: string[], tempFormula: string }>}
+     */
+    async serveParty(actor, recipe, ambitious) {
+        if (MealEffects.serveNeedsAbsentGM()) {
+            ui.notifications.warn("No game master is connected to serve the feast to the party. Ask a GM to join, then serve again.");
+            return { effectLines: [], tempFormula: null };
+        }
+
+        const cooking = Library.cooking;
+        // Route the serve through the kernel feed only when integration is live.
+        // With Respite present but integration forced off, bypass the feed so
+        // Respite's serve provider does not claim the dish; the standalone path
+        // then replaces the prior meal buff on a new serve, as it does with no
+        // Respite at all. Respite absent keeps the kernel feed (default provider),
+        // so the automatic default behaves exactly as before.
+        const bypassFeed = RespiteIntegration.respitePresent() && !RespiteIntegration.isActive();
+        const effectLines = cooking?.feed?.serveDish && !bypassFeed
+            ? await this._servePersistentBuffs(actor, recipe, ambitious, cooking)
+            : await MealEffects.applyPartyEffect(recipe.partyEffect, ambitious, { mealName: recipe.name });
+        const tempFormula = MealEffects.getTempFormula(recipe.partyEffect, ambitious);
+
+        // One GM advisory when the detected automation stack cannot fully scope
+        // the meal's buffs. Posted here so it covers both serve paths (the kernel
+        // feed and the standalone applier).
+        await MealEffects._postStackAdvisory(recipe.partyEffect, ambitious, recipe.name, effectLines.length > 0);
+
+        const lines = effectLines.length
+            ? `<ul class="mf-meal-effects">${effectLines.map(line => `<li>${line}</li>`).join("")}</ul>`
+            : "";
+        await ChatMessage.create({
+            user: game.user.id,
+            speaker: ChatMessage.getSpeaker({ actor }),
+            content: `<div class="mf-meal-served"><strong>${recipe.name}</strong> is served to the party.</div>${lines}`
+        });
+
+        if (tempFormula) {
+            if (game.user.isGM) {
+                FeastServingApp.open({
+                    recipe,
+                    ambitious,
+                    tempFormula,
+                    cookName: actor?.name ?? ""
+                });
+            } else {
+                FeastServingRelay.requestServing({
+                    recipeId: recipe.id,
+                    ambitious,
+                    tempFormula,
+                    cookName: actor?.name ?? ""
+                });
+            }
+        }
+
+        Logger.log(`Served ${recipe.name} to the party${ambitious ? " (ambitious)" : ""}.`);
+        return { effectLines, tempFormula };
+    },
+
+    /**
+     * Apply persistent buffs via kernel feed (skips temp-HP-only meals).
+     * @param {Actor} actor
+     * @param {object} recipe
+     * @param {boolean} ambitious
+     * @param {object} cooking
+     * @returns {Promise<string[]>}
+     */
+    async _servePersistentBuffs(actor, recipe, ambitious, cooking) {
+        const buffs = translatePartyEffect(recipe.partyEffect, ambitious);
+        if (!buffs.length) return [];
+
+        const members = MealEffects.getPartyMembers();
+        const descriptor = this.buildMealDescriptor(recipe, ambitious);
+
+        await cooking.feed.serveDish(descriptor, {
+            cookActor: actor,
+            recipients: members,
+            slot: SHARED_BUFF_SLOT,
+            title: recipe.name ? `Monstrous Feast: ${recipe.name}` : "Monstrous Feast",
+            consume: false
+        });
+
+        return buildServeReportLines(members, recipe.partyEffect, ambitious);
+    }
+};

@@ -1,0 +1,33 @@
+{
+    "_key": "!items!mfPageBear000001",
+    "_id": "mfPageBear000001",
+    "name": "Recipe Page: Bear Roast",
+    "type": "loot",
+    "img": "icons/sundries/documents/document-torn-diagram-tan.webp",
+    "folder": "mfFoldPages00001",
+    "sort": 300,
+    "system": {
+        "description": {
+            "value": "<p>A loose page torn from a hunter's cookbook. Inscribe it into a Monster Cooking book to learn how to prepare <strong>Bear Roast</strong>.</p><p><em>Requires:</em> 1x Bear Haunch, 1x Rations</p>"
+        },
+        "rarity": "uncommon",
+        "weight": 0.1,
+        "price": {
+            "value": 0,
+            "denomination": "gp"
+        },
+        "type": {
+            "value": ""
+        }
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "isRecipePage": true,
+            "recipeId": "cook_bear_roast"
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

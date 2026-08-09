@@ -1,0 +1,123 @@
+<section class="mf-living-cookbook">
+    <header class="mf-lc-header">
+        <div class="mf-lc-book">
+            <div class="mf-lc-book-emblem">
+                {{#if bookImg}}<img src="{{bookImg}}" alt="" class="mf-lc-book-emblem-img" />{{else}}<i class="fas fa-book"></i>{{/if}}
+            </div>
+            <div>
+                <h2>{{bookName}}</h2>
+                {{#if readOnly}}
+                <p class="mf-lc-sub"><i class="fas fa-eye"></i> Read-only{{#if carrierName}} · carried by {{carrierName}}{{/if}} · {{systemLabel}}</p>
+                {{else}}
+                <p class="mf-lc-sub"><i class="fas fa-feather"></i> Carried by {{actorName}} · {{systemLabel}}</p>
+                {{/if}}
+            </div>
+        </div>
+        <div class="mf-lc-progress">
+            <div class="mf-lc-stat">
+                <i class="fas fa-paw"></i>
+                <div class="mf-lc-stat-body">
+                    <span class="mf-lc-count"><b>{{discoveredCount}}</b> / {{totalCount}}</span>
+                    <span class="mf-lc-label">creatures known</span>
+                </div>
+            </div>
+            <div class="mf-lc-stat">
+                <i class="fas fa-utensils"></i>
+                <div class="mf-lc-stat-body">
+                    <span class="mf-lc-count mf-lc-recipes-count"><b>{{inscribedCount}}</b> / {{recipeTotal}}</span>
+                    <span class="mf-lc-label">recipes inscribed</span>
+                </div>
+            </div>
+            {{#unless readOnly}}
+            <button type="button" class="mf-lc-share" data-action="shareBook" title="Share with the party">
+                <i class="fas fa-share-nodes"></i>
+            </button>
+            {{/unless}}
+            <button type="button" class="mf-lc-help" data-mf-flyout="howto" title="How to use">
+                <i class="fas fa-question"></i>
+            </button>
+        </div>
+    </header>
+
+    <nav class="mf-lc-tabs" data-mf-tabs>
+        <button type="button" class="mf-lc-tab{{#if creaturesTabActive}} active{{/if}}" data-mf-tab="creatures"><i class="fas fa-paw"></i> Creatures</button>
+        <button type="button" class="mf-lc-tab{{#if recipesTabActive}} active{{/if}}" data-mf-tab="recipes"><i class="fas fa-utensils"></i> Recipes</button>
+    </nav>
+
+    <aside class="mf-flyout" data-mf-flyout-panel="howto">
+        <header class="mf-flyout-head">
+            <h3><i class="fas fa-book"></i> How to use</h3>
+            <button type="button" class="mf-flyout-close" data-mf-flyout-close title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </header>
+        <div class="mf-flyout-body">
+            <div class="mf-howto">
+                <p>The party's shared cookbook. The carrier keeps it; everyone's hunts fill its pages.</p>
+                <ol class="mf-howto-steps">
+                    <li><span class="mf-howto-num">1</span><div><strong>Butcher what you kill.</strong> Fallen creatures yield ingredients and get added to the cooking book here.</div></li>
+                    <li><span class="mf-howto-num">2</span><div><strong>Find recipe pages.</strong> Add pages you find by inscribing the recipes into the cooking book.</div></li>
+                    <li><span class="mf-howto-num">3</span><div><strong>Cook at camp.</strong> Use the Recipes tab to cook food when you have ingredients.</div></li>
+                </ol>
+            </div>
+        </div>
+    </aside>
+
+    <div class="mf-lc-panel{{#if creaturesTabActive}} active{{/if}}" data-mf-panel="creatures">
+        {{> "modules/ionrift-monstrous-feast/templates/partials/codex.hbs"}}
+    </div>
+
+    <div class="mf-lc-panel{{#if recipesTabActive}} active{{/if}}" data-mf-panel="recipes">
+        {{#if cookActive}}
+        {{> "modules/ionrift-monstrous-feast/templates/partials/cook-session.hbs" cook}}
+        {{else}}
+        <div class="mf-lc-recipes-browse">
+        {{#if pendingPages.length}}
+        <section class="mf-lc-pending">
+            <h3 class="mf-lc-pending-title"><i class="fas fa-scroll"></i> Pages to inscribe</h3>
+            <ul class="mf-lc-pending-list">
+                {{#each pendingPages as |page|}}
+                <li>
+                    <img src="{{page.img}}" alt="" class="mf-lc-recipe-art" />
+                    <div class="mf-lc-recipe-body">
+                        <strong>{{page.name}}</strong>
+                        {{#if page.buffs.length}}
+                        <p class="mf-lc-recipe-buff"><i class="fas fa-bolt"></i> {{#each page.buffs}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+                        {{/if}}
+                    </div>
+                    <button type="button" class="mf-lc-inscribe" data-action="inscribePage" data-page-id="{{page.pageId}}">
+                        <i class="fas fa-feather"></i> Inscribe
+                    </button>
+                </li>
+                {{/each}}
+            </ul>
+        </section>
+        {{/if}}
+        {{#if recipeSections.length}}
+        {{#each recipeSections as |section|}}
+        <section class="mf-lc-recipe-section mf-lc-recipe-section--{{section.id}}">
+            <header class="mf-lc-recipe-section-head">
+                <h3 class="mf-lc-recipe-section-title">{{section.title}}</h3>
+                {{#if section.subtitle}}
+                <p class="mf-lc-recipe-section-subtitle">{{section.subtitle}}</p>
+                {{/if}}
+            </header>
+            <ul class="mf-lc-recipe-list">
+                {{#each section.recipes as |recipe|}}
+                {{> "modules/ionrift-monstrous-feast/templates/partials/lc-recipe-row.hbs" recipe=recipe}}
+                {{/each}}
+            </ul>
+        </section>
+        {{/each}}
+        {{else}}
+        {{#unless pendingPages.length}}
+        <div class="mf-lc-empty">
+            <i class="fas fa-scroll"></i>
+            <p>No recipes inscribed yet. Find recipe pages and inscribe them to learn how to cook.</p>
+        </div>
+        {{/unless}}
+        {{/if}}
+        </div>
+        {{/if}}
+    </div>
+</section>

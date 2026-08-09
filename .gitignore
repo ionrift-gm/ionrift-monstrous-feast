@@ -1,0 +1,20 @@
+node_modules/
+/tools/
+.DS_Store
+Thumbs.db
+*.log
+
+# Compiled compendium packs (build from packs/src/ via npm run build:packs)
+packs/**/*.ldb
+packs/**/*.log
+packs/**/LOCK
+packs/**/MANIFEST-*
+packs/**/LOG
+packs/**/LOG.old
+packs/**/CURRENT
+
+# Agent handoff specs (ephemeral)
+.cursor/
+CURSOR_TASK_*
+CURSOR_SPEC_*
+CURSOR_PLAN_*

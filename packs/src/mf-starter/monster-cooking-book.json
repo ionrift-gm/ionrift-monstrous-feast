@@ -1,0 +1,36 @@
+{
+    "_key": "!items!mfBookCook000001",
+    "_id": "mfBookCook000001",
+    "name": "Monster Cooking",
+    "type": "equipment",
+    "img": "icons/sundries/books/book-worn-brown.webp",
+    "folder": "mfStarterFold001",
+    "sort": 100,
+    "system": {
+        "description": {
+            "value": "<p>A well-thumbed cookbook of recipes for creatures most people would never think to eat. Pages of butchering diagrams, notes on which parts are safe to take, and what pairs with what.</p><p>A character carrying this book can identify the edible parts of a slain creature and dress a carcass cleanly. Without it, that knowledge simply is not there.</p>"
+        },
+        "rarity": "uncommon",
+        "weight": 2,
+        "price": {
+            "value": 50,
+            "denomination": "gp"
+        },
+        "type": {
+            "value": "trinket"
+        },
+        "equipped": false
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "itemRef": "monster-cooking-book",
+            "isButcherCookbook": true,
+            "discoveredTypes": [],
+            "inscribedRecipes": []
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

@@ -1,0 +1,107 @@
+/* ── Purple scrollbar override (UI Handbook §2) ──────────────────────
+   The library's .ionrift-window scrollbar rules lose to Foundry's
+   defaults on CSS load order. Module-class nuclear override guarantees
+   purple scrollbars. Values match ionrift-library/styles/ionrift.css. */
+.monstrous-feast-living-cookbook,
+.monstrous-feast-living-cookbook *,
+.monstrous-feast-cookbook,
+.monstrous-feast-cookbook *,
+.monstrous-feast-ceremony,
+.monstrous-feast-ceremony * {
+    scrollbar-color: #6d28d9 rgba(0, 0, 0, 0.4) !important;
+    scrollbar-width: thin !important;
+}
+
+.monstrous-feast-living-cookbook ::-webkit-scrollbar,
+.monstrous-feast-living-cookbook *::-webkit-scrollbar,
+.monstrous-feast-cookbook ::-webkit-scrollbar,
+.monstrous-feast-cookbook *::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+.monstrous-feast-living-cookbook ::-webkit-scrollbar-track,
+.monstrous-feast-living-cookbook *::-webkit-scrollbar-track,
+.monstrous-feast-cookbook ::-webkit-scrollbar-track,
+.monstrous-feast-cookbook *::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border-radius: 4px;
+}
+
+.monstrous-feast-living-cookbook ::-webkit-scrollbar-thumb,
+.monstrous-feast-living-cookbook *::-webkit-scrollbar-thumb,
+.monstrous-feast-cookbook ::-webkit-scrollbar-thumb,
+.monstrous-feast-cookbook *::-webkit-scrollbar-thumb {
+    background: #6d28d9 !important;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.monstrous-feast-living-cookbook ::-webkit-scrollbar-thumb:hover,
+.monstrous-feast-living-cookbook *::-webkit-scrollbar-thumb:hover,
+.monstrous-feast-cookbook ::-webkit-scrollbar-thumb:hover,
+.monstrous-feast-cookbook *::-webkit-scrollbar-thumb:hover {
+    background: #8b5cf6 !important;
+}
+
+/* ── Focus-ring residue (UI Handbook §3) ─────────────────────────────
+   The global .ionrift-window suppression loses to the dnd5e/core focus
+   ring on a cascade tie. Re-close mouse :focus with the app-root class
+   for higher specificity, and keep a violet :focus-visible for keyboard
+   a11y, so the stale warm/red outline never bleeds on tabs or buttons. */
+.application.monstrous-feast-living-cookbook button:focus,
+.application.monstrous-feast-living-cookbook [role="button"]:focus,
+.application.monstrous-feast-living-cookbook [tabindex]:focus,
+.application.monstrous-feast-living-cookbook a:focus,
+.application.monstrous-feast-cookbook button:focus,
+.application.monstrous-feast-cookbook [role="button"]:focus,
+.application.monstrous-feast-cookbook [tabindex]:focus,
+.application.monstrous-feast-cookbook a:focus,
+.application.monstrous-feast-ceremony button:focus,
+.application.monstrous-feast-ceremony [role="button"]:focus,
+.application.monstrous-feast-ceremony [tabindex]:focus,
+.application.monstrous-feast-ceremony a:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.application.monstrous-feast-living-cookbook button:focus-visible,
+.application.monstrous-feast-living-cookbook [role="button"]:focus-visible,
+.application.monstrous-feast-living-cookbook [tabindex]:focus-visible,
+.application.monstrous-feast-living-cookbook a:focus-visible,
+.application.monstrous-feast-cookbook button:focus-visible,
+.application.monstrous-feast-cookbook [role="button"]:focus-visible,
+.application.monstrous-feast-cookbook [tabindex]:focus-visible,
+.application.monstrous-feast-cookbook a:focus-visible,
+.application.monstrous-feast-ceremony button:focus-visible,
+.application.monstrous-feast-ceremony [role="button"]:focus-visible,
+.application.monstrous-feast-ceremony [tabindex]:focus-visible,
+.application.monstrous-feast-ceremony a:focus-visible {
+    outline: 2px solid var(--ionrift-accent, #9b59b6) !important;
+    outline-offset: 2px !important;
+    box-shadow: none !important;
+}
+
+/* Keep the active tab's selected glow even while focused. */
+.application.monstrous-feast-living-cookbook .mf-lc-tab.active:focus,
+.application.monstrous-feast-living-cookbook .mf-lc-tab.active:focus-visible {
+    box-shadow: 0 0 14px rgba(155, 89, 182, 0.25), inset 0 0 0 1px rgba(155, 89, 182, 0.15) !important;
+}
+
+.application.monstrous-feast-cookbook .mf-gm-tab.active:focus,
+.application.monstrous-feast-cookbook .mf-gm-tab.active:focus-visible {
+    box-shadow: 0 0 14px rgba(155, 89, 182, 0.25), inset 0 0 0 1px rgba(155, 89, 182, 0.15) !important;
+}
+
+.monstrous-feast-cookbook .monstrous-feast-cookbook-body {
+    position: relative;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+

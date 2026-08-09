@@ -1,0 +1,37 @@
+{
+    "_key": "!items!mfStapleSalt0001",
+    "_id": "mfStapleSalt0001",
+    "name": "Salt",
+    "type": "consumable",
+    "img": "icons/commodities/materials/powder-grey.webp",
+    "folder": "mfFoldPantry0001",
+    "sort": 430,
+    "system": {
+        "description": {
+            "value": "<p>Coarse cooking salt. The one seasoning worth carrying everywhere. A pinch lifts almost any dish.</p>"
+        },
+        "rarity": "common",
+        "weight": 0.1,
+        "price": {
+            "value": 1,
+            "denomination": "sp"
+        },
+        "quantity": 1,
+        "type": {
+            "value": "food",
+            "subtype": ""
+        }
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "pantryStaple": true
+        },
+        "ionrift-respite": {
+            "resourceType": "ingredient"
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

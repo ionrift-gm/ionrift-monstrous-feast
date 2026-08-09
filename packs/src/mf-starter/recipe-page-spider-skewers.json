@@ -1,0 +1,33 @@
+{
+    "_key": "!items!mfPageSpider0001",
+    "_id": "mfPageSpider0001",
+    "name": "Recipe Page: Spider Skewers",
+    "type": "loot",
+    "img": "icons/sundries/documents/document-torn-diagram-tan.webp",
+    "folder": "mfFoldPages00001",
+    "sort": 750,
+    "system": {
+        "description": {
+            "value": "<p>A loose page torn from a hunter's cookbook. Inscribe it into a Monster Cooking book to learn how to prepare <strong>Spider Skewers</strong>.</p><p><em>Requires:</em> Spider Haunch</p>"
+        },
+        "rarity": "common",
+        "weight": 0.1,
+        "price": {
+            "value": 0,
+            "denomination": "gp"
+        },
+        "type": {
+            "value": ""
+        }
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "isRecipePage": true,
+            "recipeId": "cook_spider_skewers"
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

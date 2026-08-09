@@ -1,0 +1,234 @@
+name: Release Creation
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      dry_run_discord:
+        description: 'Post Discord notification only (no release artifact)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Validate Release
+        if: github.event.inputs.dry_run_discord != 'true'
+        run: |
+          MODULE_VERSION=$(python3 -c "import json; d=json.load(open('module.json')); print(d['version'])")
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$MODULE_VERSION" != "$TAG_VERSION" ]; then
+            echo "ERROR: module.json version ($MODULE_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+          echo "OK: module.json version $MODULE_VERSION matches tag $TAG_VERSION"
+
+      - name: Validate Assets
+        if: github.event.inputs.dry_run_discord != 'true'
+        run: |
+          FIRST_PNG=$(find assets -name '*.png' -type f | head -1)
+          if [ -z "$FIRST_PNG" ]; then
+            echo "WARNING: No PNG files found in assets/. Skipping validation."
+          else
+            SIZE=$(wc -c < "$FIRST_PNG")
+            if [ "$SIZE" -lt 1000 ]; then
+              echo "ERROR: $FIRST_PNG is only ${SIZE} bytes; likely an LFS pointer, not an image"
+              exit 1
+            fi
+            echo "OK: Asset files are real images (first file: $FIRST_PNG, ${SIZE} bytes)"
+          fi
+
+      - name: Set up Node
+        if: github.event.inputs.dry_run_discord != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Checkout private module tools
+        if: github.event.inputs.dry_run_discord != 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ionrift-gm/ionrift-testharness
+          token: ${{ secrets.IONRIFT_CI_PAT }}
+          path: ionrift-testharness
+
+      - name: Install dependencies
+        if: github.event.inputs.dry_run_discord != 'true'
+        # Testharness gitignores package-lock.json; npm ci would fail without a lockfile.
+        run: npm install --prefix ionrift-testharness --ignore-scripts
+
+      - name: Compile compendium packs
+        if: github.event.inputs.dry_run_discord != 'true'
+        env:
+          MODULE_ROOT: ${{ github.workspace }}
+        run: node ionrift-testharness/tools/modules/monstrous-feast/compile-packs.mjs
+
+      - name: Validate ES module imports
+        if: github.event.inputs.dry_run_discord != 'true'
+        run: |
+          ERRORS=0
+          while IFS= read -r jsfile; do
+            DIR=$(dirname "$jsfile")
+            grep -oE "from[[:space:]]+['\"](\.\./|\./)[^'\"]+['\"]" "$jsfile" 2>/dev/null | while IFS= read -r match; do
+              IMPORT_PATH=$(echo "$match" | sed -E "s/from[[:space:]]*['\"]//;s/['\"]//")
+              TARGET="$DIR/$IMPORT_PATH"
+              if [ ! -f "$TARGET" ]; then
+                echo "::error file=$jsfile::Import '$IMPORT_PATH' resolves to '$TARGET' which does not exist"
+                ERRORS=$((ERRORS + 1))
+              fi
+            done
+          done < <(find scripts/ -name '*.js' -type f)
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "FAILED: $ERRORS broken import(s) found"
+            exit 1
+          fi
+          echo "OK: All static imports resolve to existing files"
+
+      - name: Zip Module
+        if: github.event.inputs.dry_run_discord != 'true'
+        run: |
+          zip -r module.zip . \
+            -x ".git/*" \
+            -x ".github/*" \
+            -x ".gitignore" \
+            -x ".gitattributes" \
+            -x "package.json" \
+            -x "package-lock.json" \
+            -x "node_modules/*" \
+            -x "packs/src/*" \
+            -x "docs/*" \
+            -x "tools/*" \
+            -x "ionrift-testharness/*" \
+            -x ".cursor/*" \
+            -x "tests/*" \
+            -x "vitest*" \
+            -x "*.bak"
+
+      - name: Smoke test release ZIP
+        if: github.event.inputs.dry_run_discord != 'true'
+        run: |
+          mkdir -p /tmp/smoke && cd /tmp/smoke
+          unzip -q "$GITHUB_WORKSPACE/module.zip"
+          ENTRY=$(jq -r '.esmodules[0]' module.json)
+          if [ ! -f "$ENTRY" ]; then
+            echo "::error::esmodules entry '$ENTRY' not found in release ZIP"
+            exit 1
+          fi
+          for STYLE in $(jq -r '.styles[]' module.json); do
+            if [ ! -f "$STYLE" ]; then
+              echo "::error::styles entry '$STYLE' not found in release ZIP"
+              exit 1
+            fi
+          done
+          if [ ! -d packs/mf-starter ]; then
+            echo "::error::compiled pack packs/mf-starter missing from release ZIP"
+            exit 1
+          fi
+          echo "OK: Release ZIP contains entry point, styles, and starter pack"
+
+      - name: Create Release
+        if: github.event.inputs.dry_run_discord != 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            module.zip
+            module.json
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-ea') || contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
+          generate_release_notes: true
+          make_latest: ${{ !(contains(github.ref_name, '-ea') || contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha')) }}
+
+  notify-discord:
+    name: Notify Discord
+    needs: build
+    runs-on: ubuntu-latest
+    if: >
+      (
+        startsWith(github.ref, 'refs/tags/v') ||
+        github.event.inputs.dry_run_discord == 'true'
+      ) &&
+      !contains(github.ref_name, '-rc') &&
+      !contains(github.ref_name, '-beta') &&
+      !contains(github.ref_name, '-alpha') &&
+      !contains(github.ref_name, '-ea')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Post to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+
+            const versionMatch = changelog.match(/^## \[(?!Unreleased\])([^\]]+)\]/m);
+            const version = versionMatch ? versionMatch[1] : 'unknown';
+
+            const lines = changelog.split('\n');
+            let body = [];
+            let found = false;
+            const versionHeader = `## [${version}]`;
+            for (const line of lines) {
+              if (line.startsWith('## ')) {
+                if (found) break;
+                if (line.startsWith(versionHeader)) { found = true; }
+                continue;
+              }
+              if (found) {
+                if (line.startsWith('### ')) {
+                  body.push('', `**${line.slice(4)}**`);
+                } else {
+                  body.push(line);
+                }
+              }
+            }
+            let desc = body.join('\n').trim();
+            if (desc.length > 3900) {
+              desc = desc.slice(0, 3900) + '\n\n_...see full notes on GitHub_';
+            }
+
+            const payload = {
+              embeds: [{
+                title: `Monstrous Feast: v${version}`,
+                description: desc,
+                color: 0x8b5cf6,
+                url: `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/v${version}`
+              }]
+            };
+
+            const webhook = process.env.DISCORD_WEBHOOK;
+            if (!webhook) {
+              core.warning('DISCORD_WEBHOOK_URL secret is not set. Skipping Discord notification.');
+              return;
+            }
+
+            const resp = await fetch(webhook, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            if (!resp.ok) {
+              const text = await resp.text();
+              core.setFailed(`Discord webhook failed (${resp.status}): ${text}`);
+            } else {
+              console.log('Discord notification posted successfully.');
+            }

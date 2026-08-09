@@ -1,0 +1,7 @@
+{
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "build:packs": "node ../ionrift-testharness/tools/modules/monstrous-feast/compile-packs.mjs"
+    }
+}

@@ -1,0 +1,37 @@
+{
+    "_key": "!items!mfStapleFlour001",
+    "_id": "mfStapleFlour001",
+    "name": "Flour",
+    "type": "consumable",
+    "img": "icons/consumables/grains/sack-rice-flour-brown.webp",
+    "folder": "mfFoldPantry0001",
+    "sort": 400,
+    "system": {
+        "description": {
+            "value": "<p>A sack of milled grain. A camp-cooking staple for batters, breads, and thickening a stew.</p>"
+        },
+        "rarity": "common",
+        "weight": 0.5,
+        "price": {
+            "value": 2,
+            "denomination": "sp"
+        },
+        "quantity": 1,
+        "type": {
+            "value": "food",
+            "subtype": ""
+        }
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "pantryStaple": true
+        },
+        "ionrift-respite": {
+            "resourceType": "ingredient"
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

@@ -1,0 +1,37 @@
+{
+    "_key": "!items!mfStapleCinn0001",
+    "_id": "mfStapleCinn0001",
+    "name": "Cinnamon",
+    "type": "consumable",
+    "img": "icons/commodities/materials/powder-red-green-yellow.webp",
+    "folder": "mfFoldPantry0001",
+    "sort": 450,
+    "system": {
+        "description": {
+            "value": "<p>Fragrant ground bark. A warm, sweet note for breads and roasts alike.</p>"
+        },
+        "rarity": "common",
+        "weight": 0.1,
+        "price": {
+            "value": 3,
+            "denomination": "sp"
+        },
+        "quantity": 1,
+        "type": {
+            "value": "food",
+            "subtype": ""
+        }
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "pantryStaple": true
+        },
+        "ionrift-respite": {
+            "resourceType": "ingredient"
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

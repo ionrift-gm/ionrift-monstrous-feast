@@ -1,0 +1,7 @@
+{
+    "_meta": {
+        "description": "Optional homebrew creature entries. Same shape as scripts/data/catalogs/creature-registry.json. Matching ids override bundled entries after a registry reload.",
+        "guide": "https://github.com/ionrift-gm/ionrift-library/wiki/15-Monstrous-Feast-Homebrew-JSON",
+        "reload": "game.ionrift.monstrousFeast.reloadRegistries()"
+    }
+}

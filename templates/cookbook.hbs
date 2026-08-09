@@ -1,0 +1,253 @@
+<section class="monstrous-feast-cookbook-body">
+    <header class="mf-gm-header">
+        <div class="mf-gm-id">
+            <div class="mf-gm-emblem"><i class="fas fa-drumstick-bite"></i></div>
+            <div class="mf-gm-id-text">
+                <h2>Monstrous Feast</h2>
+                <p class="mf-gm-sub"><i class="fas fa-feather"></i> Game Master view · {{systemLabel}}</p>
+            </div>
+        </div>
+
+        <div class="mf-gm-header-right">
+            <div class="mf-gm-stats">
+                {{#if hasPartyBook}}
+                <div class="mf-gm-stat mf-gm-stat-audit">
+                    <i class="fas fa-paw"></i>
+                    <div class="mf-gm-stat-body"><b>{{auditDiscoveredCount}} / {{registryCount}}</b><span>known in book</span></div>
+                </div>
+                <div class="mf-gm-stat mf-gm-stat-audit">
+                    <i class="fas fa-feather"></i>
+                    <div class="mf-gm-stat-body"><b>{{auditInscribedCount}} / {{recipeCount}}</b><span>inscribed</span></div>
+                </div>
+                {{else}}
+                <div class="mf-gm-stat">
+                    <i class="fas fa-paw"></i>
+                    <div class="mf-gm-stat-body"><b>{{registryCount}}</b><span>creatures</span></div>
+                </div>
+                <div class="mf-gm-stat">
+                    <i class="fas fa-utensils"></i>
+                    <div class="mf-gm-stat-body"><b>{{recipeCount}}</b><span>recipes</span></div>
+                </div>
+                {{/if}}
+            </div>
+
+            {{#if isGM}}
+            <div class="mf-gm-toolbar">
+                <button type="button" data-action="openCompendium" title="Open starter compendium">
+                    <i class="fas fa-box-open"></i>
+                </button>
+                {{#if hasPartyBook}}
+                <button type="button" data-action="openCookbook" title="Open party cookbook">
+                    <img src="{{partyBook.img}}" alt="" class="mf-gm-tool-img" />
+                </button>
+                {{/if}}
+                <button type="button" data-mf-flyout="manage" title="Manage">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+                <button type="button" data-mf-flyout="help" title="Help">
+                    <i class="fas fa-question"></i>
+                </button>
+            </div>
+            {{/if}}
+        </div>
+    </header>
+
+    {{#unless supported}}
+    <div class="mf-cookbook-warning">
+        <i class="fas fa-triangle-exclamation"></i>
+        <p>{{unsupportedNotice}}</p>
+    </div>
+    {{/unless}}
+
+    {{#if isGM}}
+    {{#unless starterPackReady}}
+    <p class="mf-cookbook-note">Starter compendium not loaded. Reload the world to finish setting up Monstrous Feast.</p>
+    {{/unless}}
+    {{/if}}
+
+    <nav class="mf-gm-tabs" data-mf-tabs>
+        <button type="button" class="mf-gm-tab active" data-mf-tab="registry">
+            <i class="fas fa-paw"></i> Registry
+        </button>
+        {{#each consolePanels as |panel|}}
+        <button type="button" class="mf-gm-tab" data-mf-tab="{{panel.id}}">
+            <i class="{{panel.icon}}"></i> {{panel.label}}
+        </button>
+        {{/each}}
+    </nav>
+
+    <div class="mf-gm-panel active" data-mf-panel="registry">
+        <section class="mf-cookbook-registry">
+            {{> "modules/ionrift-monstrous-feast/templates/partials/codex.hbs"}}
+        </section>
+    </div>
+
+    {{#each consolePanels as |panel|}}
+    <div class="mf-gm-panel" data-mf-panel="{{panel.id}}">
+        {{{panel.content}}}
+    </div>
+    {{/each}}
+
+    {{#if isGM}}
+    <aside class="mf-flyout" data-mf-flyout-panel="help">
+        <header class="mf-flyout-head">
+            <h3><i class="fas fa-question"></i> Help</h3>
+            <button type="button" class="mf-flyout-close" data-mf-flyout-close title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </header>
+
+        <div class="mf-flyout-body">
+            <div class="mf-howto">
+                <p>Set the party up so they can butcher, cook, and share the book.</p>
+                <ol class="mf-howto-steps">
+                    <li><span class="mf-howto-num">1</span><div><strong>Add the cooking book.</strong> From the Monstrous Feast Starter compendium, add the Monster Cooking book to a player. One keeper is enough for the whole party.</div></li>
+                    <li><span class="mf-howto-num">2</span><div><strong>Stock pantry staples.</strong> Players need staples such as Cooking Oil and Egg. Add some to the cook; most recipes cannot run without them.</div></li>
+                    <li><span class="mf-howto-num">3</span><div><strong>Teach a recipe.</strong> Let them butcher a registered creature, or give them a recipe page to inscribe into the book.</div></li>
+                </ol>
+            </div>
+        </div>
+    </aside>
+
+    <aside class="mf-flyout" data-mf-flyout-panel="manage">
+        <header class="mf-flyout-head">
+            <h3><i class="fas fa-sliders-h"></i> Manage</h3>
+            <button type="button" class="mf-flyout-close" data-mf-flyout-close title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </header>
+
+        <div class="mf-flyout-body">
+            <section class="mf-cookbook-homebrew-inline">
+                <div class="mf-homebrew-head">
+                    <h4>World homebrew</h4>
+                    <a class="mf-homebrew-guide" href="{{homebrewGuideUrl}}" target="_blank" rel="noopener noreferrer">
+                        <i class="fas fa-book"></i> JSON guide
+                    </a>
+                </div>
+                <p class="mf-cookbook-homebrew-lede">Import custom creatures and recipes for this world, or export what you have to share. World homebrew overrides bundled and pack content when ids match.</p>
+
+                <div class="mf-homebrew-stats">
+                    <div class="mf-homebrew-stat">
+                        <i class="fas fa-paw"></i>
+                        <span><b>{{homebrew.creatureCount}}</b> / {{homebrewLimits.maxCreatures}} creatures</span>
+                    </div>
+                    <div class="mf-homebrew-stat">
+                        <i class="fas fa-utensils"></i>
+                        <span><b>{{homebrew.recipeCount}}</b> / {{homebrewLimits.maxRecipes}} recipes</span>
+                    </div>
+                </div>
+
+                <div class="mf-cookbook-actions mf-homebrew-actions">
+                    <button type="button" data-action="importHomebrew">
+                        <i class="fas fa-upload"></i> Import JSON
+                    </button>
+                    <button type="button" data-action="exportHomebrew">
+                        <i class="fas fa-download"></i> Export JSON
+                    </button>
+                    <button type="button" data-action="reloadRegistry">
+                        <i class="fas fa-rotate"></i> Reload Registry
+                    </button>
+                    {{#if homebrew.hasContent}}
+                    <button type="button" class="mf-homebrew-clear" data-action="clearHomebrew">
+                        <i class="fas fa-trash"></i> Clear world homebrew
+                    </button>
+                    {{/if}}
+                </div>
+
+                {{#if homebrew.messages.length}}
+                <div class="mf-homebrew-messages">
+                    <p class="mf-homebrew-messages-title"><i class="fas fa-triangle-exclamation"></i> Last validation notes</p>
+                    <ul>
+                        {{#each homebrew.messages as |line|}}
+                        <li>{{line}}</li>
+                        {{/each}}
+                    </ul>
+                    {{#if homebrew.messagesTruncated}}
+                    <p class="mf-homebrew-messages-more">More issues were logged to the browser console.</p>
+                    {{/if}}
+                </div>
+                {{/if}}
+
+                <details class="mf-homebrew-file-fallback">
+                    <summary>
+                        <i class="fas fa-chevron-right mf-homebrew-file-chevron" aria-hidden="true"></i>
+                        File drop-in folder (advanced)
+                    </summary>
+                    <p class="mf-cookbook-homebrew-lede">You can also edit JSON directly in the module folder. Reload after saving.</p>
+                    <p class="mf-cookbook-homebrew-path"><code>{{homebrewPath}}</code></p>
+                </details>
+            </section>
+
+            {{#if partyBook}}
+            <section class="mf-cookbook-progress">
+                <h4>Party cookbook · {{partyBook.carrierName}}</h4>
+                <p class="mf-cookbook-progress-lede">Edit what the carried book has learned. Removals do not delete items from inventories.</p>
+
+                <div class="mf-cookbook-progress-block">
+                    <div class="mf-cookbook-progress-head">
+                        <span>Inscribed recipes <em>{{partyBook.inscribedCount}}</em></span>
+                        {{#if partyBook.inscribedRecipes.length}}
+                        <button type="button" class="mf-cookbook-progress-clear" data-action="clearInscribedRecipes">Clear all</button>
+                        {{/if}}
+                    </div>
+                    {{#if partyBook.inscribedRecipes.length}}
+                    <label class="mf-cookbook-progress-filter">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input type="search" data-progress-filter placeholder="Filter recipes" aria-label="Filter inscribed recipes" autocomplete="off" />
+                    </label>
+                    <ul class="mf-cookbook-progress-list" data-progress-list>
+                        {{#each partyBook.inscribedRecipes as |recipe|}}
+                        <li>
+                            <span data-progress-label>{{recipe.name}}</span>
+                            <button type="button" class="mf-cookbook-progress-remove" data-action="removeInscribedRecipe" data-recipe-id="{{recipe.id}}" title="Remove" aria-label="Remove {{recipe.name}}">
+                                <i class="fas fa-times" aria-hidden="true"></i>
+                            </button>
+                        </li>
+                        {{/each}}
+                    </ul>
+                    <p class="mf-cookbook-progress-empty" data-progress-filter-empty hidden>No matches.</p>
+                    {{else}}
+                    <p class="mf-cookbook-progress-empty">None inscribed yet.</p>
+                    {{/if}}
+                </div>
+
+                <div class="mf-cookbook-progress-block">
+                    <div class="mf-cookbook-progress-head">
+                        <span>Known creatures <em>{{partyBook.discoveredCount}}</em></span>
+                        {{#if partyBook.discoveredCreatures.length}}
+                        <button type="button" class="mf-cookbook-progress-clear" data-action="clearDiscoveredTypes">Clear all</button>
+                        {{/if}}
+                    </div>
+                    {{#if partyBook.discoveredCreatures.length}}
+                    <label class="mf-cookbook-progress-filter">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input type="search" data-progress-filter placeholder="Filter creatures" aria-label="Filter known creatures" autocomplete="off" />
+                    </label>
+                    <ul class="mf-cookbook-progress-list" data-progress-list>
+                        {{#each partyBook.discoveredCreatures as |creature|}}
+                        <li>
+                            <span data-progress-label>{{creature.label}}</span>
+                            <button type="button" class="mf-cookbook-progress-remove" data-action="removeDiscoveredType" data-type-id="{{creature.id}}" title="Remove" aria-label="Remove {{creature.label}}">
+                                <i class="fas fa-times" aria-hidden="true"></i>
+                            </button>
+                        </li>
+                        {{/each}}
+                    </ul>
+                    <p class="mf-cookbook-progress-empty" data-progress-filter-empty hidden>No matches.</p>
+                    {{else}}
+                    <p class="mf-cookbook-progress-empty">None known yet.</p>
+                    {{/if}}
+                </div>
+
+                <button type="button" class="mf-cookbook-progress-reset" data-action="resetCookbook">
+                    <i class="fas fa-rotate-left"></i> Reset cookbook progress
+                </button>
+            </section>
+            {{else}}
+            <p class="mf-cookbook-progress-empty">No party member is carrying a Monster Cooking book yet. Progress tools appear here once one is granted from the starter compendium.</p>
+            {{/if}}
+        </div>
+    </aside>
+    {{/if}}
+</section>

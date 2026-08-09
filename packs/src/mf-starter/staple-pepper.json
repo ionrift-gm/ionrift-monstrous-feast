@@ -1,0 +1,37 @@
+{
+    "_key": "!items!mfStaplePeppr001",
+    "_id": "mfStaplePeppr001",
+    "name": "Pepper",
+    "type": "consumable",
+    "img": "icons/commodities/materials/powder-black.webp",
+    "folder": "mfFoldPantry0001",
+    "sort": 440,
+    "system": {
+        "description": {
+            "value": "<p>Ground black pepper. Sharp heat for a dish that would otherwise be dull.</p>"
+        },
+        "rarity": "common",
+        "weight": 0.1,
+        "price": {
+            "value": 2,
+            "denomination": "sp"
+        },
+        "quantity": 1,
+        "type": {
+            "value": "food",
+            "subtype": ""
+        }
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "pantryStaple": true
+        },
+        "ionrift-respite": {
+            "resourceType": "ingredient"
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

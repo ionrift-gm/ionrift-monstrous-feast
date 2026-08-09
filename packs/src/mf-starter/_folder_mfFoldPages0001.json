@@ -1,0 +1,11 @@
+{
+    "_key": "!folders!mfFoldPages00001",
+    "_id": "mfFoldPages00001",
+    "name": "Recipe Pages",
+    "type": "Item",
+    "sorting": "a",
+    "sort": 200,
+    "color": "#c9a227",
+    "folder": "mfStarterFold001",
+    "flags": {}
+}

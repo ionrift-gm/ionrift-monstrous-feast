@@ -1,0 +1,143 @@
+{
+    "_meta": {
+        "version": "0.1.0",
+        "tier": "free",
+        "description": "Creature yields for Monstrous Feast. Maps classifyCreature() IDs to butchering yields. Lookup order: exact ID first, then parent type. Unknown types silently skip. Extra creatures may arrive from overlays."
+    },
+
+    "beast_ursine": {
+        "minCR": 3,
+        "tier": "common",
+        "label": "Bear",
+        "basic": [
+            { "name": "Monster Meat", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 }
+        ],
+        "standard": [
+            { "name": "Bear Haunch", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Bear Fat", "qty": 1, "type": "loot" }
+        ],
+        "exceptional": [
+            { "name": "Bear Haunch", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Bear Fat", "qty": 2, "type": "loot" },
+            { "name": "Bear Hide", "qty": 1, "type": "loot" }
+        ],
+        "mishap": { "type": "damage", "damage": "1d6", "damageType": "slashing", "desc": "A claw catches the wrist mid-cut. Reflexive muscle spasm from the carcass." },
+        "flavour": "The bear is enormous even in death. Dense muscle and thick fat beneath the fur."
+    },
+
+    "beast_suidae": {
+        "minCR": 2,
+        "tier": "common",
+        "label": "Boar",
+        "basic": [
+            { "name": "Monster Meat", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 }
+        ],
+        "standard": [
+            { "name": "Boar Loin", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Boar Tusk", "qty": 1, "type": "loot" }
+        ],
+        "exceptional": [
+            { "name": "Boar Loin", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Boar Tusk", "qty": 2, "type": "loot" },
+            { "name": "Boar Hide", "qty": 1, "type": "loot" }
+        ],
+        "mishap": { "type": "damage", "damage": "1d4", "damageType": "piercing", "desc": "The tusk nicks deep. Stubborn animal even dead." },
+        "flavour": "Tusks like daggers, hide like armour plate. Good eating underneath."
+    },
+
+    "beast": {
+        "minCR": 3,
+        "tier": "common",
+        "label": "Beast",
+        "basic": [
+            { "name": "Monster Meat", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 }
+        ],
+        "standard": [
+            { "name": "Choice Game Meat", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 }
+        ],
+        "exceptional": [
+            { "name": "Choice Game Meat", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Beast Hide", "qty": 1, "type": "loot" }
+        ],
+        "mishap": { "type": "damage", "damage": "1d4", "damageType": "slashing", "desc": "The blade skips on bone. A deep cut to the hand." },
+        "flavour": "A respectable kill. The cookbook suggests starting at the hindquarters."
+    },
+
+    "monstrosity_owlbear": {
+        "minCR": 3,
+        "tier": "uncommon",
+        "label": "Owlbear",
+        "basic": [
+            { "name": "Monster Meat", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 }
+        ],
+        "standard": [
+            { "name": "Owlbear Flank", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 },
+            { "itemRef": "owlbear_feather", "name": "Owlbear Feather", "qty": 1, "type": "loot" }
+        ],
+        "exceptional": [
+            { "name": "Owlbear Flank", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
+            { "itemRef": "owlbear_feather", "name": "Owlbear Feather", "qty": 2, "type": "loot" },
+            { "name": "Owlbear Beak", "qty": 1, "type": "loot" }
+        ],
+        "mishap": { "type": "damage", "damage": "1d6", "damageType": "slashing", "desc": "Talons spring open under pressure. The cookbook warned about this." },
+        "flavour": "Part owl, part bear, entirely edible. The dark meat near the ribs is the best."
+    },
+
+    "beast_arachnid": {
+        "minCR": 0,
+        "tier": "common",
+        "label": "Giant Spider",
+        "basic": [
+            { "name": "Monster Meat", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 }
+        ],
+        "standard": [
+            { "name": "Spider Haunch", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Spider Silk", "qty": 1, "type": "loot" }
+        ],
+        "exceptional": [
+            { "name": "Spider Haunch", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Spider Silk", "qty": 2, "type": "loot" },
+            { "itemRef": "venom_sac", "name": "Venom Sac", "qty": 1, "type": "loot" }
+        ],
+        "mishap": { "type": "damage", "damage": "1d4", "damageType": "piercing", "desc": "A leg hook catches the blade. The joints twitch after death." },
+        "flavour": "Eight legs, two too many. The abdomen yields dense, stringy meat the cookbook marks as safe once the venom sac is removed."
+    },
+
+    "beast_reptile": {
+        "minCR": 0,
+        "tier": "common",
+        "label": "Crocodile",
+        "basic": [
+            { "name": "Monster Meat", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 }
+        ],
+        "standard": [
+            { "name": "Croc Tail", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Croc Hide", "qty": 1, "type": "loot" }
+        ],
+        "exceptional": [
+            { "name": "Croc Tail", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Croc Hide", "qty": 1, "type": "loot" },
+            { "name": "Croc Tooth", "qty": 2, "type": "loot" }
+        ],
+        "mishap": { "type": "damage", "damage": "1d6", "damageType": "slashing", "desc": "The jaw snaps shut on reflex. Armored hide, armored reflexes." },
+        "flavour": "Tail meat is the prize. The hide is too scaly for a quick field dress but worth taking if the cut is clean."
+    },
+
+    "monstrosity": {
+        "minCR": 3,
+        "tier": "uncommon",
+        "label": "Monstrosity",
+        "basic": [
+            { "name": "Monster Meat", "qty": 1, "foodTag": "meat", "spoilsAfter": 1 }
+        ],
+        "standard": [
+            { "name": "Monster Flank", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 }
+        ],
+        "exceptional": [
+            { "name": "Monster Flank", "qty": 2, "foodTag": "meat", "spoilsAfter": 1 },
+            { "name": "Monster Trophy", "qty": 1, "type": "loot" }
+        ],
+        "mishap": { "type": "damage", "damage": "1d6", "damageType": "slashing", "desc": "Something bites back from inside. Parasites, or just muscle memory." },
+        "flavour": "The cookbook says 'when in doubt, try the legs.' Sound advice."
+    }
+}
