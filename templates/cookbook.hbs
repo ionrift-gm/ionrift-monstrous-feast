@@ -33,9 +33,11 @@
 
             {{#if isGM}}
             <div class="mf-gm-toolbar">
+                {{#if starterCompendiumAvailable}}
                 <button type="button" data-action="openCompendium" title="Open starter compendium">
                     <i class="fas fa-box-open"></i>
                 </button>
+                {{/if}}
                 {{#if hasPartyBook}}
                 <button type="button" data-action="openCookbook" title="Open party cookbook">
                     <img src="{{partyBook.img}}" alt="" class="mf-gm-tool-img" />

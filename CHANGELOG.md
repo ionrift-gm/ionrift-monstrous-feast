@@ -3,6 +3,11 @@
 All notable changes to Monstrous Feast are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.0.3] (2026-09-17)
+
+### Fixed
+- The starter compendium button is now hidden on Pathfinder 2e and Starfinder 2e worlds.
+
 ## [1.0.2] (2026-09-17)
 
 ### Fixed
