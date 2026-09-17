@@ -135,7 +135,7 @@ export class CookbookApp extends HandlebarsApplicationMixin(ApplicationV2) {
             isGM: game.user.isGM,
             hasPartyBook: Boolean(partyBook),
             partyBook,
-            starterPackReady: Boolean(CompendiumService.getStarterPack()),
+            starterPackReady: CompendiumService.isStarterContentAvailable(),
             homebrewPath: "modules/ionrift-monstrous-feast/data/homebrew/",
             homebrewGuideUrl: "https://github.com/ionrift-gm/ionrift-library/wiki/15-Monstrous-Feast-Homebrew-JSON",
             homebrew: HomebrewStore.summary(),

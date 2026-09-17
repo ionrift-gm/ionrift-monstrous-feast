@@ -2,10 +2,10 @@
     "id": "ionrift-monstrous-feast",
     "title": "Monstrous Feast",
     "description": "Butcher and cook the monsters you kill. Turn slain creatures into ingredients, cook them at camp, and feed the party. Monster hunting and creature cooking for Foundry VTT, in the spirit of delicious dungeon crawling.",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "url": "https://github.com/ionrift-gm/ionrift-monstrous-feast",
     "manifest": "https://github.com/ionrift-gm/ionrift-monstrous-feast/releases/latest/download/module.json",
-    "download": "https://github.com/ionrift-gm/ionrift-monstrous-feast/releases/download/v1.0.1/module.zip",
+    "download": "https://github.com/ionrift-gm/ionrift-monstrous-feast/releases/download/v1.0.2/module.zip",
     "compatibility": {
         "minimum": "12",
         "verified": "13"
@@ -27,6 +27,7 @@
             "name": "mf-starter",
             "label": "Monstrous Feast Starter",
             "type": "Item",
+            "system": "dnd5e",
             "path": "packs/mf-starter",
             "ownership": {
                 "GAMEMASTER": "OWNER"
