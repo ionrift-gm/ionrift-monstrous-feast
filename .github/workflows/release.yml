@@ -132,11 +132,13 @@ jobs:
               exit 1
             fi
           done
-          if [ ! -d packs/mf-starter ]; then
-            echo "::error::compiled pack packs/mf-starter missing from release ZIP"
-            exit 1
-          fi
-          echo "OK: Release ZIP contains entry point, styles, and starter pack"
+          for PACK in mf-starter mf-starter-pf2e; do
+            if [ ! -d "packs/$PACK" ]; then
+              echo "::error::compiled pack packs/$PACK missing from release ZIP"
+              exit 1
+            fi
+          done
+          echo "OK: Release ZIP contains entry point, styles, and starter packs"
 
       - name: Create Release
         if: github.event.inputs.dry_run_discord != 'true'

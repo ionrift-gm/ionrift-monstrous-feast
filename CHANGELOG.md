@@ -3,6 +3,11 @@
 All notable changes to Monstrous Feast are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.0] (2026-09-17)
+
+### Added
+- Pathfinder 2e starter compendium. Six pantry staples (Cooking Oil, Salt, Pepper, Cinnamon, Flour, Egg), eight recipe pages, and the Monster Cooking book.
+
 ## [1.0.3] (2026-09-17)
 
 ### Fixed
