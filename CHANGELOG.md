@@ -3,6 +3,11 @@
 All notable changes to Monstrous Feast are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.0.1] (2026-09-17)
+
+### Fixed
+- Starter compendium now loads correctly in Pathfinder 2e and Starfinder 2e worlds. Previously, the module showed a persistent setup warning after every reload on non-dnd5e systems.
+
 ## [1.0.0] (2026-08-10)
 
 ### Added
