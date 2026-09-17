@@ -1,0 +1,77 @@
+{
+    "_key": "!items!mfP2ePageTemp001",
+    "_id": "mfP2ePageTemp001",
+    "name": "Recipe Page: Crispy Beast Tempura",
+    "type": "equipment",
+    "img": "icons/sundries/documents/document-torn-diagram-tan.webp",
+    "folder": "mfP2eFoldPages01",
+    "sort": 510,
+    "system": {
+        "description": {
+            "gm": "",
+            "value": "<p>A loose page torn from a hunter's cookbook. Inscribe it into a Monster Cooking book to learn how to fry <strong>Crispy Beast Tempura</strong>.</p><p><em>Requires:</em> 1x Monster Meat, 1x Flour, 1x Cooking Oil</p>"
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+            "value": [],
+            "rarity": "uncommon",
+            "otherTags": []
+        },
+        "publication": {
+            "title": "Monstrous Feast",
+            "authors": "Ionrift",
+            "license": "OGL",
+            "remaster": false
+        },
+        "level": {
+            "value": 0
+        },
+        "quantity": 1,
+        "hp": {
+            "value": 0,
+            "max": 0
+        },
+        "hardness": 0,
+        "bulk": {
+            "value": 0
+        },
+        "equipped": {
+            "carryType": "worn",
+            "invested": null,
+            "handsHeld": 0
+        },
+        "price": {
+            "value": {},
+            "per": 1
+        },
+        "identification": {
+            "status": "identified",
+            "unidentified": {
+                "name": "",
+                "img": "",
+                "data": {
+                    "description": {
+                        "value": ""
+                    }
+                }
+            },
+            "misidentified": {}
+        },
+        "usage": {
+            "value": "held-in-one-hand"
+        },
+        "baseItem": null,
+        "size": "med"
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "isRecipePage": true,
+            "recipeId": "cook_beast_tempura"
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

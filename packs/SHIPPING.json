@@ -1,5 +1,6 @@
 {
     "packs": {
-        "mf-starter": { "status": "approved" }
+        "mf-starter": { "status": "approved" },
+        "mf-starter-pf2e": { "status": "approved" }
     }
 }

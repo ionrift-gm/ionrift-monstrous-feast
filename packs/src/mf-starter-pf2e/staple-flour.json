@@ -1,0 +1,86 @@
+{
+    "_key": "!items!mfP2eStapleFlou1",
+    "_id": "mfP2eStapleFlou1",
+    "name": "Flour",
+    "type": "consumable",
+    "img": "icons/consumables/grains/sack-rice-flour-brown.webp",
+    "folder": "mfP2eFldPantry01",
+    "sort": 400,
+    "system": {
+        "description": {
+            "gm": "",
+            "value": "<p>A sack of milled grain. A camp-cooking staple for batters, breads, and thickening a stew.</p>"
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+            "value": [],
+            "rarity": "common",
+            "otherTags": []
+        },
+        "publication": {
+            "title": "Monstrous Feast",
+            "authors": "Ionrift",
+            "license": "OGL",
+            "remaster": false
+        },
+        "level": {
+            "value": 0
+        },
+        "quantity": 1,
+        "hp": {
+            "value": 0,
+            "max": 0
+        },
+        "hardness": 0,
+        "bulk": {
+            "value": 0.1
+        },
+        "equipped": {
+            "carryType": "worn",
+            "invested": null,
+            "handsHeld": 0
+        },
+        "price": {
+            "value": {
+                "sp": 2
+            },
+            "per": 1
+        },
+        "identification": {
+            "status": "identified",
+            "unidentified": {
+                "name": "",
+                "img": "",
+                "data": {
+                    "description": {
+                        "value": ""
+                    }
+                }
+            },
+            "misidentified": {}
+        },
+        "usage": {
+            "value": "held-in-one-hand"
+        },
+        "baseItem": null,
+        "category": "other",
+        "uses": {
+            "value": 1,
+            "max": 1,
+            "autoDestroy": true
+        }
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "pantryStaple": true
+        },
+        "ionrift-respite": {
+            "resourceType": "ingredient"
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

@@ -1,0 +1,77 @@
+{
+    "_key": "!items!mfP2ePageSpid001",
+    "_id": "mfP2ePageSpid001",
+    "name": "Recipe Page: Spider Skewers",
+    "type": "equipment",
+    "img": "icons/sundries/documents/document-torn-diagram-tan.webp",
+    "folder": "mfP2eFoldPages01",
+    "sort": 750,
+    "system": {
+        "description": {
+            "gm": "",
+            "value": "<p>A loose page torn from a hunter's cookbook. Inscribe it into a Monster Cooking book to learn how to prepare <strong>Spider Skewers</strong>.</p><p><em>Requires:</em> Spider Haunch</p>"
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+            "value": [],
+            "rarity": "common",
+            "otherTags": []
+        },
+        "publication": {
+            "title": "Monstrous Feast",
+            "authors": "Ionrift",
+            "license": "OGL",
+            "remaster": false
+        },
+        "level": {
+            "value": 0
+        },
+        "quantity": 1,
+        "hp": {
+            "value": 0,
+            "max": 0
+        },
+        "hardness": 0,
+        "bulk": {
+            "value": 0
+        },
+        "equipped": {
+            "carryType": "worn",
+            "invested": null,
+            "handsHeld": 0
+        },
+        "price": {
+            "value": {},
+            "per": 1
+        },
+        "identification": {
+            "status": "identified",
+            "unidentified": {
+                "name": "",
+                "img": "",
+                "data": {
+                    "description": {
+                        "value": ""
+                    }
+                }
+            },
+            "misidentified": {}
+        },
+        "usage": {
+            "value": "held-in-one-hand"
+        },
+        "baseItem": null,
+        "size": "med"
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "isRecipePage": true,
+            "recipeId": "cook_spider_skewers"
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

@@ -1,0 +1,86 @@
+{
+    "_key": "!items!mfP2eStapleOil01",
+    "_id": "mfP2eStapleOil01",
+    "name": "Cooking Oil",
+    "type": "consumable",
+    "img": "icons/containers/kitchenware/jug-terracotta-orange.webp",
+    "folder": "mfP2eFldPantry01",
+    "sort": 410,
+    "system": {
+        "description": {
+            "gm": "",
+            "value": "<p>A jug of pressed cooking oil. Found often enough in old larders and trapped storerooms to keep a fryer going.</p>"
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+            "value": [],
+            "rarity": "common",
+            "otherTags": []
+        },
+        "publication": {
+            "title": "Monstrous Feast",
+            "authors": "Ionrift",
+            "license": "OGL",
+            "remaster": false
+        },
+        "level": {
+            "value": 0
+        },
+        "quantity": 1,
+        "hp": {
+            "value": 0,
+            "max": 0
+        },
+        "hardness": 0,
+        "bulk": {
+            "value": 0.1
+        },
+        "equipped": {
+            "carryType": "worn",
+            "invested": null,
+            "handsHeld": 0
+        },
+        "price": {
+            "value": {
+                "sp": 5
+            },
+            "per": 1
+        },
+        "identification": {
+            "status": "identified",
+            "unidentified": {
+                "name": "",
+                "img": "",
+                "data": {
+                    "description": {
+                        "value": ""
+                    }
+                }
+            },
+            "misidentified": {}
+        },
+        "usage": {
+            "value": "held-in-one-hand"
+        },
+        "baseItem": null,
+        "category": "other",
+        "uses": {
+            "value": 1,
+            "max": 1,
+            "autoDestroy": true
+        }
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "pantryStaple": true
+        },
+        "ionrift-respite": {
+            "resourceType": "ingredient"
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

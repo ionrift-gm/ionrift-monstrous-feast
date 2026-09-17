@@ -1,0 +1,81 @@
+{
+    "_key": "!items!mfP2eBookCook001",
+    "_id": "mfP2eBookCook001",
+    "name": "Monster Cooking",
+    "type": "equipment",
+    "img": "icons/sundries/books/book-worn-brown.webp",
+    "folder": "mfP2eStartFold01",
+    "sort": 100,
+    "system": {
+        "description": {
+            "gm": "",
+            "value": "<p>A well-thumbed cookbook of recipes for creatures most people would never think to eat. Pages of butchering diagrams, notes on which parts are safe to take, and what pairs with what.</p><p>A character carrying this book can identify the edible parts of a slain creature and dress a carcass cleanly. Without it, that knowledge simply is not there.</p>"
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+            "value": [],
+            "rarity": "uncommon",
+            "otherTags": []
+        },
+        "publication": {
+            "title": "Monstrous Feast",
+            "authors": "Ionrift",
+            "license": "OGL",
+            "remaster": false
+        },
+        "level": {
+            "value": 0
+        },
+        "quantity": 1,
+        "hp": {
+            "value": 0,
+            "max": 0
+        },
+        "hardness": 0,
+        "bulk": {
+            "value": 0.1
+        },
+        "equipped": {
+            "carryType": "worn",
+            "invested": null,
+            "handsHeld": 0
+        },
+        "price": {
+            "value": {
+                "gp": 50
+            },
+            "per": 1
+        },
+        "identification": {
+            "status": "identified",
+            "unidentified": {
+                "name": "",
+                "img": "",
+                "data": {
+                    "description": {
+                        "value": ""
+                    }
+                }
+            },
+            "misidentified": {}
+        },
+        "usage": {
+            "value": "held-in-one-hand"
+        },
+        "baseItem": null,
+        "size": "med"
+    },
+    "flags": {
+        "ionrift-monstrous-feast": {
+            "itemRef": "monster-cooking-book",
+            "isButcherCookbook": true,
+            "discoveredTypes": [],
+            "inscribedRecipes": []
+        }
+    },
+    "effects": [],
+    "ownership": {
+        "default": 0
+    }
+}

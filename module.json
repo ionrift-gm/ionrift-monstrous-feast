@@ -32,6 +32,16 @@
             "ownership": {
                 "GAMEMASTER": "OWNER"
             }
+        },
+        {
+            "name": "mf-starter-pf2e",
+            "label": "Monstrous Feast Starter (PF2e)",
+            "type": "Item",
+            "system": "pf2e",
+            "path": "packs/mf-starter-pf2e",
+            "ownership": {
+                "GAMEMASTER": "OWNER"
+            }
         }
     ],
     "packFolders": [
@@ -41,7 +51,7 @@
             "folders": [
                 {
                     "name": "Monstrous Feast",
-                    "packs": ["mf-starter"]
+                    "packs": ["mf-starter", "mf-starter-pf2e"]
                 }
             ]
         }
