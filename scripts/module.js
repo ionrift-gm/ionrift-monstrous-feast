@@ -101,7 +101,7 @@ Hooks.once("init", () => {
         name: "Debug Mode",
         hint: "Verbose console logging for Monstrous Feast, including butcher marker decisions.",
         scope: "client",
-        config: true,
+        config: false,
         type: Boolean,
         default: false
     });
