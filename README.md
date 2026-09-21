@@ -2,13 +2,17 @@
 
 ![Foundry v12+](https://img.shields.io/badge/Foundry-v12%2B-333333?style=flat&logo=foundryvirtualtabletop)
 ![Systems](https://img.shields.io/badge/system-dnd5e%20%7C%20pf2e-blue)
-![Status](https://img.shields.io/badge/status-1.0.0-8b5cf6)
+![Status](https://img.shields.io/badge/status-1.1.0-8b5cf6)
 
-**Butcher slain creatures into ingredients, cook from a shared party cookbook, and serve meal buffs.**
+**Monster butchering, campfire cooking, and meal buffs for Foundry VTT (D&D 5e & Pathfinder 2e).**
+
+Carve fallen creatures for ingredients, expand your shared cookbook with loot recipes, and cook hearty meals for the whole adventuring party.
+
+> **Free module for Foundry VTT (v12 and v13):** Install directly using the manifest link below. No Patreon subscription required.
 
 <img src="docs/cookbook-creatures.png" alt="Living Cookbook creatures tab" width="720" />
 
-### Support Ionrift
+### Links & Support
 
 [![Patreon](https://img.shields.io/badge/Patreon-ionrift-ff424d?logo=patreon&logoColor=white)](https://patreon.com/ionrift)
 [![Discord](https://img.shields.io/badge/Discord-Ionrift-5865F2?logo=discord&logoColor=white)](https://discord.gg/vFGXf7Fncj)
