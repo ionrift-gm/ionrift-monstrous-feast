@@ -17,7 +17,19 @@ export const Logger = {
         }
     },
 
+    _verbose() {
+        try {
+            const bag = game.settings?.settings;
+            const libraryDebug = bag?.has("ionrift-library.debug") && game.settings.get("ionrift-library", "debug");
+            const moduleDebug = bag?.has(`${MODULE_ID}.debug`) && game.settings.get(MODULE_ID, "debug");
+            return !!(libraryDebug || moduleDebug);
+        } catch {
+            return false;
+        }
+    },
+
     info(...args) {
+        if (!this._verbose()) return;
         const lib = this._lib();
         if (lib) return lib.info(MODULE_LABEL, ...args);
         console.log(`Ionrift ${MODULE_LABEL} |`, ...args);

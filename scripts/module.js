@@ -46,7 +46,7 @@ Hooks.once("init", () => {
 
     game.settings.register(MODULE_ID, "promptOnCombatEnd", {
         name: "Offer Butchering After Combat",
-        hint: "When eligible creatures die, show canvas markers and chat offers. Markers appear when HP hits 0 (including mid-combat) and again when combat ends. Harvested corpses show a dim check marker; passed corpses show none.",
+        hint: "Shows canvas markers and chat offers when eligible creatures die and after combat. Harvested corpses show a check marker.",
         scope: "world",
         config: true,
         type: Boolean,
