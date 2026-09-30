@@ -1134,9 +1134,8 @@ button.mf-open-party-cookbook:hover {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* Scoped glass fill: this AppV2 window misses the shared .ionrift-window
-       (.window-app) background, so set a solid-but-glassy panel here only. */
-    background: rgba(15, 15, 20, 0.9) !important;
+    /* Backed by shared .ionrift-window glass token */
+    background: var(--ionrift-glass-bg) !important;
     backdrop-filter: blur(24px);
 }
 

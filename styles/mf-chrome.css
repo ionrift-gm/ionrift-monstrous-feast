@@ -1,49 +1,5 @@
-/* ── Purple scrollbar override (UI Handbook §2) ──────────────────────
-   The library's .ionrift-window scrollbar rules lose to Foundry's
-   defaults on CSS load order. Module-class nuclear override guarantees
-   purple scrollbars. Values match ionrift-library/styles/ionrift.css. */
-.monstrous-feast-living-cookbook,
-.monstrous-feast-living-cookbook *,
-.monstrous-feast-cookbook,
-.monstrous-feast-cookbook *,
-.monstrous-feast-ceremony,
-.monstrous-feast-ceremony * {
-    scrollbar-color: #6d28d9 rgba(0, 0, 0, 0.4) !important;
-    scrollbar-width: thin !important;
-}
+/* ── Purple scrollbars inherited from ionrift-library (.ionrift-window *) ── */
 
-.monstrous-feast-living-cookbook ::-webkit-scrollbar,
-.monstrous-feast-living-cookbook *::-webkit-scrollbar,
-.monstrous-feast-cookbook ::-webkit-scrollbar,
-.monstrous-feast-cookbook *::-webkit-scrollbar {
-    width: 6px !important;
-    height: 6px !important;
-    background: rgba(0, 0, 0, 0.4) !important;
-}
-
-.monstrous-feast-living-cookbook ::-webkit-scrollbar-track,
-.monstrous-feast-living-cookbook *::-webkit-scrollbar-track,
-.monstrous-feast-cookbook ::-webkit-scrollbar-track,
-.monstrous-feast-cookbook *::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.4) !important;
-    border-radius: 4px;
-}
-
-.monstrous-feast-living-cookbook ::-webkit-scrollbar-thumb,
-.monstrous-feast-living-cookbook *::-webkit-scrollbar-thumb,
-.monstrous-feast-cookbook ::-webkit-scrollbar-thumb,
-.monstrous-feast-cookbook *::-webkit-scrollbar-thumb {
-    background: #6d28d9 !important;
-    border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.monstrous-feast-living-cookbook ::-webkit-scrollbar-thumb:hover,
-.monstrous-feast-living-cookbook *::-webkit-scrollbar-thumb:hover,
-.monstrous-feast-cookbook ::-webkit-scrollbar-thumb:hover,
-.monstrous-feast-cookbook *::-webkit-scrollbar-thumb:hover {
-    background: #8b5cf6 !important;
-}
 
 /* ── Focus-ring residue (UI Handbook §3) ─────────────────────────────
    The global .ionrift-window suppression loses to the dnd5e/core focus

@@ -25,3 +25,6 @@ docs/
 *_PLAN.md
 *_SPEC.md
 
+
+# Automated adversarial audit output (DEV_PROTOCOLS)
+.audit/
