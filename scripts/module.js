@@ -169,11 +169,23 @@ Hooks.once("ready", async () => {
 });
 
 Hooks.on("getSceneControlButtons", (controls) => {
-    if (!game.user.isGM) return;
+    if (!game.user?.isGM || !controls) return;
+
+    if (game.ionrift?.hud?.registerSceneControl) {
+        game.ionrift.hud.registerSceneControl(controls, {
+            group: "tokens",
+            name: "monstrous-feast",
+            title: MODULE_LABEL,
+            icon: "fas fa-drumstick-bite",
+            order: 11,
+            onClick: () => game.ionrift.monstrousFeast.openCookbook()
+        });
+        return;
+    }
 
     const tokenGroup = Array.isArray(controls)
-        ? controls.find(c => c.name === "token")
-        : controls.tokens;
+        ? controls.find(c => c.name === "token" || c.name === "tokens")
+        : (controls.tokens || controls.token);
     if (!tokenGroup) return;
 
     const tool = {
@@ -181,12 +193,15 @@ Hooks.on("getSceneControlButtons", (controls) => {
         title: MODULE_LABEL,
         icon: "fas fa-drumstick-bite",
         button: true,
-        onClick: () => game.ionrift.monstrousFeast.openCookbook()
+        order: 11
     };
 
     if (Array.isArray(tokenGroup.tools)) {
+        tool.onClick = () => game.ionrift.monstrousFeast.openCookbook();
         tokenGroup.tools.push(tool);
     } else {
+        tool.onChange = () => game.ionrift.monstrousFeast.openCookbook();
+        if (!tokenGroup.tools) tokenGroup.tools = {};
         tokenGroup.tools[tool.name] = tool;
     }
 });
