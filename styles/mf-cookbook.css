@@ -756,10 +756,13 @@
     object-fit: cover;
 }
 
-.mf-butcher-title h3 {
+.mf-butcher-card .mf-butcher-title h3 {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
+    color: var(--ionrift-card-strong, #ffffff) !important;
+    border: none;
+    text-shadow: none;
 }
 
 .mf-butcher-flavour {
