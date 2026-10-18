@@ -108,7 +108,7 @@ function attachToChatMessage(message, html) {
             const actions = document.createElement("div");
             actions.className = "mf-butcher-actions mf-gm-only";
             actions.innerHTML = `
-                <button type="button" class="mf-btn-undo" data-action="undo" title="GM: Undo butchering, remove items, and restore offering">
+                <button type="button" class="mf-btn-undo" data-tone="danger" data-action="undo" title="GM: Undo butchering, remove items, and restore offering">
                     <i class="fas fa-rotate-left"></i> Undo Butchering
                 </button>
             `;

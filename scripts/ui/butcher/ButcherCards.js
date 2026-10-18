@@ -57,7 +57,7 @@ export function buildResultCard(result, butcherName, { undone = false } = {}) {
     const footerHtml = undone
         ? `<div class="mf-butcher-undone"><i class="fas fa-rotate-left"></i> Butchering undone by GM. Offering restored.</div>`
         : `<div class="mf-butcher-actions mf-gm-only">
-            <button type="button" class="mf-btn-undo" data-action="undo" title="GM: Undo butchering, remove items, and restore offering">
+            <button type="button" class="mf-btn-undo" data-tone="danger" data-action="undo" title="GM: Undo butchering, remove items, and restore offering">
                 <i class="fas fa-rotate-left"></i> Undo Butchering
             </button>
         </div>`;
