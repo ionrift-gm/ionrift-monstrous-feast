@@ -254,6 +254,85 @@ export async function grantYields(actor, yields, creatureName, tier, { skipRelay
     return results;
 }
 
+function matchesYieldItem(item, targetName) {
+    if (!item?.name) return false;
+    const baseTarget = targetName.toLowerCase().trim();
+    const itemName = item.name.toLowerCase().trim();
+    if (itemName === baseTarget) return true;
+    if (itemName.startsWith(baseTarget) && /^\s*(\(|\-)/.test(itemName.slice(baseTarget.length))) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Revoke previously granted butcher yields from an actor's inventory.
+ * Reduces item quantities or deletes items if the quantity reaches zero.
+ * @param {Actor} actor
+ * @param {object[]} yields
+ * @param {string} [creatureName]
+ * @returns {Promise<string[]>}
+ */
+export async function revokeYields(actor, yields, creatureName = "") {
+    if (!actor || !yields?.length) return [];
+
+    const aggregated = new Map();
+    for (const y of yields) {
+        const qty = Math.max(1, Number(y.qty) || 1);
+        const name = (y.displayName ?? y.name).toLowerCase().trim();
+        aggregated.set(name, (aggregated.get(name) || 0) + qty);
+    }
+
+    const toDelete = [];
+    const toUpdate = [];
+    const revokedSummary = [];
+
+    for (const [targetName, qtyToRevoke] of aggregated.entries()) {
+        let remaining = qtyToRevoke;
+        const candidates = (actor.items?.contents ?? actor.items ?? []).filter(item =>
+            matchesYieldItem(item, targetName)
+        );
+
+        candidates.sort((a, b) => {
+            const aIsMF = a.getFlag?.(MODULE_ID, "monsterIngredient") ? 1 : 0;
+            const bIsMF = b.getFlag?.(MODULE_ID, "monsterIngredient") ? 1 : 0;
+            return bIsMF - aIsMF;
+        });
+
+        for (const item of candidates) {
+            if (remaining <= 0) break;
+            const currentQty = Math.max(1, Number(item.system?.quantity ?? 1));
+
+            if (currentQty <= remaining) {
+                toDelete.push(item.id);
+                remaining -= currentQty;
+                revokedSummary.push(`${currentQty}x ${item.name}`);
+            } else {
+                toUpdate.push({
+                    _id: item.id,
+                    "system.quantity": currentQty - remaining
+                });
+                revokedSummary.push(`${remaining}x ${item.name}`);
+                remaining = 0;
+            }
+        }
+    }
+
+    if (toDelete.length) {
+        await actor.deleteEmbeddedDocuments("Item", toDelete);
+    }
+    if (toUpdate.length) {
+        await actor.updateEmbeddedDocuments("Item", toUpdate);
+    }
+
+    if (revokedSummary.length) {
+        ui.notifications?.info(`Monstrous Feast: Removed ${revokedSummary.join(", ")} from ${actor.name}.`);
+    }
+
+    return revokedSummary;
+}
+
+
 /**
  * @param {{ actor?: Actor, actorUuid?: string, yields?: object[], creatureName?: string, tier?: string }} data
  */

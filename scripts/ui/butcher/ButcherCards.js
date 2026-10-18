@@ -31,7 +31,7 @@ export function buildPromptCard(target, butcherActors) {
     </div>`;
 }
 
-export function buildResultCard(result, butcherName) {
+export function buildResultCard(result, butcherName, { undone = false } = {}) {
     const tierClass = `tier-${result.tier}`;
     const yieldLines = result.yields.map(y =>
         `<li>${y.qty}x ${y.name}${y.type === "loot" ? " <span class='mf-loot-tag'>loot</span>" : ""}</li>`
@@ -54,6 +54,14 @@ export function buildResultCard(result, butcherName) {
         </div>`;
     }
 
+    const footerHtml = undone
+        ? `<div class="mf-butcher-undone"><i class="fas fa-rotate-left"></i> Butchering undone by GM. Offering restored.</div>`
+        : `<div class="mf-butcher-actions mf-gm-only">
+            <button type="button" class="mf-btn-undo" data-action="undo" title="GM: Undo butchering, remove items, and restore offering">
+                <i class="fas fa-rotate-left"></i> Undo Butchering
+            </button>
+        </div>`;
+
     return `<div class="mf-butcher-card result" data-mf-card="result">
         <div class="mf-butcher-header">
             <img src="${result.creatureImg}" alt="${result.creatureName}" class="mf-butcher-img" />
@@ -71,6 +79,7 @@ export function buildResultCard(result, butcherName) {
         <ul class="mf-butcher-yields">${yieldLines}</ul>
         <p class="mf-butcher-inventory"><i class="fas fa-backpack"></i> Added to ${butcherName}'s inventory.</p>
         ${mishapHtml}
+        ${footerHtml}
     </div>`;
 }
 

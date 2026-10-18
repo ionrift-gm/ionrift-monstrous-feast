@@ -1,5 +1,6 @@
 import { BUTCHER_STATE } from "./ButcherTokenState.js";
 import { MODULE_ID } from "../../data/moduleId.js";
+import { SystemBridge } from "../../compat/SystemBridge.js";
 
 const FA_SOLID_CODEPOINT = {
     "fa-utensils": 0xf2e7,
@@ -216,6 +217,23 @@ function tokenStillOnScene(token) {
     return Boolean(token?.scene?.id && canvas?.scene?.id === token.scene.id);
 }
 
+const STEALTH_STATUS_IDS = ["invisible", "undetected", "unnoticed"];
+
+export function isTokenVisibleToUser(token, user = globalThis.game?.user) {
+    if (!token || !token.document || !tokenStillOnScene(token)) return false;
+    if (token.actor && !SystemBridge.isDead(token.actor)) return false;
+    if (token.visible === false) return false;
+    if ("isVisible" in token && token.isVisible === false) return false;
+    if (user?.isGM) return true;
+    if (token.document.hidden) return false;
+    const statuses = token.actor?.statuses;
+    if (statuses?.has && STEALTH_STATUS_IDS.some(id => statuses.has(id))) return false;
+    if (typeof token.actor?.hasCondition === "function" && token.actor.hasCondition(...STEALTH_STATUS_IDS)) {
+        return false;
+    }
+    return true;
+}
+
 function containerLive(container) {
     return Boolean(container && !container.destroyed && container.parent);
 }
@@ -299,6 +317,7 @@ class CorpseMarkerOverlay {
 
     _onHover(over) {
         if (!this._alive || !containerLive(this._container)) return;
+        if (over && !isTokenVisibleToUser(this.token)) return;
         const harvested = this.butcherState === BUTCHER_STATE.HARVESTED;
         if (this._hoverLabel) this._hoverLabel.visible = over;
         this._drawBadgeBackground(this._background, harvested, over && !harvested);
@@ -334,6 +353,12 @@ class CorpseMarkerOverlay {
 
     syncPosition() {
         if (!this._container || !this.token?.document || !tokenStillOnScene(this.token)) return;
+        const visible = isTokenVisibleToUser(this.token);
+        this._container.visible = visible;
+        if (!visible) {
+            if (this._hoverLabel) this._hoverLabel.visible = false;
+            return;
+        }
         const gridSize = canvas.grid?.size ?? 100;
         const tokenWidth = (this.token.document.width ?? 1) * gridSize;
         this._container.x = this.token.x + tokenWidth / 2;

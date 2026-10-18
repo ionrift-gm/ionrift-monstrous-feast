@@ -31,8 +31,26 @@ export const ButcherEligibility = {
             if (byTokenId) return byTokenId;
         }
 
+        const directTokenId = actor?.token?.id ?? actor?.token?.object?.id ?? null;
+        if (directTokenId) {
+            const byDirectToken = placeables.find(
+                entry => entry.id === directTokenId || entry.document?.id === directTokenId
+            );
+            if (byDirectToken) return byDirectToken;
+        }
+
         if (combatantId) {
-            const byCombatant = placeables.find(entry => entry.document?.combatantId === combatantId);
+            const combatant = game.combat?.combatants?.get?.(combatantId) ?? null;
+            const combatantTokenId = combatant?.tokenId ?? combatant?.token?.id ?? null;
+            if (combatantTokenId) {
+                const byCombatantToken = placeables.find(
+                    entry => entry.id === combatantTokenId || entry.document?.id === combatantTokenId
+                );
+                if (byCombatantToken) return byCombatantToken;
+            }
+            const byCombatant = placeables.find(
+                entry => entry.combatant?.id === combatantId || entry.document?.combatantId === combatantId
+            );
             if (byCombatant) return byCombatant;
             const byDocId = placeables.find(
                 entry => entry.id === combatantId || entry.document?.id === combatantId
@@ -41,10 +59,14 @@ export const ButcherEligibility = {
         }
 
         if (!actor?.id) return null;
+        if (actor.uuid) {
+            const byUuid = placeables.find(entry => entry.actor?.uuid === actor.uuid);
+            if (byUuid) return byUuid;
+        }
+        if (actor.isToken) return null;
         return placeables.find(entry =>
             entry.actor?.id === actor.id
             || entry.document?.actorId === actor.id
-            || (actor.uuid && entry.actor?.uuid === actor.uuid)
         ) ?? null;
     },
 
@@ -89,14 +111,18 @@ export const ButcherEligibility = {
                 continue;
             }
 
-            const token = this.findCanvasTokenForActor(actor, { combatantId: combatant.id });
+            const combatantTokenId = combatant.tokenId ?? combatant.token?.id ?? null;
+            const token = this.findCanvasTokenForActor(actor, {
+                combatantId: combatant.id,
+                tokenId: combatantTokenId
+            });
             if (!isButcherableState(getButcherState(token))) {
                 markerDebug("combatant skipped: already harvested or passed", { name: actor.name });
                 continue;
             }
             targets.push({
                 combatantId: combatant.id,
-                tokenId: token?.document?.id ?? token?.id ?? null,
+                tokenId: token?.document?.id ?? token?.id ?? combatantTokenId ?? null,
                 actor,
                 actorName: actor.name ?? combatant.name ?? "Unknown Creature",
                 actorImg: actor.img ?? combatant.img ?? "icons/svg/mystery-man.svg",

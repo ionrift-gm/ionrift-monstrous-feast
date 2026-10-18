@@ -41,6 +41,7 @@ function refreshOpenWindows() {
 Hooks.once("init", () => {
     Logger.log("Initializing...");
     createMonstrousFeastContext({ refreshOpenWindows });
+    ChatHandler.init();
 
     HomebrewStore.registerSetting();
 
