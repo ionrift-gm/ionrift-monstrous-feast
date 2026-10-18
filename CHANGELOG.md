@@ -3,6 +3,18 @@
 All notable changes to Monstrous Feast are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.1] - 2026-10-18
+
+### Changed
+- The Monstrous Feast scene control keeps a fixed place in the toolbar.
+- Window styling matches the rest of the Ionrift suite.
+
+### Fixed
+- Butchering works on unlinked tokens.
+- Corpse markers stay hidden under fog of war and for hidden tokens.
+- Butcher card titles and the Undo Butchering button are easier to read.
+- The debug mode setting no longer shows in player settings.
+
 ## [1.1.0] (2026-09-17)
 
 ### Added
