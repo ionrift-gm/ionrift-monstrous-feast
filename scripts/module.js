@@ -19,6 +19,7 @@ import { RespiteIntegration } from "./compat/RespiteIntegration.js";
 import { OverlayContentLoader } from "./services/content/OverlayContentLoader.js";
 import { ensureBuiltinBuffHandlers } from "./services/meals/MealBuffHandlers.js";
 import { ButcherCorpseMarker } from "./services/ButcherCorpseMarker.js";
+import { getButcherState, BUTCHER_STATE } from "./services/butcher/ButcherTokenState.js";
 import { HomebrewStore } from "./services/content/HomebrewStore.js";
 import { MODULE_ID, MODULE_LABEL } from "./data/moduleId.js";
 import { createMonstrousFeastContext } from "./composition/createMonstrousFeastContext.js";
@@ -247,4 +248,41 @@ Hooks.on("updateActor", async (actor, changes) => {
 Hooks.on("dnd5e.restCompleted", (actor, result) => {
     MealEffects.onShortRestCompleted(actor, result);
     MealEffects.onLongRestCompleted(actor, result);
+});
+
+Hooks.on("renderTokenHUD", (hud, html) => {
+    if (!game.user?.isGM) return;
+    const token = hud.object;
+    if (!token?.actor || SystemBridge.isPlayerCharacter(token.actor)) return;
+
+    const state = getButcherState(token);
+    const isLoot = ButcherEngine.isLootContainer(token.actor, token);
+    const target = ButcherEngine.buildTargetFromActor(token.actor, token, { allowResolved: true, allowLoot: true });
+
+    if (!target && !state) return;
+    if (isLoot && !state) return;
+
+    const isActive = state === BUTCHER_STATE.READY
+        || ButcherEngine.getPendingTargetsList().some(p => p.tokenId === (token.document?.id ?? token.id));
+
+    const title = isActive
+        ? "Monstrous Feast: Butchering enabled (click to disable)"
+        : "Monstrous Feast: Butchering disabled (click to enable)";
+
+    const el = html instanceof HTMLElement ? html : (html[0] ?? html);
+    const col = el.querySelector?.(".col.left") ?? el.querySelector?.(".col.right");
+    if (!col) return;
+
+    const btn = document.createElement("div");
+    btn.className = `control-icon ${isActive ? "active" : ""}`;
+    btn.dataset.action = "mf-toggle-butcher";
+    btn.title = title;
+    btn.innerHTML = `<i class="fas fa-drumstick-bite"></i>`;
+    btn.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        await ButcherEngine.toggleButcherOffer(token);
+        hud.render(true);
+    });
+    col.appendChild(btn);
 });

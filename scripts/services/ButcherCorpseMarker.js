@@ -62,6 +62,13 @@ async function handleMarkerClick(combatantId, fallbackTarget) {
     await _butcherEngine.resolve(butcher, target);
 }
 
+async function handleMarkerRightClick(combatantId, fallbackTarget) {
+    if (!game.user?.isGM) return;
+    const target = _butcherEngine?.getPendingTarget(combatantId) ?? fallbackTarget;
+    if (!target) return;
+    await _butcherEngine?.toggleButcherOffer(target, { combatantId });
+}
+
 async function applyTargetsWithIcons(targets) {
     await ButcherMarkerPresentation.ensureReady();
     ButcherCorpseMarker.showTargets(targets);
@@ -95,7 +102,8 @@ export const ButcherCorpseMarker = {
         presentation.configure({
             debug: markerDebug,
             warn: markerWarn,
-            onClick: handleMarkerClick
+            onClick: handleMarkerClick,
+            onRightClick: handleMarkerRightClick
         });
     },
 

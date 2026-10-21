@@ -7,7 +7,8 @@ const REGISTRY_FLAG = "corpseRegistry";
 export const BUTCHER_STATE = Object.freeze({
     READY: "ready",
     HARVESTED: "harvested",
-    PASSED: "passed"
+    PASSED: "passed",
+    DISABLED: "disabled"
 });
 
 /** Client-side overrides until a GM relay writes token flags. @type {Map<string, string>} */
@@ -163,7 +164,9 @@ export async function clearSceneCorpseEntry(tokenDocumentId) {
  * @returns {boolean}
  */
 export function isButcherableState(state) {
-    return state !== BUTCHER_STATE.HARVESTED && state !== BUTCHER_STATE.PASSED;
+    return state !== BUTCHER_STATE.HARVESTED
+        && state !== BUTCHER_STATE.PASSED
+        && state !== BUTCHER_STATE.DISABLED;
 }
 
 /**

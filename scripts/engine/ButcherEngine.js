@@ -764,6 +764,81 @@ export const ButcherEngine = {
         _markerService?.clear(combatantId);
     },
 
+    isLootContainer(actor, token = null) {
+        return ButcherEligibility.isLootContainer(actor, token);
+    },
+
+    /**
+     * GM toggle: enable or disable butchering on a token or actor without creating "passed" chat cards.
+     * @param {Token|Actor|object} targetOrToken
+     * @param {{ combatantId?: string|null }} [options]
+     * @returns {Promise<boolean>} True if now enabled, false if disabled.
+     */
+    async toggleButcherOffer(targetOrToken, { combatantId = null } = {}) {
+        if (!game.user?.isGM) return false;
+
+        let token = null;
+        let actor = null;
+        let target = null;
+        let id = combatantId;
+
+        if (targetOrToken?.documentName === "Token" || (targetOrToken?.actor && targetOrToken?.document)) {
+            token = targetOrToken;
+            actor = token.actor;
+            id = id ?? token.document?.id ?? token.id;
+        } else if (targetOrToken?.actor || targetOrToken?.tokenId) {
+            target = targetOrToken;
+            actor = target.actor;
+            token = this.findCanvasTokenForActor(actor, {
+                combatantId: target.combatantId,
+                tokenId: target.tokenId
+            });
+            id = id ?? target.combatantId ?? target.tokenId;
+        } else if (targetOrToken?.documentName === "Actor") {
+            actor = targetOrToken;
+            token = this.findCanvasTokenForActor(actor);
+            id = id ?? token?.document?.id ?? token?.id ?? actor.id;
+        }
+
+        if (!actor && token) actor = token.actor;
+        if (!actor) return false;
+
+        const currentState = token ? getButcherState(token) : null;
+        const isCurrentlyOffered = currentState === BUTCHER_STATE.READY
+            || (id && _pendingTargets.has(id))
+            || [..._pendingTargets.values()].some(p => p.actor?.id === actor.id || (token && p.tokenId === (token.document?.id ?? token.id)));
+
+        const creatureName = actor.name ?? target?.actorName ?? "Creature";
+
+        if (isCurrentlyOffered) {
+            await persistButcherState(token, target ?? { tokenId: token?.document?.id ?? token?.id, actor }, BUTCHER_STATE.DISABLED);
+            const offerIds = _collectRevokeOfferIds(actor, token, target);
+            for (const offerId of offerIds) {
+                _pendingTargets.delete(offerId);
+                _markerService?.clear(offerId);
+            }
+            await _withdrawButcherPrompts(offerIds);
+            _markerService?.syncShow(this.getCorpseMarkerEntries());
+            ui.notifications?.info(`Monstrous Feast: Butchering disabled for ${creatureName}.`);
+            return false;
+        } else {
+            if (this.isLootContainer(actor, token)) {
+                ui.notifications?.warn(`Monstrous Feast: ${creatureName} is classified as a loot container.`);
+                return false;
+            }
+            const newTarget = this.buildTargetFromActor(actor, token, { allowResolved: true, allowLoot: true });
+            if (!newTarget) {
+                ui.notifications?.warn(`Monstrous Feast: ${creatureName} does not match any registered creature.`);
+                return false;
+            }
+            await persistButcherState(token, newTarget, BUTCHER_STATE.READY);
+            _pendingTargets.set(newTarget.combatantId, newTarget);
+            _markerService?.syncShow(this.getCorpseMarkerEntries());
+            ui.notifications?.info(`Monstrous Feast: Butchering enabled for ${creatureName}.`);
+            return true;
+        }
+    },
+
     async passTarget(combatantId, creatureName, target = null) {
         const resolved = target ?? _pendingTargets.get(combatantId);
         if (resolved) await _markCorpsePassed(resolved);

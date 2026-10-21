@@ -70,8 +70,40 @@ export const ButcherEligibility = {
         ) ?? null;
     },
 
-    buildTargetFromActor(actor, token, { allowResolved = false } = {}) {
+    /**
+     * Determine if an actor or token represents a loot container, vehicle, hazard, or non-creature pile.
+     * @param {Actor|null} actor
+     * @param {Token|null} [token]
+     * @returns {boolean}
+     */
+    isLootContainer(actor, token = null) {
+        if (!actor) return false;
+
+        const type = String(actor.type ?? "").toLowerCase();
+        if (["loot", "container", "vehicle", "hazard", "merchant"].includes(type)) return true;
+
+        const itemPilesData = actor.flags?.["item-piles"]?.data ?? token?.document?.flags?.["item-piles"]?.data;
+        if (itemPilesData?.enabled === true) return true;
+        if (actor.getFlag?.("item-piles", "data.enabled") === true) return true;
+        if (token?.document?.getFlag?.("item-piles", "data.enabled") === true) return true;
+        if (globalThis.game?.itempiles?.API?.isItemPile?.(actor) || globalThis.game?.itempiles?.API?.isItemPile?.(token)) return true;
+
+        if (actor.flags?.lootsheetnpc5e) return true;
+        const lootSheetType = actor.getFlag?.("lootsheetnpc5e", "lootsheettype");
+        if (lootSheetType === "Loot" || lootSheetType === "Merchant") return true;
+        const sheetClass = String(actor.flags?.core?.sheetClass ?? "").toLowerCase();
+        if (sheetClass.includes("loot")) return true;
+
+        const nameCandidates = [token?.name, token?.document?.name, actor.name].filter(Boolean);
+        const LOOT_NAME_PATTERN = /\b(loot|chest|crate|barrel|cache|hoard|container)\b/i;
+        if (nameCandidates.some(n => LOOT_NAME_PATTERN.test(n))) return true;
+
+        return false;
+    },
+
+    buildTargetFromActor(actor, token, { allowResolved = false, allowLoot = false } = {}) {
         if (token && !allowResolved && !isButcherableState(getButcherState(token))) return null;
+        if (!allowLoot && this.isLootContainer(actor, token)) return null;
         const cr = SystemBridge.getChallengeRating(actor);
         const classification = classificationForActor(actor);
         if (!classification) return null;
@@ -98,6 +130,13 @@ export const ButcherEligibility = {
             const actor = combatant.actor;
             if (!actor || SystemBridge.isPlayerCharacter(actor) || !SystemBridge.isDead(actor)) continue;
 
+            const combatantTokenId = combatant.tokenId ?? combatant.token?.id ?? null;
+            const token = this.findCanvasTokenForActor(actor, {
+                combatantId: combatant.id,
+                tokenId: combatantTokenId
+            });
+            if (this.isLootContainer(actor, token)) continue;
+
             const cr = SystemBridge.getChallengeRating(actor);
             const classification = classificationForActor(actor);
             if (!classification) continue;
@@ -111,11 +150,6 @@ export const ButcherEligibility = {
                 continue;
             }
 
-            const combatantTokenId = combatant.tokenId ?? combatant.token?.id ?? null;
-            const token = this.findCanvasTokenForActor(actor, {
-                combatantId: combatant.id,
-                tokenId: combatantTokenId
-            });
             if (!isButcherableState(getButcherState(token))) {
                 markerDebug("combatant skipped: already harvested or passed", { name: actor.name });
                 continue;

@@ -42,6 +42,7 @@ const _markers = new Map();
 let _debug = () => {};
 let _warn = () => {};
 let _onClick = async () => {};
+let _onRightClick = async () => {};
 
 function faSolidFamily() {
     if (_solidFamilyCache) return _solidFamilyCache;
@@ -242,6 +243,9 @@ function tooltipText(target, butcherState) {
     const name = target?.actorName ?? target?.actor?.name ?? "Creature";
     if (butcherState === BUTCHER_STATE.HARVESTED) return `${name}\nHarvested`;
     const dcBit = Number.isFinite(target?.dc) ? ` (DC ${target.dc})` : "";
+    if (globalThis.game?.user?.isGM) {
+        return `${name}\nClick to butcher${dcBit}\nRight-click to toggle off`;
+    }
     return `${name}\nClick to butcher${dcBit}`;
 }
 
@@ -288,7 +292,21 @@ class CorpseMarkerOverlay {
             container.on("pointerdown", event => {
                 event?.stopPropagation?.();
                 event?.nativeEvent?.stopImmediatePropagation?.();
+                const isRight = event?.button === 2 || event?.data?.button === 2 || event?.nativeEvent?.button === 2;
+                if (isRight) {
+                    if (globalThis.game?.user?.isGM) {
+                        void _onRightClick(this.combatantId, this.target);
+                    }
+                    return;
+                }
                 void _onClick(this.combatantId, this.target);
+            });
+            container.on("rightdown", event => {
+                event?.stopPropagation?.();
+                event?.nativeEvent?.stopImmediatePropagation?.();
+                if (globalThis.game?.user?.isGM) {
+                    void _onRightClick(this.combatantId, this.target);
+                }
             });
         }
 
@@ -412,10 +430,11 @@ function stopTickerIfEmpty() {
 }
 
 export const ButcherMarkerPresentation = {
-    configure({ debug, warn, onClick }) {
+    configure({ debug, warn, onClick, onRightClick }) {
         _debug = debug;
         _warn = warn;
         _onClick = onClick;
+        _onRightClick = onRightClick ?? (() => {});
     },
 
     ensureReady() {
