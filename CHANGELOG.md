@@ -3,6 +3,14 @@
 All notable changes to Monstrous Feast are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.2] - 2026-10-25
+
+### Added
+- Right-click a corpse marker on the canvas to toggle it on or off for a token.
+
+### Fixed
+- Butcher offer availability stays synchronized across connected clients when toggled.
+
 ## [1.1.1] - 2026-10-18
 
 ### Changed
