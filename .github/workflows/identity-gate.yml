@@ -1,0 +1,16 @@
+name: CI - Commit Identity Gate
+
+on:
+  push:
+    branches: ['**']
+    tags-ignore: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  identity-gate:
+    uses: ionrift-gm/ionrift-ci/.github/workflows/identity-gate.yml@main
+    secrets:
+      IDENTITY_DENYLIST: ${{ secrets.IDENTITY_DENYLIST }}
