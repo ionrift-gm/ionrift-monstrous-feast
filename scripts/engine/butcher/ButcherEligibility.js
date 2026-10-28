@@ -5,6 +5,15 @@ import { DiscoveryService } from "../../services/cookbook/DiscoveryService.js";
 import { getButcherState, isButcherableState } from "../../services/butcher/ButcherTokenState.js";
 import { MODULE_ID } from "../../data/moduleId.js";
 
+function safeGetFlag(doc, scope, key) {
+    if (!doc || typeof doc.getFlag !== "function") return undefined;
+    try {
+        return doc.getFlag(scope, key);
+    } catch {
+        return undefined;
+    }
+}
+
 function classificationForActor(actor) {
     let classification = Library.classify(actor);
     if (!classification?.id || classification.id === "unknown") {
@@ -84,12 +93,12 @@ export const ButcherEligibility = {
 
         const itemPilesData = actor.flags?.["item-piles"]?.data ?? token?.document?.flags?.["item-piles"]?.data;
         if (itemPilesData?.enabled === true) return true;
-        if (actor.getFlag?.("item-piles", "data.enabled") === true) return true;
-        if (token?.document?.getFlag?.("item-piles", "data.enabled") === true) return true;
+        if (safeGetFlag(actor, "item-piles", "data.enabled") === true) return true;
+        if (safeGetFlag(token?.document, "item-piles", "data.enabled") === true) return true;
         if (globalThis.game?.itempiles?.API?.isItemPile?.(actor) || globalThis.game?.itempiles?.API?.isItemPile?.(token)) return true;
 
         if (actor.flags?.lootsheetnpc5e) return true;
-        const lootSheetType = actor.getFlag?.("lootsheetnpc5e", "lootsheettype");
+        const lootSheetType = safeGetFlag(actor, "lootsheetnpc5e", "lootsheettype");
         if (lootSheetType === "Loot" || lootSheetType === "Merchant") return true;
         const sheetClass = String(actor.flags?.core?.sheetClass ?? "").toLowerCase();
         if (sheetClass.includes("loot")) return true;
