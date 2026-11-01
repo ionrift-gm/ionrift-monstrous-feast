@@ -108,7 +108,7 @@ export const ButcherCorpseMarker = {
     },
 
     init() {
-        markerWarn("marker service registered");
+        markerDebug("marker service registered");
         if (game.socket) game.socket.on(SOCKET_CHANNEL, onSocket);
 
         Hooks.on("canvasTearDown", () => {
