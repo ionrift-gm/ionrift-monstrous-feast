@@ -19,7 +19,7 @@ CURSOR_TASK_*
 CURSOR_SPEC_*
 CURSOR_PLAN_*
 
-# Internal engineering docs (DEV_PROTOCOLS §22)
+# Internal engineering docs (DEV_PROTOCOLS ï¿½22)
 docs/
 *_STRATEGY.md
 *_PLAN.md
@@ -31,3 +31,15 @@ docs/
 # Local locks & debug logs
 *.lock
 ionrift_debug/
+
+# Engineering protocol hygiene guards
+tests/
+scripts/tests/
+vitest.config.*
+packs/*/LOCK
+packs/*/CURRENT
+packs/*/MANIFEST-*
+packs/*/*.log
+packs/*/LOG
+packs/*/LOG.old
+packs/*/lost/
