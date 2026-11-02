@@ -1,7 +1,5 @@
 import { Logger } from "../lib/Logger.js";
-import { MODULE_ID } from "../data/moduleId.js";
-
-const CHANNEL = `module.${MODULE_ID}`;
+import { FeastSocket } from "./FeastSocket.js";
 
 export const GM_RELAY_ACTIONS = Object.freeze({
     discover: "recordDiscovery",
@@ -65,13 +63,13 @@ export const GMRelay = {
     },
 
     init() {
-        if (!game.socket) {
-            Logger.warn("GMRelay.init: game.socket unavailable.");
+        if (!FeastSocket.isAvailable()) {
+            Logger.warn("GMRelay.init: socket unavailable.");
             return;
         }
-        if (_bound) game.socket.off(CHANNEL, _bound);
+        if (_bound) FeastSocket.off(_bound);
         _bound = (data) => GMRelay._onMessage(data);
-        game.socket.on(CHANNEL, _bound);
+        FeastSocket.on(_bound);
     },
 
     /**
@@ -179,8 +177,8 @@ export const GMRelay = {
      * @param {object} payload
      */
     _emit(action, payload) {
-        if (!game.socket) return;
-        game.socket.emit(CHANNEL, {
+        if (!FeastSocket.isAvailable()) return;
+        FeastSocket.emit({
             action,
             requestId: foundry.utils.randomID(),
             ...payload

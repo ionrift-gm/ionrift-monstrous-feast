@@ -1,6 +1,5 @@
-import { MODULE_ID } from "../../data/moduleId.js";
+import { FeastSocket } from "../FeastSocket.js";
 
-const CHANNEL = `module.${MODULE_ID}`;
 const ACTION_SERVING = "openFeastServing";
 
 /**
@@ -16,8 +15,8 @@ export const FeastServingRelay = {
      */
     requestServing(payload) {
         if (game.user.isGM) return;
-        if (!game.socket) return;
-        game.socket.emit(CHANNEL, {
+        if (!FeastSocket.isAvailable()) return;
+        FeastSocket.emit({
             action: ACTION_SERVING,
             requestId: foundry.utils.randomID(),
             ...payload

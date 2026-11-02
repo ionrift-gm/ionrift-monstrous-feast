@@ -7,9 +7,10 @@ import {
     clearSceneCorpseEntry
 } from "./butcher/ButcherTokenState.js";
 import { ButcherMarkerPresentation } from "./butcher/ButcherMarkerPresentation.js";
+import { FeastSocket } from "./FeastSocket.js";
 
 const MAX_MARKERS = 3;
-const SOCKET_CHANNEL = `module.${MODULE_ID}`;
+
 const SOCKET_ACTION_SHOW = "showButcherMarkers";
 let _butcherEngine = null;
 
@@ -109,7 +110,7 @@ export const ButcherCorpseMarker = {
 
     init() {
         markerDebug("marker service registered");
-        if (game.socket) game.socket.on(SOCKET_CHANNEL, onSocket);
+        FeastSocket.on(onSocket);
 
         Hooks.on("canvasTearDown", () => {
             clearLocalButcherStateOverrides();
@@ -222,8 +223,8 @@ export const ButcherCorpseMarker = {
         const normalizedTargets = targets ?? [];
         this.showTargets(normalizedTargets);
         void ButcherMarkerPresentation.refreshIcons();
-        if (!game.user.isGM || !game.socket) return;
-        game.socket.emit(SOCKET_CHANNEL, {
+        if (!game.user.isGM || !FeastSocket.isAvailable()) return;
+        FeastSocket.emit({
             action: SOCKET_ACTION_SHOW,
             targets: _butcherEngine?.serializeTargets(normalizedTargets) ?? normalizedTargets
         });
